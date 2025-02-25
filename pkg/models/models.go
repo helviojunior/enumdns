@@ -12,7 +12,7 @@ type Result struct {
 	ID uint `json:"id" gorm:"primarykey"`
 
 	TestId                string    `json:"test_id"`
-	FQDN                  string    `json:"fqdn"`
+	FQDN                  string    `json:"fqdn" gorm:"index:idx_exists"`
 	RType                 string    `json:"result_type"`
 	IPv4                  string    `json:"ipv4,omitempty"`
 	IPv6                  string    `json:"ipv6,omitempty"`
@@ -24,7 +24,7 @@ type Result struct {
 	Exists       		  bool   	`json:"exists"`
 
 	// Failed flag set if the result should be considered failed
-	Failed       bool   `json:"failed"`
+	Failed       bool   `json:"failed" gorm:"index:idx_exists"`
 	FailedReason string `json:"failed_reason,omitempty"`
 
 }
