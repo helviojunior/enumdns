@@ -291,6 +291,63 @@ func (run *Runner) Probe(host string) []*models.Result {
 								c1.CloudProduct = prodName
 							}
 							resList = append(resList, c1)
+
+							m1 := new(dns.Msg)
+				            m1.Id = dns.Id()
+							m1.RecursionDesired = true
+							m1.SetQuestion(strings.Trim(cname.Target, ". ") + ".", dns.TypeANY)
+							r1, err := dns.Exchange(m1, run.dnsServer); 
+							if err != nil {
+								good_to_go = false
+							}else{
+								for _, ans1 := range r1.Answer {
+									a, ok := ans1.(*dns.A)
+									if ok {
+										logger.Debug("A", "IP", a.A.String())
+										ips = append(ips, a.A.String())
+
+										// With the same FQDN
+										a1 := resultBase.Clone()
+										a1.RType = "A"
+										a1.IPv4 = a.A.String()
+										if !models.SliceHasResult(resList, a1) {
+											resList = append(resList, a1)
+										}
+
+										// With CNAME fqdn
+										a1 = resultBase.Clone()
+										a1.FQDN = cname.Target
+										a1.RType = "A"
+										a1.IPv4 = a.A.String()
+										if !models.SliceHasResult(resList, a1) {
+											resList = append(resList, a1)
+										}
+									}
+
+									aaaa, ok := ans1.(*dns.AAAA)
+									if ok {
+										logger.Debug("AAAA", "IP", aaaa.AAAA.String())
+										ips = append(ips, aaaa.AAAA.String())
+										
+										// With the same FQDN
+										a2 := resultBase.Clone()
+										a2.RType = "AAAA"
+										a2.IPv6 = aaaa.AAAA.String()
+										if !models.SliceHasResult(resList, a2) {
+											resList = append(resList, a2)
+										}
+
+										// With CNAME fqdn
+										a2 = resultBase.Clone()
+										a2.FQDN = cname.Target
+										a2.RType = "AAAA"
+										a2.IPv6 = aaaa.AAAA.String()
+										if !models.SliceHasResult(resList, a2) {
+											resList = append(resList, a2)
+										}
+									}
+								}
+							}
 						}
 					}
 
