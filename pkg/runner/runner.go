@@ -16,7 +16,7 @@ import (
     "syscall"
     //"strconv"
 
-	//"github.com/helviojunior/enumdns/internal/islazy"
+	"github.com/helviojunior/enumdns/internal/islazy"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/helviojunior/enumdns/pkg/writers"
 	"github.com/miekg/dns"
@@ -80,9 +80,9 @@ func (st *Status) Print() {
             st.Label = "[=====]"
 	}
 
-	fmt.Fprintf(os.Stderr, "%s\n    %s (%d/%d) failed: %d               \r\033[A", 
+	fmt.Fprintf(os.Stderr, "%s\n    %s (%s/%s) failed: %s               \r\033[A", 
     	"                                                                        ",
-    	st.Label, st.Complete, st.Total, st.Error)
+    	st.Label, islazy.FormatInt(st.Complete), islazy.FormatInt(st.Total), islazy.FormatInt(st.Error))
 	
 } 
 
