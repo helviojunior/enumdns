@@ -204,8 +204,6 @@ multiple writers using the _--writer-*_ flags (see --help).
 
                     if i {
                         bruteRunner.Targets <- h + "." + s
-                    }else{
-                        bruteRunner.AddSkipped()
                     }
                 }
             }
@@ -233,7 +231,7 @@ func init() {
     bruteCmd.Flags().BoolVar(&opts.Logging.LogScanErrors, "log-scan-errors", false, "Log scan errors (timeouts, DNS errors, etc.) to stderr (warning: can be verbose!)")
 
     // "Threads" & other
-    bruteCmd.Flags().IntVarP(&opts.Scan.Threads, "threads", "t", 6, "Number of concurrent threads (goroutines) to use")
+    bruteCmd.Flags().IntVarP(&opts.Scan.Threads, "threads", "t", 16, "Number of concurrent threads (goroutines) to use")
     bruteCmd.Flags().IntVarP(&opts.Scan.Timeout, "timeout", "T", 60, "Number of seconds before considering a page timed out")
     bruteCmd.Flags().IntVar(&opts.Scan.Delay, "delay", 3, "Number of seconds delay between navigation and screenshotting")
 

@@ -55,12 +55,9 @@ type Runner struct {
 }
 
 type Status struct {
-	Parsed int
+	Total int
+	Complete int
 	Error int
-    Url int
-    Email int
-    Credential int
-	Skipped int
 	Label string
 	Running bool
 }
@@ -83,15 +80,15 @@ func (st *Status) Print() {
             st.Label = "[=====]"
 	}
 
-	fmt.Fprintf(os.Stderr, "%s\n    %s read: %d, failed: %d, ignored: %d               \n            cred: %d, url: %d, email: %d\r\033[A\033[A", 
+	fmt.Fprintf(os.Stderr, "%s\n    %s (%d/%d) failed: %d               \r\033[A", 
     	"                                                                        ",
-    	st.Label, st.Parsed, st.Error, st.Skipped, st.Credential, st.Url, st.Email)
+    	st.Label, st.Complete, st.Total, st.Error)
 	
 } 
 
 
 func (st *Status) AddResult(result *models.Result) { 
-    st.Parsed += 1
+    st.Complete += 1
 	if result.Failed {
 		st.Error += 1
 		return
@@ -114,18 +111,25 @@ func NewRunner(logger *slog.Logger, opts Options, writers []writers.Writer) (*Ru
 		searchOrder: []uint16{ dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY },
 		dnsServer: opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
 		status:     &Status{
-			Parsed: 0,
+			Total: 0,
+			Complete: 0,
 			Error: 0,
-			Skipped: 0,
 			Label: "[=====]",
 			Running: true,
 		},
 	}, nil
 }
 
-func (run *Runner) AddSkipped() {
-	run.status.Skipped += 1
-	run.status.Parsed += 1
+func ContainsCloudProduct(s string) (bool, string, string) {
+    s = strings.Trim(strings.ToLower(s), ". ")
+    for prodName, identifiers := range products {
+    	for _, id := range identifiers {
+	        if strings.Contains(s, strings.ToLower(id)) {
+	            return true, prodName, id
+	        }
+	    }
+    }
+    return false, "", ""
 }
 
 // runWriters takes a result and passes it to writers
@@ -142,6 +146,8 @@ func (run *Runner) runWriters(result *models.Result) error {
 func (run *Runner) Run(total int) Status {
 	wg := sync.WaitGroup{}
 	swg := sync.WaitGroup{}
+
+	run.status.Total = total
 
     c := make(chan os.Signal)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -190,9 +196,16 @@ func (run *Runner) Run(total int) Status {
 
 					results := run.Probe(host)
 					if run.status.Running {
+						
+						if len(results) == 0 {
+							//Host not found
+							run.status.Complete += 1
+						}else{
+							run.status.AddResult(results[0])
+						}
+						
 						for _, res := range results {
-        					run.status.AddResult(res)
-
+        					
         					if err := run.runWriters(res); err != nil {
         						logger.Error("failed to write result", "err", err)
         					}
@@ -235,7 +248,7 @@ func (run *Runner) Probe(host string) []*models.Result {
 
     	good_to_go := false
 		counter := 0
-		for good_to_go != true {
+		for good_to_go != true && run.status.Running {
             m := new(dns.Msg)
             m.Id = dns.Id()
 			m.RecursionDesired = true
@@ -268,6 +281,10 @@ func (run *Runner) Probe(host string) []*models.Result {
 						c1.RType = "CNAME"
 						c1.Target = cname.Target
 						if !models.SliceHasResult(resList, c1) {
+							cc, prodName, _ := ContainsCloudProduct(cname.Target)
+							if cc {
+								c1.CloudProduct = prodName
+							}
 							resList = append(resList, c1)
 						}
 					}
@@ -332,9 +349,13 @@ func (run *Runner) Probe(host string) []*models.Result {
 							resList = append(resList, a2)
 						}
 
+						cc, prodName, _ := ContainsCloudProduct(ptr.Ptr)
 						for _, res := range resList {
 							if res.RType != "PTR" && (res.IPv4 == ip || res.IPv6 == ip) {
 								res.Ptr = ptr.Ptr
+								if cc {
+									res.CloudProduct = prodName
+								}
 							}
 						}
 					}

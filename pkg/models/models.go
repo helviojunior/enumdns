@@ -18,6 +18,7 @@ type Result struct {
 	IPv6                  string    `json:"ipv6,omitempty"`
 	Target                string    `json:"target,omitempty"`
 	Ptr                   string    `json:"ptr,omitempty"`
+	CloudProduct          string    `json:"cloud_product,omitempty"`
 	ProbedAt              time.Time `json:"probed_at"`
 
 	// Failed flag set if the result should be considered failed
@@ -35,6 +36,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		IPv6                  string    `json:"ipv6,omitempty"`
 		Target                string    `json:"target,omitempty"`
 		Ptr                   string    `json:"ptr,omitempty"`
+		CloudProduct          string    `json:"cloud_product,omitempty"`
 		ProbedAt              string    `json:"probed_at"`
 
 	}{
@@ -45,21 +47,23 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		IPv6 				: result.IPv6,
 		Target 				: strings.Trim(strings.ToLower(result.Target), ". "),
 		Ptr 				: strings.Trim(strings.ToLower(result.Ptr), ". "),
+		CloudProduct 		: result.CloudProduct,
 	})
 }
 
 func (result Result) Clone() *Result {
 	return &Result{
-		TestId: result.TestId,
-		FQDN: result.FQDN,
-		RType: result.RType,
-		IPv4: result.IPv4,
-		IPv6: result.IPv6,
-		Target: result.Target,
-		Ptr: result.Ptr,
-		ProbedAt: result.ProbedAt,
-		Failed: result.Failed,
-		FailedReason: result.FailedReason,
+		TestId 				: result.TestId,
+		FQDN 				: result.FQDN,
+		RType 				: result.RType,
+		IPv4 				: result.IPv4,
+		IPv6 				: result.IPv6,
+		Target 				: result.Target,
+		Ptr 				: result.Ptr,
+		CloudProduct 		: result.CloudProduct,
+		ProbedAt 			: result.ProbedAt,
+		Failed 				: result.Failed,
+		FailedReason 		: result.FailedReason,
 	}
 }
 
@@ -90,6 +94,9 @@ func (result Result) String() string {
 		}else if result.Ptr != "" {
 			r += result.Ptr
 		}
+	}
+	if result.CloudProduct != "" {
+		r += " (Cloud = " + result.CloudProduct + ")"
 	}
 	return r
 }
