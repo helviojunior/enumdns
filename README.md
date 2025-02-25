@@ -46,6 +46,7 @@ Usage:
 
 Examples:
 
+   - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db
 

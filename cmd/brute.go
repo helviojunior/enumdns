@@ -33,6 +33,7 @@ collect information such as response codes, content, and more. You can specify
 multiple writers using the _--writer-*_ flags (see --help).
 `)),
     Example: `
+   - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db`,
     PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
