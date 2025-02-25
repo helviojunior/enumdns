@@ -181,7 +181,7 @@ multiple writers using the _--writer-*_ flags (see --help).
             }
             dnsSufix = append(dnsSufix, s)
         }
-        log.Debugf("Loaded %d DNS sufix(es)", len(dnsSufix))
+        log.Debugf("Loaded %s DNS sufix(es)", islazy.FormatInt(len(dnsSufix)))
 
         log.Debugf("Reading dns word list file: %s", fileOptions.HostFile)
         if err := reader.ReadWordList(&hostWordList); err != nil {
@@ -190,7 +190,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         }
         total = len(dnsSufix) * len(hostWordList)
 
-        log.Infof("Enumerating %d DNS hosts", total)
+        log.Infof("Enumerating %s DNS hosts", islazy.FormatInt(total))
 
         // Check runned items
         conn, _ := database.Connection("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", true, false)
