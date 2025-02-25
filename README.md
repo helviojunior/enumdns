@@ -6,6 +6,15 @@ Available modules:
 
 1. Brute-force
 
+
+## Main features
+
+- [x] Perform brute-force DNS enumeration to discover hostnames  
+- [x] Support for custom DNS suffix lists  
+- [x] Automatically identify cloud provider services  
+- [x] Retrieve multiple DNS record types (e.g., CNAME, A, AAAA)  
+- [x] Additional advanced features and enhancements  
+
 # Build
 
 Clone the repository and build the project with Golang:
