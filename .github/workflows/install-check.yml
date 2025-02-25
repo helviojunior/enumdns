@@ -1,0 +1,60 @@
+name: Go Install Check
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+        - .gitignore
+        - README.md
+        - LICENSE
+        - TODO
+        - Dockerfile
+
+  pull_request:
+    branches: [main]
+    paths-ignore:
+        - .gitignore
+        - README.md
+        - LICENSE
+        - TODO
+        - Dockerfile
+
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            ca-certificates jq curl
+
+      - name: Install enumdns at specific commit
+        run: |
+          go install github.com/helviojunior/enumdns@${GITHUB_SHA}
+
+      - name: Create a fake wordlist
+        run: |
+          cat << EOF > /tmp/wl.txt
+          www
+          wiki
+          EOF
+
+      - name: Verify Installation
+        run: |
+          enumdns version
+          enumdns brute -d sec4us.com.br -w /tmp/wl.txt -o /tmp/result.txt
+          
