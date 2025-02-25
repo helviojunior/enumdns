@@ -64,6 +64,7 @@ func (result Result) Clone() *Result {
 		Ptr 				: result.Ptr,
 		CloudProduct 		: result.CloudProduct,
 		ProbedAt 			: result.ProbedAt,
+		Exists 				: result.Exists,
 		Failed 				: result.Failed,
 		FailedReason 		: result.FailedReason,
 	}
