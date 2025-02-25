@@ -21,6 +21,8 @@ type Result struct {
 	CloudProduct          string    `json:"cloud_product,omitempty"`
 	ProbedAt              time.Time `json:"probed_at"`
 
+	Exists       		  bool   	`json:"exists"`
+
 	// Failed flag set if the result should be considered failed
 	Failed       bool   `json:"failed"`
 	FailedReason string `json:"failed_reason,omitempty"`

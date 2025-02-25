@@ -51,6 +51,11 @@ func (cw *CsvWriter) Finish() error {
 
 // Write a CSV line
 func (cw *CsvWriter) Write(result *models.Result) error {
+	
+	if !result.Exists {
+		return nil
+	}
+
 	file, err := os.OpenFile(cw.finalPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return err

@@ -86,6 +86,9 @@ func (st *Status) Print() {
 	
 } 
 
+func (run *Runner) AddSkiped() { 
+    run.status.Complete += 1
+}
 
 func (st *Status) AddResult(result *models.Result) { 
     st.Complete += 1
@@ -237,6 +240,7 @@ func (run *Runner) Probe(host string) []*models.Result {
 		TestId: run.uid,
 		FQDN: host,
 		ProbedAt: time.Now(),
+		Exists: true,
 	}
     
 	ips := []string{}
@@ -267,6 +271,7 @@ func (run *Runner) Probe(host string) []*models.Result {
 			}
 
 			if !good_to_go && counter >= 5 {
+				resultBase.Exists = false
 				resultBase.Failed = true
 				resultBase.FailedReason = err.Error()
 				return []*models.Result{ resultBase }
@@ -362,6 +367,11 @@ func (run *Runner) Probe(host string) []*models.Result {
 				}
 			}
 		}
+	}
+
+	if len(resList) == 0 {
+		resultBase.Exists = false
+		return []*models.Result{ resultBase }
 	}
 
 	return resList

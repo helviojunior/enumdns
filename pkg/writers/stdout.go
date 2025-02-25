@@ -25,6 +25,10 @@ func (s *StdoutWriter) Write(result *models.Result) error {
 		return nil
 	}
 
+	if !result.Exists {
+		return nil
+	}
+
 	switch result.RType {
 	case "A", "AAAA":
 		logger.Infof("%s", result.String())

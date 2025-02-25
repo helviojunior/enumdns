@@ -28,6 +28,11 @@ func NewJsonWriter(destination string) (*JsonWriter, error) {
 
 // Write JSON lines to a file
 func (jw *JsonWriter) Write(result *models.Result) error {
+	
+	if !result.Exists {
+		return nil
+	}
+
 	j, err := json.Marshal(result)
 	if err != nil {
 		return err

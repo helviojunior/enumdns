@@ -52,6 +52,11 @@ func (t *TextWriter) Finish() error {
 
 // Write results to stdout
 func (t *TextWriter) Write(result *models.Result) error {
+
+	if !result.Exists {
+		return nil
+	}
+
 	file, err := os.OpenFile(t.finalPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err

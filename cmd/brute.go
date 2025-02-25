@@ -10,7 +10,7 @@ import (
     "github.com/helviojunior/enumdns/internal/islazy"
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/pkg/runner"
-    //"github.com/helviojunior/enumdns/pkg/database"
+    "github.com/helviojunior/enumdns/pkg/database"
     "github.com/helviojunior/enumdns/pkg/writers"
     "github.com/helviojunior/enumdns/pkg/readers"
     "github.com/spf13/cobra"
@@ -193,7 +193,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         log.Infof("Enumerating %d DNS hosts", total)
 
         // Check runned items
-        //conn, _ := database.Connection("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", true, false)
+        conn, _ := database.Connection("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", true, false)
 
         go func() {
             defer close(bruteRunner.Targets)
@@ -201,9 +201,21 @@ multiple writers using the _--writer-*_ flags (see --help).
                 for _, h := range hostWordList {
 
                     i := true
+                    host := h + "." + s
+                    response := conn.Raw("SELECT count(id) as count from results WHERE failed = 0 AND fqdn = ?", host)
+                    if response != nil {
+                        var cnt int
+                        _ = response.Row().Scan(&cnt)
+                        i = (cnt == 0)
+                        if cnt > 0 {
+                            log.Debug("[Host already checked]", "fqdn", host)
+                        }
+                    }
 
                     if i {
-                        bruteRunner.Targets <- h + "." + s
+                        bruteRunner.Targets <- host
+                    }else{
+                        bruteRunner.AddSkiped()
                     }
                 }
             }
