@@ -9,6 +9,8 @@ import (
 	"unicode"
 	"encoding/base64"
 	"io/ioutil"
+	"crypto/sha1"
+	"encoding/hex"
 )
 
 // CreateDir creates a directory if it does not exist, returning the final
@@ -136,4 +138,10 @@ func EncodeFileToBase64(filename string) (string, error) {
 	encoded := base64.StdEncoding.EncodeToString(data)
 	return encoded, nil
 
+}
+
+func GetHash(data []byte) string {
+	h := sha1.New()
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
 }

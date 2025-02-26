@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	//"fmt"
 	"strings"
+
+	"github.com/helviojunior/enumdns/internal/islazy"
 )
 
 // Result is a github.com/helviojunior/enumdnsenumdns result
@@ -102,6 +104,11 @@ func (result Result) String() string {
 		r += " (Cloud = " + result.CloudProduct + ")"
 	}
 	return r
+}
+
+func (result Result) GetHash() string {
+	b_data := []byte(result.String())
+	return islazy.GetHash(b_data)
 }
 
 func SliceHasResult(s []*Result, r *Result) bool {

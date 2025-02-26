@@ -166,7 +166,7 @@ func (ew *ElasticWriter) Write(result *models.Result) error {
         return err
     }
 
-    res, err := ew.Client.Index(ew.Index, bytes.NewReader(b_data))
+    res, err := ew.Client.Index(ew.Index, bytes.NewReader(b_data), ew.Client.Index.WithDocumentID(result.GetHash()))
     if err != nil {
         return err
     }
