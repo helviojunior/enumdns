@@ -94,7 +94,7 @@ Flags:
       --write-db-enable-debug            Enable database query debug logging (warning: verbose!)
       --write-db-uri string              The database URI to use. Supports SQLite, Postgres, and MySQL (e.g., postgres://user:pass@host:port/db) (default "sqlite://enumdns.sqlite3")
       --write-elastic                    Write results to a SQLite database
-      --write-elasticsearch-uri string   The elastic search URI to use. (e.g., http://user:pass@host:9200/index) (default "http://localhost:9200/intelparser")
+      --write-elasticsearch-uri string   The elastic search URI to use. (e.g., http://user:pass@host:9200/index) (default "http://localhost:9200/enumdns")
       --write-jsonl                      Write results as JSON lines
       --write-jsonl-file string          The file to write JSON lines to (default "enumdns.jsonl")
       --write-none                       Use an empty writer to silence warnings

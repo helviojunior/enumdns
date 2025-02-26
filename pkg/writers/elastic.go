@@ -156,6 +156,10 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
 // Write JSON lines to a file
 func (ew *ElasticWriter) Write(result *models.Result) error {
 
+    if !result.Exists {
+        return nil
+    }
+
     //File
     b_data, err := json.Marshal(*result) //ew.Marshal(*result)
     if err != nil {

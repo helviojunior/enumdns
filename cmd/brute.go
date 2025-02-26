@@ -260,6 +260,6 @@ func init() {
     bruteCmd.Flags().BoolVar(&opts.Writer.None, "write-none", false, "Use an empty writer to silence warnings")
 
     bruteCmd.Flags().BoolVar(&opts.Writer.ELastic, "write-elastic", false, "Write results to a SQLite database")
-    bruteCmd.Flags().StringVar(&opts.Writer.ELasticURI, "write-elasticsearch-uri", "http://localhost:9200/intelparser", "The elastic search URI to use. (e.g., http://user:pass@host:9200/index)")
+    bruteCmd.Flags().StringVar(&opts.Writer.ELasticURI, "write-elasticsearch-uri", "http://localhost:9200/enumdns", "The elastic search URI to use. (e.g., http://user:pass@host:9200/index)")
 
 }
