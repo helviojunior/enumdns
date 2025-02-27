@@ -40,7 +40,7 @@ func convertFromDbTo(from string, writer writers.Writer) error {
         return err
     }
 
-    if err := conn.Model(&models.Result{}).Preload(clause.Associations).Find(&results).Error; err != nil {
+    if err := conn.Model(&models.Result{}).Preload(clause.Associations).Where("`exists` = ?", 1).Find(&results).Error; err != nil {
         return err
     }
 
@@ -55,7 +55,7 @@ func convertFromDbTo(from string, writer writers.Writer) error {
 }
 func convertFromJsonlTo(from string, writer writers.Writer) error {
 	log.Info("starting conversion...")
-	
+
     file, err := os.Open(from)
     if err != nil {
         return err
