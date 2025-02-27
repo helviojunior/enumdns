@@ -12,4 +12,7 @@ var products = map[string][]string{
     "AWS Global Accelerator": []string{ "awsglobalaccelerator.com", },
     "AWS": []string{ "amazonaws.com", },
     "Microsoft Office 365": []string{ "lync.com", "office.com", "outlook.com" },
+    "Locaweb": []string{ "locaweb.com.br" },
+    "Oracle Cloud": []string{ "oraclecloud.net" },
+    "GCP": []string{ "googleusercontent.com" },
 }
