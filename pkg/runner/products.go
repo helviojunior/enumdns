@@ -15,5 +15,5 @@ var products = map[string][]string{
     "Locaweb": []string{ "locaweb.com.br" },
     "Oracle Cloud": []string{ "oraclecloud.net" },
     "GCP": []string{ "googleusercontent.com" },
-    "Heroku": []string{ "herokuapp.com" },
+    "Heroku": []string{ "herokuapp.com", "herokudns.com" },
 }
