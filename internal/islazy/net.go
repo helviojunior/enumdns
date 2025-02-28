@@ -42,7 +42,7 @@ func GetValidDnsSuffix(dnsServer string, suffix string) (string, error) {
 		return "", errors.New("empty suffix string")
 	}
 
-	suffix = suffix + "."
+	suffix = strings.ToLower(suffix) + "."
 	i := false
 
     m := new(dns.Msg)

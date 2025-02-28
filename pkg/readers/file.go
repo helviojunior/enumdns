@@ -6,7 +6,7 @@ import (
 	//"net/url"
 	"os"
 	//"strconv"
-	//"strings"
+	"strings"
 
 	"github.com/helviojunior/enumdns/internal/islazy"
 	"github.com/helviojunior/enumdns/pkg/log"
@@ -62,7 +62,13 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 			log.Warnf("DNS suffix (%s) does not exists: %s", candidate, err.Error())
 		}
 
-		*outList = append(*outList, s)
+		if s == "" {
+			continue
+		}
+
+		if !islazy.SliceHasStr(*outList, s){
+			*outList = append(*outList, s)
+		}
 
 	}
 
@@ -72,8 +78,6 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 func (fr *FileReader) ReadWordList(outList *[]string) error {
 	return fr.readFileList(fr.Options.HostFile, outList)
 }
-
-
 
 // Read from a file.
 func (fr *FileReader) readFileList(fileName string, outList *[]string) error {
@@ -94,7 +98,7 @@ func (fr *FileReader) readFileList(fileName string, outList *[]string) error {
 			continue
 		}
 
-		*outList = append(*outList, candidate)
+		*outList = append(*outList, strings.ToLower(candidate))
 	}
 
 	return scanner.Err()

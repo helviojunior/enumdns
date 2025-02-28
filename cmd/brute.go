@@ -171,6 +171,7 @@ multiple writers using the _--writer-*_ flags (see --help).
             log.Debugf("Reading dns suffix file: %s", fileOptions.DnsSuffixFile)
             if err := reader.ReadDnsList(&dnsSuffix); err != nil {
                 log.Error("error in reader.Read", "err", err)
+                log.Warn("If you are facing error related to 'SOA not found for domain' you can ignore it with -I option")
                 os.Exit(2)
             }
         }else{
