@@ -61,6 +61,13 @@ var rootCmd = &cobra.Command{
 	        	return errors.New("Error parsing URL: " + err.Error())
 	        }
 	        opts.Proxy = u
+	        fileOptions.ProxyUri = opts.Proxy
+
+			port := u.Port()
+			if port == "" {
+				port = "1080"
+			}
+	        log.Warn("Setting proxy to " + u.Scheme + "://" + u.Hostname() + ":" + port)
         }else{
         	opts.Proxy = nil
         }
