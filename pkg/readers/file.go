@@ -9,6 +9,7 @@ import (
 	//"strings"
 
 	"github.com/helviojunior/enumdns/internal/islazy"
+	"github.com/helviojunior/enumdns/pkg/log"
 )
 
 // FileReader is a reader that expects a file with targets that
@@ -22,6 +23,7 @@ type FileReaderOptions struct {
 	DnsSufixFile    string
 	HostFile		string
 	DnsServer 		string
+	IgnoreNonexistent bool
 }
 
 // NewFileReader prepares a new file reader
@@ -53,7 +55,11 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 		//Check if DNS exists
 		s, err := islazy.GetValidDnsSufix(fr.Options.DnsServer, candidate)
 		if err != nil {
-			return err
+			if !fr.Options.IgnoreNonexistent {
+				return err
+			}
+
+			log.Warnf("DNS suffix (%s) does not exists: %s", candidate, err.Error())
 		}
 
 		*outList = append(*outList, s)

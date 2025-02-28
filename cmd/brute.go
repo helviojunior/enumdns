@@ -191,6 +191,11 @@ multiple writers using the _--writer-*_ flags (see --help).
         }
         total = len(dnsSufix) * len(hostWordList)
 
+        if len(dnsSufix) == 0 {
+            log.Error("DNS suffix list is empty")
+            os.Exit(2)
+        }
+
         log.Infof("Enumerating %s DNS hosts", islazy.FormatInt(total))
 
         // Check runned items
@@ -237,6 +242,8 @@ func init() {
     bruteCmd.Flags().StringVarP(&fileOptions.DnsSufixFile, "dns-list", "L", "", "File containing a list of DNS sufix")
     bruteCmd.Flags().StringVarP(&fileOptions.HostFile, "word-list", "w", "", "File containing a list of DNS hosts")
     
+    bruteCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
+
     bruteCmd.Flags().StringVarP(&opts.DnsServer, "server", "s", "8.8.8.8", "DNS Server")
     bruteCmd.Flags().IntVar(&opts.DnsPort, "port", 53, "DNS Server Port")
     bruteCmd.Flags().StringVarP(&opts.DnsProtocol, "protocol", "", "UDP", "DNS Server protocol (TCP/UDP)")
