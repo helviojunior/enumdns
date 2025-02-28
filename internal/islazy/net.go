@@ -57,8 +57,10 @@ func GetValidDnsSufix(dnsServer string, sufix string) (string, error) {
 		return "", err
 	}else{
 		
-		if _, ok := in.Answer[0].(*dns.SOA); ok {
-			i = true
+		for _, ans1 := range in.Answer {
+			if _, ok := ans1.(*dns.SOA); ok {
+				i = true
+			}
 		}
 		
 	}
