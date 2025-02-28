@@ -13,6 +13,7 @@ Available modules:
 - [x] Support for custom DNS suffix lists  
 - [x] Automatically identify cloud provider services  
 - [x] Retrieve multiple DNS record types (e.g., CNAME, A, AAAA)  
+- [x] Support to SOCKS (socks4/socks5) proxy
 - [x] Additional advanced features and enhancements  
 
 # Build
