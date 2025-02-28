@@ -20,7 +20,7 @@ type FileReader struct {
 
 // FileReaderOptions are options for the file reader
 type FileReaderOptions struct {
-	DnsSufixFile    string
+	DnsSuffixFile    string
 	HostFile		string
 	DnsServer 		string
 	IgnoreNonexistent bool
@@ -39,7 +39,7 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 	var file *os.File
 	var err error
 
-	file, err = os.Open(fr.Options.DnsSufixFile)
+	file, err = os.Open(fr.Options.DnsSuffixFile)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 		}
 
 		//Check if DNS exists
-		s, err := islazy.GetValidDnsSufix(fr.Options.DnsServer, candidate)
+		s, err := islazy.GetValidDnsSuffix(fr.Options.DnsServer, candidate)
 		if err != nil {
 			if !fr.Options.IgnoreNonexistent {
 				return err

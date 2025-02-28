@@ -36,13 +36,13 @@ func IpsInCIDR(cidr string) ([]string, error) {
 	return ips, nil
 }
 
-func GetValidDnsSufix(dnsServer string, sufix string) (string, error) {
-	sufix = strings.Trim(sufix, ". ")
-	if sufix == "" {
-		return "", errors.New("empty sufix string")
+func GetValidDnsSuffix(dnsServer string, suffix string) (string, error) {
+	suffix = strings.Trim(suffix, ". ")
+	if suffix == "" {
+		return "", errors.New("empty suffix string")
 	}
 
-	sufix = sufix + "."
+	suffix = suffix + "."
 	i := false
 
     m := new(dns.Msg)
@@ -50,7 +50,7 @@ func GetValidDnsSufix(dnsServer string, sufix string) (string, error) {
 	m.RecursionDesired = true
 
 	m.Question = make([]dns.Question, 1)
-	m.Question[0] = dns.Question{sufix, dns.TypeSOA, dns.ClassINET}
+	m.Question[0] = dns.Question{suffix, dns.TypeSOA, dns.ClassINET}
 
 	in, err := dns.Exchange(m, dnsServer); 
 	if err != nil {
@@ -66,9 +66,9 @@ func GetValidDnsSufix(dnsServer string, sufix string) (string, error) {
 	}
 
 	if i == false {
-		return "", errors.New("SOA not found for domain '"+ sufix + "'")
+		return "", errors.New("SOA not found for domain '"+ suffix + "'")
 	}
 
-	return sufix, nil
+	return suffix, nil
 
 }

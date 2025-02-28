@@ -131,13 +131,13 @@ multiple writers using the _--writer-*_ flags (see --help).
         return nil
     },
     PreRunE: func(cmd *cobra.Command, args []string) error {
-        if opts.DnsSufix == "" && fileOptions.DnsSufixFile == "" {
-            return errors.New("a DNS sufix or DNS sufix file must be specified")
+        if opts.DnsSuffix == "" && fileOptions.DnsSuffixFile == "" {
+            return errors.New("a DNS suffix or DNS suffix file must be specified")
         }
 
-        if fileOptions.DnsSufixFile != "" {
-            if !islazy.FileExists(fileOptions.DnsSufixFile) {
-                return errors.New("DNS sufix file is not readable")
+        if fileOptions.DnsSuffixFile != "" {
+            if !islazy.FileExists(fileOptions.DnsSuffixFile) {
+                return errors.New("DNS suffix file is not readable")
             }
         }
 
@@ -154,7 +154,7 @@ multiple writers using the _--writer-*_ flags (see --help).
     Run: func(cmd *cobra.Command, args []string) {
 
         //Check DNS connectivity
-        _, err := islazy.GetValidDnsSufix(fileOptions.DnsServer, "google.com.")
+        _, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.")
         if err != nil {
             log.Error("Error checking DNS connectivity", "err", err)
             os.Exit(2)
@@ -162,36 +162,36 @@ multiple writers using the _--writer-*_ flags (see --help).
 
         log.Debug("starting DNS brute-force")
 
-        dnsSufix := []string{}
+        dnsSuffix := []string{}
         hostWordList := []string{}
         reader := readers.NewFileReader(fileOptions)
         total := 0
 
-        if fileOptions.DnsSufixFile != "" {
-            log.Debugf("Reading dns sufix file: %s", fileOptions.DnsSufixFile)
-            if err := reader.ReadDnsList(&dnsSufix); err != nil {
+        if fileOptions.DnsSuffixFile != "" {
+            log.Debugf("Reading dns suffix file: %s", fileOptions.DnsSuffixFile)
+            if err := reader.ReadDnsList(&dnsSuffix); err != nil {
                 log.Error("error in reader.Read", "err", err)
                 os.Exit(2)
             }
         }else{
             //Check if DNS exists
-            s, err := islazy.GetValidDnsSufix(fileOptions.DnsServer, opts.DnsSufix)
+            s, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix)
             if err != nil {
-                log.Error("invalid dns sufix", "sufix", opts.DnsSufix, "err", err)
+                log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
                 os.Exit(2)
             }
-            dnsSufix = append(dnsSufix, s)
+            dnsSuffix = append(dnsSuffix, s)
         }
-        log.Debugf("Loaded %s DNS sufix(es)", islazy.FormatInt(len(dnsSufix)))
+        log.Debugf("Loaded %s DNS suffix(es)", islazy.FormatInt(len(dnsSuffix)))
 
         log.Debugf("Reading dns word list file: %s", fileOptions.HostFile)
         if err := reader.ReadWordList(&hostWordList); err != nil {
             log.Error("error in reader.Read", "err", err)
             os.Exit(2)
         }
-        total = len(dnsSufix) * len(hostWordList)
+        total = len(dnsSuffix) * len(hostWordList)
 
-        if len(dnsSufix) == 0 {
+        if len(dnsSuffix) == 0 {
             log.Error("DNS suffix list is empty")
             os.Exit(2)
         }
@@ -203,7 +203,7 @@ multiple writers using the _--writer-*_ flags (see --help).
 
         go func() {
             defer close(bruteRunner.Targets)
-            for _, s := range dnsSufix {
+            for _, s := range dnsSuffix {
                 bruteRunner.Targets <- s
                 for _, h := range hostWordList {
 
@@ -238,8 +238,8 @@ multiple writers using the _--writer-*_ flags (see --help).
 func init() {
     rootCmd.AddCommand(bruteCmd)
     
-    bruteCmd.Flags().StringVarP(&opts.DnsSufix, "dns-sufix", "d", "", "Single DNS sufix. (ex: helviojunior.com.br)")
-    bruteCmd.Flags().StringVarP(&fileOptions.DnsSufixFile, "dns-list", "L", "", "File containing a list of DNS sufix")
+    bruteCmd.Flags().StringVarP(&opts.DnsSuffix, "dns-suffix", "d", "", "Single DNS suffix. (ex: helviojunior.com.br)")
+    bruteCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "dns-list", "L", "", "File containing a list of DNS suffix")
     bruteCmd.Flags().StringVarP(&fileOptions.HostFile, "word-list", "w", "", "File containing a list of DNS hosts")
     
     bruteCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")

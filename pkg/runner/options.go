@@ -11,7 +11,7 @@ type Options struct {
     // Scan is typically Scan options
     Scan Scan
     //
-    DnsSufix string
+    DnsSuffix string
 
     //
     DnsServer string
@@ -88,6 +88,6 @@ func NewDefaultOptions() *Options {
             Debug:         true,
             LogScanErrors: true,
         },
-        DnsSufix: "",
+        DnsSuffix: "",
     }
 }

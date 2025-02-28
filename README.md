@@ -78,8 +78,8 @@ Examples:
 
 Flags:
       --delay int                        Number of seconds delay between navigation and screenshotting (default 3)
-  -L, --dns-list string                  File containing a list of DNS sufix
-  -d, --dns-sufix string                 Single DNS sufix. (ex: helviojunior.com.br)
+  -L, --dns-list string                  File containing a list of DNS suffix
+  -d, --dns-suffix string                 Single DNS suffix. (ex: helviojunior.com.br)
   -h, --help                             help for brute
       --log-scan-errors                  Log scan errors (timeouts, DNS errors, etc.) to stderr (warning: can be verbose!)
       --port int                         DNS Server Port (default 53)
