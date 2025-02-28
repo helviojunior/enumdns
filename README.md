@@ -102,6 +102,7 @@ Flags:
 
 Global Flags:
   -D, --debug-log                Enable debug logging
+  -X, --proxy string             Proxy to pass traffic through: <scheme://ip:port> (e.g., http://user:pass@proxy_host:1080
   -q, --quiet                    Silence (almost all) logging
   -o, --write-text-file string   The file to write Text lines to
 
