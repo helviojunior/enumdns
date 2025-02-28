@@ -3,7 +3,7 @@ package readers
 import (
 	"bufio"
 	//"fmt"
-	//"net/url"
+	"net/url"
 	"os"
 	//"strconv"
 	"strings"
@@ -24,6 +24,7 @@ type FileReaderOptions struct {
 	HostFile		string
 	DnsServer 		string
 	IgnoreNonexistent bool
+	ProxyUri 		*url.URL
 }
 
 // NewFileReader prepares a new file reader
@@ -53,7 +54,7 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 		}
 
 		//Check if DNS exists
-		s, err := islazy.GetValidDnsSuffix(fr.Options.DnsServer, candidate)
+		s, err := islazy.GetValidDnsSuffix(fr.Options.DnsServer, candidate, fr.Options.ProxyUri)
 		if err != nil {
 			if !fr.Options.IgnoreNonexistent {
 				return err

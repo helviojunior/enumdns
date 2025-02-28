@@ -2,11 +2,14 @@ package cmd
 
 import (
 	//"crypto/tls"
-	//"net/http"
+	"net/url"
 	"os/user"
 	"os"
 	"fmt"
+	"errors"
 
+
+	"github.com/helviojunior/enumdns/internal"
 	"github.com/helviojunior/enumdns/internal/ascii"
 	"github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/pkg/runner"
@@ -17,6 +20,7 @@ import (
 var (
 	opts = &runner.Options{}
 	fileOptions = &readers.FileReaderOptions{}
+	tProxy = ""
 )
 
 var rootCmd = &cobra.Command{
@@ -45,6 +49,22 @@ var rootCmd = &cobra.Command{
             opts.Writer.Text = true
         }
 
+        //Check Proxy config
+        if tProxy != "" {
+        	u, err := url.Parse(tProxy)
+        	if err != nil {
+	        	return errors.New("Error parsing URL: " + err.Error())
+	        }
+
+        	_, err = internal.FromURL(u, nil)
+        	if err != nil {
+	        	return errors.New("Error parsing URL: " + err.Error())
+	        }
+	        opts.Proxy = u
+        }else{
+        	opts.Proxy = nil
+        }
+        
 		return nil
 	},
 }
@@ -86,7 +106,7 @@ func init() {
     
 
 	//rootCmd.PersistentFlags().BoolVarP(&opts.DnsOverHttps.SkipSSLCheck, "ssl-insecure", "K", true, "SSL Insecure")
-	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.Proxy, "proxy", "X", "", "Proxy to pass traffic through: <scheme://ip:port>")
+	rootCmd.PersistentFlags().StringVarP(&tProxy, "proxy", "X", "", "Proxy to pass traffic through: <scheme://ip:port>")
 	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.ProxyUser, "proxy-user", "", "", "Proxy User")
 	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.ProxyPassword, "proxy-pass", "", "", "Proxy Password")
 

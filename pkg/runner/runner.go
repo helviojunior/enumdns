@@ -16,6 +16,7 @@ import (
     "syscall"
     //"strconv"
 
+	"github.com/helviojunior/enumdns/internal"
 	"github.com/helviojunior/enumdns/internal/islazy"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/helviojunior/enumdns/pkg/writers"
@@ -261,7 +262,9 @@ func (run *Runner) Probe(host string) []*models.Result {
 			//m.Question[0] = dns.Question{host, t, dns.ClassINET}
 			m.SetQuestion(host, t)
 
-			r, err := dns.Exchange(m, run.dnsServer); 
+			//r, err := dns.Exchange(m, run.dnsServer); 
+			c := new(internal.SocksClient)
+			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
 			counter += 1
 			good_to_go = (err == nil)
 
@@ -296,7 +299,8 @@ func (run *Runner) Probe(host string) []*models.Result {
 				            m1.Id = dns.Id()
 							m1.RecursionDesired = true
 							m1.SetQuestion(strings.Trim(cname.Target, ". ") + ".", dns.TypeANY)
-							r1, err := dns.Exchange(m1, run.dnsServer); 
+							//r1, err := dns.Exchange(m1, run.dnsServer); 
+							r1, err := c.Exchange(m1, run.options.Proxy, run.dnsServer); 
 							if err != nil {
 								good_to_go = false
 							}else{
@@ -390,7 +394,9 @@ func (run *Runner) Probe(host string) []*models.Result {
 
 			m.SetQuestion(arpa, dns.TypePTR)
 
-			r, err := dns.Exchange(m, run.dnsServer); 
+			//r, err := dns.Exchange(m, run.dnsServer); 
+			c := new(internal.SocksClient)
+			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
 			if err != nil {
 				logger.Error("Error", "err", err)
 			}else{

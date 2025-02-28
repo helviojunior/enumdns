@@ -154,7 +154,7 @@ multiple writers using the _--writer-*_ flags (see --help).
     Run: func(cmd *cobra.Command, args []string) {
 
         //Check DNS connectivity
-        _, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.")
+        _, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
         if err != nil {
             log.Error("Error checking DNS connectivity", "err", err)
             os.Exit(2)
@@ -176,7 +176,7 @@ multiple writers using the _--writer-*_ flags (see --help).
             }
         }else{
             //Check if DNS exists
-            s, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix)
+            s, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
             if err != nil {
                 log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
                 os.Exit(2)

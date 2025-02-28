@@ -5,8 +5,11 @@ import (
 	"encoding/binary"
 	"net"
 	"strings"
-	//"fmt"
+	"net/url"
+	//"context"
 	"github.com/miekg/dns"
+
+	"github.com/helviojunior/enumdns/internal"
 )
 
 // IpsInCIDR returns a list of usable IP addresses in a given CIDR block
@@ -36,7 +39,7 @@ func IpsInCIDR(cidr string) ([]string, error) {
 	return ips, nil
 }
 
-func GetValidDnsSuffix(dnsServer string, suffix string) (string, error) {
+func GetValidDnsSuffix(dnsServer string, suffix string, proxyUri *url.URL) (string, error) {
 	suffix = strings.Trim(suffix, ". ")
 	if suffix == "" {
 		return "", errors.New("empty suffix string")
@@ -52,7 +55,8 @@ func GetValidDnsSuffix(dnsServer string, suffix string) (string, error) {
 	m.Question = make([]dns.Question, 1)
 	m.Question[0] = dns.Question{suffix, dns.TypeSOA, dns.ClassINET}
 
-	in, err := dns.Exchange(m, dnsServer); 
+	c := new(internal.SocksClient)
+	in, err := c.Exchange(m, proxyUri, dnsServer); 
 	if err != nil {
 		return "", err
 	}else{
@@ -72,3 +76,4 @@ func GetValidDnsSuffix(dnsServer string, suffix string) (string, error) {
 	return suffix, nil
 
 }
+

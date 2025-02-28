@@ -1,5 +1,9 @@
 package runner
 
+import (
+    "net/url"
+)
+
 // Options are global github.com/helviojunior/enumdnsenumdns options
 type Options struct {
     // Logging is logging options
@@ -17,6 +21,8 @@ type Options struct {
     DnsServer string
     DnsPort int
     DnsProtocol string
+
+    Proxy *url.URL
 }
 
 // Logging is log related options
