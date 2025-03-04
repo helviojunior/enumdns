@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"crypto/sha1"
 	"encoding/hex"
+	"os/user"
+	"errors"
 )
 
 // CreateDir creates a directory if it does not exist, returning the final
@@ -144,4 +146,63 @@ func GetHash(data []byte) string {
 	h := sha1.New()
 	h.Write(data)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func ResolveFullPath(file_path string) (string, error) {
+
+	if file_path == "" {
+		return "", errors.New("File path cannot be empty!") 
+	}
+
+	fc := file_path[0:1]
+	if fc == "~" {
+		usr, err := user.Current()
+	    if err != nil {
+	       return "", err
+	    }
+
+		file_path = strings.Replace(file_path, "~", usr.HomeDir, 1)
+		if !IsValid(file_path) {
+			return "", errors.New("File path '"+ file_path + "' is not a valid path") 
+		}
+
+		return file_path, nil
+	}
+
+	currentPath, err := os.Getwd()
+    if err != nil {
+       return "", err
+    }
+
+	if fc == "." {
+		file_path = strings.Replace(file_path, ".", currentPath, 1)
+		if !IsValid(file_path) {
+			return "", errors.New("File path '"+ file_path + "' is not a valid path") 
+		}
+
+		return file_path, nil
+	}
+
+	file_path = filepath.Join(currentPath, file_path)
+	if !IsValid(file_path) {
+		return "", errors.New("File path '"+ file_path + "' is not a valid path") 
+	}
+
+	return file_path, nil
+}
+
+func IsValid(fp string) bool {
+  // Check if file already exists
+  if _, err := os.Stat(fp); err == nil {
+    return true
+  }
+
+  // Attempt to create it
+  var d []byte
+  if err := ioutil.WriteFile(fp, d, 0644); err == nil {
+    os.Remove(fp) // And delete it
+    return true
+  }
+
+  return false
 }

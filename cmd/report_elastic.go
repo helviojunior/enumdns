@@ -32,11 +32,16 @@ A --from-file and --elasticsearch-uri must be specified.`)),
 - enumdns report elastic --from-file enumdns.sqlite3 --elasticsearch-uri http://localhost:9200/enumdns
 - enumdns report elastic --from-file enumdns.jsonl --elasticsearch-uri http://localhost:9200/enumdns`),
     PreRunE: func(cmd *cobra.Command, args []string) error {
+        var err error
+        
         if elkCmdFlags.fromFile == "" {
             return errors.New("from file not set")
         }
 
-        elkCmdFlags.fromFile = strings.Replace(elkCmdFlags.fromFile, "~", opts.Writer.UserPath, 2)
+        elkCmdFlags.fromFile, err = islazy.ResolveFullPath(elkCmdFlags.fromFile)
+        if err != nil {
+            return err
+        }
 
         elkCmdFlags.fromExt = strings.ToLower(filepath.Ext(elkCmdFlags.fromFile))
 

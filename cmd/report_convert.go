@@ -37,6 +37,8 @@ target.`)),
 - gowitness report convert --from-file gowitness.sqlite3 --to-file data.jsonl
 - gowitness report convert --from-file gowitness.jsonl --to-file db.sqlite3`),
     PreRunE: func(cmd *cobra.Command, args []string) error {
+        var err error
+        
         if convertCmdFlags.fromFile == "" {
             return errors.New("from file not set")
         }
@@ -44,7 +46,15 @@ target.`)),
             return errors.New("to file not set")
         }
 
-        elkCmdFlags.fromFile = strings.Replace(elkCmdFlags.fromFile, "~", opts.Writer.UserPath, 1)
+        convertCmdFlags.fromFile, err = islazy.ResolveFullPath(convertCmdFlags.fromFile)
+        if err != nil {
+            return err
+        }
+
+        convertCmdFlags.toFile, err = islazy.ResolveFullPath(convertCmdFlags.toFile)
+        if err != nil {
+            return err
+        }
 
         convertCmdFlags.fromExt = strings.ToLower(filepath.Ext(convertCmdFlags.fromFile))
         convertCmdFlags.toExt = strings.ToLower(filepath.Ext(convertCmdFlags.toFile))
