@@ -46,7 +46,7 @@ url=$(curl -s https://api.github.com/repos/helviojunior/enumdns/releases | jq -r
 
 cd /opt
 rm -rf enumdns-latest.tar.gz enumdns
-wget -nv -O enumdns-latest.tar.gz "$url"
+curl --no-progress-meter -o enumdns-latest.tar.gz "$url"
 tar -xzf enumdns-latest.tar.gz
 
 rsync -av enumdns /usr/local/sbin/
