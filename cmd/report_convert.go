@@ -8,7 +8,7 @@ import (
     "strings"
 
     "github.com/helviojunior/enumdns/internal/ascii"
-    "github.com/helviojunior/enumdns/internal/islazy"
+    "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/pkg/writers"
     "github.com/spf13/cobra"
@@ -46,12 +46,12 @@ target.`)),
             return errors.New("to file not set")
         }
 
-        convertCmdFlags.fromFile, err = islazy.ResolveFullPath(convertCmdFlags.fromFile)
+        convertCmdFlags.fromFile, err = tools.ResolveFullPath(convertCmdFlags.fromFile)
         if err != nil {
             return err
         }
 
-        convertCmdFlags.toFile, err = islazy.ResolveFullPath(convertCmdFlags.toFile)
+        convertCmdFlags.toFile, err = tools.ResolveFullPath(convertCmdFlags.toFile)
         if err != nil {
             return err
         }
@@ -71,10 +71,10 @@ target.`)),
             return errors.New("source and destination files cannot be the same")
         }
 
-        if !islazy.SliceHasStr(conversionCmdExtensions, convertCmdFlags.fromExt) {
+        if !tools.SliceHasStr(conversionCmdExtensions, convertCmdFlags.fromExt) {
             return errors.New("unsupported from file type")
         }
-        if !islazy.SliceHasStr(conversionCmdExtensions, convertCmdFlags.toExt) {
+        if !tools.SliceHasStr(conversionCmdExtensions, convertCmdFlags.toExt) {
             return errors.New("unsupported to file type")
         }
 
@@ -94,7 +94,7 @@ target.`)),
                 return
             }
         } else if convertCmdFlags.toExt == ".jsonl" {
-            toFile, err := islazy.CreateFileWithDir(convertCmdFlags.toFile)
+            toFile, err := tools.CreateFileWithDir(convertCmdFlags.toFile)
             if err != nil {
                 log.Error("could not create target file", "err", err)
                 return

@@ -15,7 +15,7 @@ import (
     //"reflect"
     //"io"
 
-    "github.com/helviojunior/enumdns/internal/islazy"
+    "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/models"
     elk "github.com/elastic/go-elasticsearch/v8"
     esapi "github.com/elastic/go-elasticsearch/v8/esapi"
@@ -379,7 +379,7 @@ func (ew *ElasticWriter) MarshalAppend(marshalled []byte, new_data map[string]in
     data := make(map[string]interface{})
     for k, v := range t_data {
         // skip excluded fields
-        if islazy.SliceHasStr(elkExludedFields, k) {
+        if tools.SliceHasStr(elkExludedFields, k) {
             continue
         }
 
@@ -411,7 +411,7 @@ func (ew *ElasticWriter) Marshal(v any) ([]byte, error) {
     data := make(map[string]interface{})
     for k, v := range t_data {
         // skip excluded fields
-        if islazy.SliceHasStr(elkExludedFields, k) {
+        if tools.SliceHasStr(elkExludedFields, k) {
             continue
         }
 

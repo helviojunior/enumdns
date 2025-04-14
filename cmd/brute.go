@@ -7,7 +7,7 @@ import (
     "fmt"
 
     "github.com/helviojunior/enumdns/internal/ascii"
-    "github.com/helviojunior/enumdns/internal/islazy"
+    "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/pkg/runner"
     "github.com/helviojunior/enumdns/pkg/database"
@@ -136,7 +136,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         }
 
         if fileOptions.DnsSuffixFile != "" {
-            if !islazy.FileExists(fileOptions.DnsSuffixFile) {
+            if !tools.FileExists(fileOptions.DnsSuffixFile) {
                 return errors.New("DNS suffix file is not readable")
             }
         }
@@ -145,7 +145,7 @@ multiple writers using the _--writer-*_ flags (see --help).
             return errors.New("a wordlist file must be specified")
         }
 
-        if !islazy.FileExists(fileOptions.HostFile) {
+        if !tools.FileExists(fileOptions.HostFile) {
             return errors.New("wordlist file is not readable")
         }
 
@@ -154,7 +154,7 @@ multiple writers using the _--writer-*_ flags (see --help).
     Run: func(cmd *cobra.Command, args []string) {
 
         //Check DNS connectivity
-        _, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
+        _, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
         if err != nil {
             log.Error("Error checking DNS connectivity", "err", err)
             os.Exit(2)
@@ -176,14 +176,14 @@ multiple writers using the _--writer-*_ flags (see --help).
             }
         }else{
             //Check if DNS exists
-            s, err := islazy.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
+            s, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
             if err != nil {
                 log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
                 os.Exit(2)
             }
             dnsSuffix = append(dnsSuffix, s)
         }
-        log.Debugf("Loaded %s DNS suffix(es)", islazy.FormatInt(len(dnsSuffix)))
+        log.Debugf("Loaded %s DNS suffix(es)", tools.FormatInt(len(dnsSuffix)))
 
         log.Debugf("Reading dns word list file: %s", fileOptions.HostFile)
         if err := reader.ReadWordList(&hostWordList); err != nil {
@@ -197,7 +197,7 @@ multiple writers using the _--writer-*_ flags (see --help).
             os.Exit(2)
         }
 
-        log.Infof("Enumerating %s DNS hosts", islazy.FormatInt(total))
+        log.Infof("Enumerating %s DNS hosts", tools.FormatInt(total))
 
         // Check runned items
         conn, _ := database.Connection("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", true, false)

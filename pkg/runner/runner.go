@@ -17,7 +17,7 @@ import (
     //"strconv"
 
 	"github.com/helviojunior/enumdns/internal"
-	"github.com/helviojunior/enumdns/internal/islazy"
+	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/helviojunior/enumdns/pkg/writers"
 	"github.com/miekg/dns"
@@ -83,7 +83,7 @@ func (st *Status) Print() {
 
 	fmt.Fprintf(os.Stderr, "%s\n    %s (%s/%s) failed: %s               \r\033[A", 
     	"                                                                        ",
-    	st.Label, islazy.FormatInt(st.Complete), islazy.FormatInt(st.Total), islazy.FormatInt(st.Error))
+    	st.Label, tools.FormatInt(st.Complete), tools.FormatInt(st.Total), tools.FormatInt(st.Error))
 	
 } 
 

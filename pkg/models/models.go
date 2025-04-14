@@ -6,7 +6,7 @@ import (
 	//"fmt"
 	"strings"
 
-	"github.com/helviojunior/enumdns/internal/islazy"
+	"github.com/helviojunior/enumdns/internal/tools"
 )
 
 // Result is a github.com/helviojunior/enumdnsenumdns result
@@ -108,7 +108,7 @@ func (result Result) String() string {
 
 func (result Result) GetHash() string {
 	b_data := []byte(result.String())
-	return islazy.GetHash(b_data)
+	return tools.GetHash(b_data)
 }
 
 func SliceHasResult(s []*Result, r *Result) bool {

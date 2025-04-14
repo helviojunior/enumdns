@@ -6,7 +6,7 @@ import (
     "strings"
 
     "github.com/helviojunior/enumdns/internal/ascii"
-    "github.com/helviojunior/enumdns/internal/islazy"
+    "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/pkg/writers"
     "github.com/spf13/cobra"
@@ -38,7 +38,7 @@ A --from-file and --elasticsearch-uri must be specified.`)),
             return errors.New("from file not set")
         }
 
-        elkCmdFlags.fromFile, err = islazy.ResolveFullPath(elkCmdFlags.fromFile)
+        elkCmdFlags.fromFile, err = tools.ResolveFullPath(elkCmdFlags.fromFile)
         if err != nil {
             return err
         }
@@ -49,7 +49,7 @@ A --from-file and --elasticsearch-uri must be specified.`)),
             return errors.New("source file must have extension")
         }
 
-        if !islazy.SliceHasStr(elkCmdExtensions, elkCmdFlags.fromExt) {
+        if !tools.SliceHasStr(elkCmdExtensions, elkCmdFlags.fromExt) {
             return errors.New("unsupported from file type")
         }
 

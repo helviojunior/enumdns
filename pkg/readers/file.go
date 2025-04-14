@@ -8,7 +8,7 @@ import (
 	//"strconv"
 	"strings"
 
-	"github.com/helviojunior/enumdns/internal/islazy"
+	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/log"
 )
 
@@ -54,7 +54,7 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 		}
 
 		//Check if DNS exists
-		s, err := islazy.GetValidDnsSuffix(fr.Options.DnsServer, candidate, fr.Options.ProxyUri)
+		s, err := tools.GetValidDnsSuffix(fr.Options.DnsServer, candidate, fr.Options.ProxyUri)
 		if err != nil {
 			if !fr.Options.IgnoreNonexistent {
 				return err
@@ -67,7 +67,7 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 			continue
 		}
 
-		if !islazy.SliceHasStr(*outList, s){
+		if !tools.SliceHasStr(*outList, s){
 			*outList = append(*outList, s)
 		}
 

@@ -3,7 +3,7 @@ package writers
 import (
 	"sync"
 
-	"github.com/helviojunior/enumdns/internal/islazy"
+	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/database"
 	//"github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/pkg/models"
@@ -17,7 +17,7 @@ type DbWriter struct {
 	URI           string
 	conn          *gorm.DB
 	mutex         sync.Mutex
-	hammingGroups []islazy.HammingGroup
+	hammingGroups []tools.HammingGroup
 }
 
 // NewDbWriter initialises a database writer
@@ -31,7 +31,7 @@ func NewDbWriter(uri string, debug bool) (*DbWriter, error) {
 		URI:           uri,
 		conn:          c,
 		mutex:         sync.Mutex{},
-		hammingGroups: []islazy.HammingGroup{},
+		hammingGroups: []tools.HammingGroup{},
 	}, nil
 }
 
