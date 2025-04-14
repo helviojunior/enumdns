@@ -14,6 +14,7 @@ import (
 	"github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/pkg/runner"
 	"github.com/helviojunior/enumdns/pkg/readers"
+    resolver "github.com/helviojunior/gopathresolver"
 	"github.com/spf13/cobra"
 )
 
@@ -46,6 +47,12 @@ var rootCmd = &cobra.Command{
 		}
 
         if opts.Writer.TextFile != "" {
+
+        	opts.Writer.TextFile, err = resolver.ResolveFullPath(opts.Writer.TextFile)
+	        if err != nil {
+	            return err
+	        }
+
             opts.Writer.Text = true
         }
 

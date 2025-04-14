@@ -11,6 +11,7 @@ import (
     "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/pkg/writers"
+    resolver "github.com/helviojunior/gopathresolver"
     "github.com/spf13/cobra"
 )
 
@@ -46,12 +47,12 @@ target.`)),
             return errors.New("to file not set")
         }
 
-        convertCmdFlags.fromFile, err = tools.ResolveFullPath(convertCmdFlags.fromFile)
+        convertCmdFlags.fromFile, err = resolver.ResolveFullPath(convertCmdFlags.fromFile)
         if err != nil {
             return err
         }
 
-        convertCmdFlags.toFile, err = tools.ResolveFullPath(convertCmdFlags.toFile)
+        convertCmdFlags.toFile, err = resolver.ResolveFullPath(convertCmdFlags.toFile)
         if err != nil {
             return err
         }

@@ -9,6 +9,7 @@ import (
     "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/pkg/writers"
+    resolver "github.com/helviojunior/gopathresolver"
     "github.com/spf13/cobra"
     
 )
@@ -38,7 +39,7 @@ A --from-file and --elasticsearch-uri must be specified.`)),
             return errors.New("from file not set")
         }
 
-        elkCmdFlags.fromFile, err = tools.ResolveFullPath(elkCmdFlags.fromFile)
+        elkCmdFlags.fromFile, err = resolver.ResolveFullPath(elkCmdFlags.fromFile)
         if err != nil {
             return err
         }
