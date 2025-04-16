@@ -37,6 +37,10 @@ var rootCmd = &cobra.Command{
 
 	    opts.Writer.UserPath = usr.HomeDir
 
+	    if cmd.CalledAs() != "version" {
+			fmt.Println(ascii.Logo())
+		}
+
 		if opts.Logging.Silence {
 			log.EnableSilence()
 		}
@@ -84,6 +88,9 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	
+	ascii.SetConsoleColors()
+
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.SilenceErrors = true
 	err := rootCmd.Execute()
