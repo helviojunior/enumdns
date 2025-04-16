@@ -8,6 +8,7 @@ import (
 	//"github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var hammingThreshold = 10
