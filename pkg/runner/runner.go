@@ -144,11 +144,6 @@ func (run *Runner) Run(total int) Status {
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
     go func() {
         <-c
-        fmt.Fprintf(os.Stderr, "\n%s\n", 
-            "                                                                                ",
-        )
-        run.log.Warn("interrupted, shutting down...                            \n")
-
         run.status.Running = false
     }()
 
