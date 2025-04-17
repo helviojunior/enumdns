@@ -10,11 +10,14 @@ import (
 
 // StdoutWriter is a Stdout writer
 type StdoutWriter struct {
+	WriteAll  bool
 }
 
 // NewStdoutWriter initialises a stdout writer
 func NewStdoutWriter() (*StdoutWriter, error) {
-	return &StdoutWriter{}, nil
+	return &StdoutWriter{
+		WriteAll: false,
+	}, nil
 }
 
 // Write results to stdout
@@ -29,12 +32,25 @@ func (s *StdoutWriter) Write(result *models.Result) error {
 		return nil
 	}
 
-	switch result.RType {
-	case "A", "AAAA":
-		logger.Infof("%s", result.String())
-	default:
-		logger.Debug(result.String())
-	} 
+	if s.WriteAll {
+		switch result.RType {
+		case "A", "AAAA":
+			logger.Infof("%s", result.String())
+		case "SOA":
+			if result.FQDN != result.Target {
+				logger.Infof("%s", result.String())
+			}
+		default:
+			logger.Infof("%s", result.String())		
+		}
+	}else{
+		switch result.RType {
+		case "A", "AAAA":
+			logger.Infof("%s", result.String())
+		default:
+			logger.Debug(result.String())		
+		} 
+	}
 	
 	return nil
 }

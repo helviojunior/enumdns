@@ -20,6 +20,7 @@ type Result struct {
 	IPv6                  string    `json:"ipv6,omitempty"`
 	Target                string    `json:"target,omitempty"`
 	Ptr                   string    `json:"ptr,omitempty"`
+	Txt                   string    `json:"txt,omitempty"`
 	CloudProduct          string    `json:"cloud_product,omitempty"`
 	ProbedAt              time.Time `json:"probed_at"`
 
@@ -40,6 +41,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		IPv6                  string    `json:"ipv6,omitempty"`
 		Target                string    `json:"target,omitempty"`
 		Ptr                   string    `json:"ptr,omitempty"`
+		Txt                   string    `json:"txt,omitempty"`
 		CloudProduct          string    `json:"cloud_product,omitempty"`
 		ProbedAt              string    `json:"probed_at"`
 
@@ -51,6 +53,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		IPv6 				: result.IPv6,
 		Target 				: strings.Trim(strings.ToLower(result.Target), ". "),
 		Ptr 				: strings.Trim(strings.ToLower(result.Ptr), ". "),
+		Txt 				: result.Txt,
 		CloudProduct 		: result.CloudProduct,
 	})
 }
@@ -64,6 +67,7 @@ func (result Result) Clone() *Result {
 		IPv6 				: result.IPv6,
 		Target 				: result.Target,
 		Ptr 				: result.Ptr,
+		Txt 				: result.Txt,
 		CloudProduct 		: result.CloudProduct,
 		ProbedAt 			: result.ProbedAt,
 		Exists 				: result.Exists,
@@ -79,7 +83,7 @@ func (result Result) String() string {
 		r += result.IPv4
 	case "AAAA":
 		r += result.IPv6
-	case "CNAME":
+	case "CNAME", "SRV", "NS", "SOA":
 		r += strings.Trim(strings.ToLower(result.Target), ". ")
 	case "PTR":
 		r += strings.Trim(strings.ToLower(result.Ptr), ". ") + " -> "

@@ -63,7 +63,7 @@ func (t *TextWriter) Write(result *models.Result) error {
 	}
 	defer file.Close()
 
-	if _, err := file.WriteString(result.String() + "\r\n"); err != nil {
+	if _, err := file.WriteString("["+ result.RType + "] " + result.String() + "\r\n"); err != nil {
 		return err
 	}
 
