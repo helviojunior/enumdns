@@ -30,6 +30,14 @@ var rootCmd = &cobra.Command{
 	Use:   "enumdns",
 	Short: "enumdns is a modular DNS recon tool",
 	Long:  ascii.Logo(),
+	Example: `
+   - enumdns recon -d helviojunior.com.br -o enumdns.txt
+   - enumdns recon -d helviojunior.com.br --write-jsonl
+   - enumdns recon -D domains.txt --write-db   
+
+   - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
+   - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
+   - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		
 		usr, err := user.Current()
@@ -148,7 +156,7 @@ func init() {
     
 
 	//rootCmd.PersistentFlags().BoolVarP(&opts.DnsOverHttps.SkipSSLCheck, "ssl-insecure", "K", true, "SSL Insecure")
-	rootCmd.PersistentFlags().StringVarP(&tProxy, "proxy", "X", "", "Proxy to pass traffic through: <scheme://ip:port> (e.g., http://user:pass@proxy_host:1080")
+	rootCmd.PersistentFlags().StringVarP(&tProxy, "proxy", "X", "", "Proxy to pass traffic through: <scheme://ip:port> (e.g., socks4://user:pass@proxy_host:1080")
 	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.ProxyUser, "proxy-user", "", "", "Proxy User")
 	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.ProxyPassword, "proxy-pass", "", "", "Proxy Password")
 
