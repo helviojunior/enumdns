@@ -204,6 +204,8 @@ multiple writers using the _--writer-*_ flags (see --help).
 
         go func() {
             defer close(bruteRunner.Targets)
+
+            ascii.HideCursor()
             for _, s := range dnsSuffix {
                 bruteRunner.Targets <- s
                 for _, h := range hostWordList {

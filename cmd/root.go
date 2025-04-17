@@ -7,7 +7,9 @@ import (
 	"os"
 	"fmt"
 	"errors"
-
+	"os/signal"
+    "syscall"
+    "time"
 
 	"github.com/helviojunior/enumdns/internal"
 	"github.com/helviojunior/enumdns/internal/ascii"
@@ -91,6 +93,20 @@ func Execute() {
 	
 	ascii.SetConsoleColors()
 
+	c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        ascii.ClearLine()
+        fmt.Fprintf(os.Stderr, "\r\n")
+        ascii.ClearLine()
+        ascii.ShowCursor()
+        log.Warn("interrupted, shutting down...                            ")
+        ascii.ClearLine()
+        fmt.Printf("\n")
+        os.Exit(2)
+    }()
+
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.SilenceErrors = true
 	err := rootCmd.Execute()
@@ -114,6 +130,11 @@ func Execute() {
 
 		os.Exit(1)
 	}
+
+	//Time to wait the logger flush
+	time.Sleep(time.Second/4)
+    ascii.ShowCursor()
+    fmt.Printf("\n")
 }
 
 func init() {
