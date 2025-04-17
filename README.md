@@ -94,14 +94,6 @@ Use "enumdns [command] --help" for more information about a command.
 
 ```
 
-### Installing Go v1.23.5
-
-```
-wget https://go.dev/dl/go1.23.5.linux-amd64.tar.gz
-rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.5.linux-amd64.tar.gz
-rm -rf /usr/bin/go && ln -s /usr/local/go/bin/go /usr/bin/go
-```
-
 
 ## Disclaimer
 
