@@ -6,6 +6,8 @@ Available modules:
 
 1. Brute-force
 2. Enumerate DNS registers (CNAME, A, AAAA, NS and so on)
+3. Resolve DNS hosts from txt file
+4. Resolve DNS hosts from BloodHound file (.zip or .json)
 
 
 ## Main features
@@ -52,7 +54,6 @@ $ enumdns -h
   / __/ / __ \/ / / / __ '__ \/ / / /  |/ /\__ \
  / /___/ / / / /_/ / / / / / / /_/ / /|  /___/ /
 /_____/_/ /_/\__,_/_/ /_/ /_/_____/_/ |_//____/
-                                  Ver: dev-dev
 
 Usage:
   enumdns [command]
@@ -66,6 +67,14 @@ Examples:
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db
+
+   - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
+   - enumdns resolve bloodhound -L /tmp/bloodhound_files.zip --write-jsonl
+   - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json --write-db
+
+   - enumdns resolve file -L /tmp/host_list.txt -o enumdns.txt
+   - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
+   - enumdns resolve file -L /tmp/host_list.txt --write-db
 
 Available Commands:
   brute       Perform brute-force enumeration

@@ -38,7 +38,15 @@ var rootCmd = &cobra.Command{
 
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
-   - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db`,
+   - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db   
+
+   - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
+   - enumdns resolve bloodhound -L /tmp/bloodhound_files.zip --write-jsonl
+   - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json --write-db
+
+   - enumdns resolve file -L /tmp/host_list.txt -o enumdns.txt
+   - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
+   - enumdns resolve file -L /tmp/host_list.txt --write-db`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		
 		usr, err := user.Current()
