@@ -28,7 +28,7 @@ Note: Just run this command if you need to install HomeBrew to first time
 /bin/bash -c "$(curl -fsSL raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### Installing PCAP Raptor
+### Installing EnumDNS
 
 ```
 brew install curl jq
