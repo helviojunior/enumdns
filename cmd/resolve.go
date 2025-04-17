@@ -143,7 +143,7 @@ Perform resolver operations.
 func init() {
     rootCmd.AddCommand(resolveCmd)
 
-    resolveCmd.PersistentFlags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
+    resolveCmd.PersistentFlags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix.")
 
     resolveCmd.PersistentFlags().StringVarP(&opts.DnsServer, "server", "s", "8.8.8.8", "DNS Server")
     resolveCmd.PersistentFlags().IntVar(&opts.DnsPort, "port", 53, "DNS Server Port")

@@ -11,7 +11,43 @@ import (
 	"io/ioutil"
 	"crypto/sha1"
 	"encoding/hex"
+    "errors"
+	"net/http"
+	"math/rand"
+	"archive/zip"
+    
+    "github.com/helviojunior/enumdns/pkg/log"
+    "github.com/helviojunior/enumdns/internal/disk"
 )
+
+func GetMimeType(s string) (string, error) {
+	file, err := os.Open(s)
+
+     if err != nil {
+         return "", err
+     }
+
+     defer file.Close()
+
+     buff := make([]byte, 512)
+
+     // why 512 bytes ? see http://golang.org/pkg/net/http/#DetectContentType
+     _, err = file.Read(buff)
+
+     if err != nil {
+        return "", err
+     }
+
+     filetype := http.DetectContentType(buff)
+     if strings.Contains(filetype, ";") {
+     	s1 := strings.SplitN(filetype, ";", 2)
+     	if s1[0] != "" && strings.Contains(s1[0], "/") {
+     		filetype = s1[0]
+     	}
+     } 
+
+     return filetype, nil
+}
 
 // CreateDir creates a directory if it does not exist, returning the final
 // normalized directory as a result.
@@ -63,6 +99,15 @@ func CreateFileWithDir(destination string) (string, error) {
 	return absPath, nil
 }
 
+func CreateDirFromFilename(destination string, s string) (string, error) {
+	fn := SafeFileName(strings.TrimSuffix(filepath.Base(s), filepath.Ext(s)))
+	if fn == "" {
+		fn = "temp"
+	}
+
+	return CreateDir(filepath.Join(destination, fn))
+}
+
 // SafeFileName takes a string and returns a string safe to use as
 // a file name.
 func SafeFileName(s string) string {
@@ -77,6 +122,34 @@ func SafeFileName(s string) string {
 	}
 
 	return builder.String()
+}
+
+func TempFileName(base_path, prefix, suffix string) string {
+    randBytes := make([]byte, 16)
+    rand.Read(randBytes)
+
+    if base_path == "" {
+    	base_path = os.TempDir()
+
+    	di, err := disk.GetInfo(base_path, false)
+    	if err != nil {
+    		log.Debug("Error getting disk stats", "path", base_path, "err", err)
+    	}
+        if err == nil {
+        	log.Debug("Free disk space", "path", base_path, "free", di.Free)
+            if di.Free <= (5 * 1024 * 1024 * 1024) { // Less than 5GB
+            	currentPath, err := os.Getwd()
+            	if err != nil {
+		    		log.Debug("Error getting working directory", "err", err)
+		    	}
+			    if err == nil {
+			       base_path = currentPath
+			    }
+			    log.Debug("Free disk <= 5Gb, changing temp path location", "temp_path", base_path)
+            }
+        }
+    }
+    return filepath.Join(base_path, prefix+hex.EncodeToString(randBytes)+suffix)
 }
 
 // FileExists returns true if a path exists
@@ -144,4 +217,72 @@ func GetHash(data []byte) string {
 	h := sha1.New()
 	h.Write(data)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+
+func RemoveFolder(path string) error {
+	if path == "" {
+		return nil
+	}
+
+	fi, err := os.Stat(path)
+
+    if err != nil {
+    	return err
+    }
+
+    if fi.Mode().IsDir() {
+    	err = os.RemoveAll(path)
+		if err != nil {
+			return err
+		}
+
+    }else{
+    	return errors.New("Path is not a Directory!") 
+    }
+
+    return nil
+}
+
+func Unzip(src, dest string) error {
+    r, err := zip.OpenReader(src)
+    if err != nil {
+        return err
+    }
+    defer r.Close()
+
+    for _, f := range r.File {
+        rc, err := f.Open()
+        if err != nil {
+            return err
+        }
+        defer rc.Close()
+
+        fpath := filepath.Join(dest, f.Name)
+        if f.FileInfo().IsDir() {
+            os.MkdirAll(fpath, f.Mode())
+        } else {
+            var fdir string
+            if lastIndex := strings.LastIndex(fpath,string(os.PathSeparator)); lastIndex > -1 {
+                fdir = fpath[:lastIndex]
+            }
+
+            err = os.MkdirAll(fdir, f.Mode())
+            if err != nil {
+                return err
+            }
+            f, err := os.OpenFile(
+                fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+            if err != nil {
+                return err
+            }
+            defer f.Close()
+
+            _, err = io.Copy(f, rc)
+            if err != nil {
+                return err
+            }
+        }
+    }
+    return nil
 }
