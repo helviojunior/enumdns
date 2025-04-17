@@ -26,23 +26,6 @@ Available modules:
 Check how to get last release by your Operational Systems procedures here [INSTALL.md](https://github.com/helviojunior/enumdns/blob/main/INSTALL.md)
 
 
-## Get Linux last release
-```
-apt install curl jq
-
-url=$(curl -s https://api.github.com/repos/helviojunior/enumdns/releases | jq -r '[ .[] | {id: .id, tag_name: .tag_name, assets: [ .assets[] | select(.name|match("linux-amd64.tar.gz$")) | {name: .name, browser_download_url: .browser_download_url} ]} | select(.assets != []) ] | sort_by(.id) | reverse | first(.[].assets[]) | .browser_download_url')
-
-cd /opt
-rm -rf enumdns-latest.tar.gz enumdns
-wget -nv -O enumdns-latest.tar.gz "$url"
-tar -xzf enumdns-latest.tar.gz
-
-rsync -av enumdns /usr/local/sbin/
-chmod +x /usr/local/sbin/enumdns
-
-enumdns version
-```
-
 # Utilization
 
 ```
