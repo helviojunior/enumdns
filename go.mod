@@ -8,9 +8,12 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/elastic/go-elasticsearch/v8 v8.17.0
 	github.com/glebarez/sqlite v1.11.0
+	github.com/helviojunior/gopathresolver v0.1.0
 	github.com/miekg/dns v1.1.63
+	github.com/prometheus/procfs v0.16.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/sys v0.28.0
+	golang.org/x/net v0.31.0
+	golang.org/x/sys v0.30.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -31,7 +34,6 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
-	github.com/helviojunior/gopathresolver v0.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -56,8 +58,7 @@ require (
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.18.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/term v0.26.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/tools v0.22.0 // indirect
