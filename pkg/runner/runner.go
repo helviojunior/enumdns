@@ -17,6 +17,7 @@ import (
     //"strconv"
 
 	"github.com/helviojunior/enumdns/internal"
+	"github.com/helviojunior/enumdns/internal/ascii"
 	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/helviojunior/enumdns/pkg/writers"
@@ -59,31 +60,17 @@ type Status struct {
 	Total int
 	Complete int
 	Error int
-	Label string
+	Spin string
 	Running bool
 }
 
 func (st *Status) Print() { 
-	switch st.Label {
-		case "[=====]":
-            st.Label = "[ ====]"
-        case  "[ ====]":
-            st.Label = "[  ===]"
-        case  "[  ===]":
-            st.Label = "[=  ==]"
-        case "[=  ==]":
-            st.Label = "[==  =]"
-        case  "[==  =]":
-            st.Label = "[===  ]"
-        case "[===  ]":
-            st.Label = "[==== ]"
-        default:
-            st.Label = "[=====]"
-	}
+
+	st.Spin = ascii.GetNextSpinner(st.Spin)
 
 	fmt.Fprintf(os.Stderr, "%s\n    %s (%s/%s) failed: %s               \r\033[A", 
     	"                                                                        ",
-    	st.Label, tools.FormatInt(st.Complete), tools.FormatInt(st.Total), tools.FormatInt(st.Error))
+    	ascii.ColoredSpin(st.Spin), tools.FormatInt(st.Complete), tools.FormatInt(st.Total), tools.FormatInt(st.Error))
 	
 } 
 
@@ -118,7 +105,7 @@ func NewRunner(logger *slog.Logger, opts Options, writers []writers.Writer) (*Ru
 			Total: 0,
 			Complete: 0,
 			Error: 0,
-			Label: "[=====]",
+			Spin: "",
 			Running: true,
 		},
 	}, nil
