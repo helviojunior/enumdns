@@ -212,17 +212,19 @@ multiple writers using the _--writer-*_ flags (see --help).
 
                     i := true
                     host := h + "." + s
-                    response := conn.Raw("SELECT count(id) as count from results WHERE failed = 0 AND fqdn = ?", host)
-                    if response != nil {
-                        var cnt int
-                        _ = response.Row().Scan(&cnt)
-                        i = (cnt == 0)
-                        if cnt > 0 {
-                            log.Debug("[Host already checked]", "fqdn", host)
+                    if !forceCheck {
+                        response := conn.Raw("SELECT count(id) as count from results WHERE failed = 0 AND fqdn = ?", host)
+                        if response != nil {
+                            var cnt int
+                            _ = response.Row().Scan(&cnt)
+                            i = (cnt == 0)
+                            if cnt > 0 {
+                                log.Debug("[Host already checked]", "fqdn", host)
+                            }
                         }
                     }
 
-                    if i {
+                    if i || forceCheck{
                         bruteRunner.Targets <- host
                     }else{
                         bruteRunner.AddSkiped()
