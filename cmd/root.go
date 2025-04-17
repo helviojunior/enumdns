@@ -24,6 +24,7 @@ var (
 	opts = &runner.Options{}
 	fileOptions = &readers.FileReaderOptions{}
 	tProxy = ""
+	forceCheck = false
 )
 
 var rootCmd = &cobra.Command{
@@ -151,6 +152,7 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&opts.Logging.Debug, "debug-log", "D", false, "Enable debug logging")
 	rootCmd.PersistentFlags().BoolVarP(&opts.Logging.Silence, "quiet", "q", false, "Silence (almost all) logging")
+	rootCmd.PersistentFlags().BoolVarP(&forceCheck, "force", "F", false, "Force to check all hosts again.")
 
 	rootCmd.PersistentFlags().StringVarP(&opts.Writer.TextFile, "write-text-file", "o", "", "The file to write Text lines to")
     
