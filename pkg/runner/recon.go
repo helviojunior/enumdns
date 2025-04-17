@@ -19,7 +19,7 @@ import (
 
 	"github.com/helviojunior/enumdns/internal"
 	//"github.com/helviojunior/enumdns/internal/ascii"
-	//"github.com/helviojunior/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/helviojunior/enumdns/pkg/writers"
 	"github.com/miekg/dns"
@@ -70,7 +70,7 @@ func NewRecon(logger *slog.Logger, opts Options, writers []writers.Writer) (*Rec
 		log:        logger,
 		writers:    writers,
 		options:    opts,
-		searchOrder: []uint16{ dns.TypeSOA, dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV },
+		searchOrder: []uint16{ dns.TypeSOA, dns.TypeCNAME, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV, dns.TypeA, dns.TypeAAAA, dns.TypeANY },
 		dnsServer: opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
 		Running: true,
 	}, nil
@@ -217,6 +217,7 @@ func (run *Recon) Probe(host string) []*models.Result {
 	}
     
 	ips := []string{}
+	names := []string{}
 
     for _, t := range run.searchOrder {
     	tName := dns.Type(t).String()
@@ -270,8 +271,8 @@ func (run *Recon) Probe(host string) []*models.Result {
 							}
 							resList = append(resList, c1)
 
-							run.getHost(c, soa.Hdr.Name, &resList, &ips, resultBase)
 						}
+						run.appendName(&names, soa.Hdr.Name)
 					}
 					
 					//TXT
@@ -301,9 +302,8 @@ func (run *Recon) Probe(host string) []*models.Result {
 								c1.CloudProduct = prodName
 							}
 							resList = append(resList, c1)
-
-							run.getHost(c, cname.Target, &resList, &ips, resultBase)
 						}
+						run.appendName(&names, cname.Target)
 					}
 
 					//SRV
@@ -319,9 +319,8 @@ func (run *Recon) Probe(host string) []*models.Result {
 								c1.CloudProduct = prodName
 							}
 							resList = append(resList, c1)
-
-							run.getHost(c, srv.Target, &resList, &ips, resultBase)
 						}
+						run.appendName(&names, srv.Target)
 					}
 
 					//MX
@@ -337,9 +336,8 @@ func (run *Recon) Probe(host string) []*models.Result {
 								c1.CloudProduct = prodName
 							}
 							resList = append(resList, c1)
-
-							run.getHost(c, mx.Mx, &resList, &ips, resultBase)
 						}
+						run.appendName(&names, mx.Mx)
 					}
 
 					//NS
@@ -355,9 +353,8 @@ func (run *Recon) Probe(host string) []*models.Result {
 								c1.CloudProduct = prodName
 							}
 							resList = append(resList, c1)
-
-							run.getHost(c, ns.Ns, &resList, &ips, resultBase)
 						}
+						run.appendName(&names, ns.Ns)
 					}
 
 					//IPv4
@@ -389,6 +386,11 @@ func (run *Recon) Probe(host string) []*models.Result {
 				}
 			}
 		}
+	}
+
+	c := new(internal.SocksClient)
+	for _, n := range names {
+		run.getHost(c, n, &resList, &ips, resultBase)
 	}
 
 	for _, ip := range ips {
@@ -445,6 +447,13 @@ func (run *Recon) Probe(host string) []*models.Result {
 	}
 
 	return resList
+}
+
+func (run *Recon) appendName(list *[]string, name string) {
+	name = strings.ToLower(strings.Trim(name, ". "))
+	if !tools.SliceHasStr(*list, name) {
+		*list = append(*list, name)
+	}
 }
 
 func (run *Recon) getHost(c *internal.SocksClient, host string, resList *[]*models.Result, ips *[]string, resultBase *models.Result) {
