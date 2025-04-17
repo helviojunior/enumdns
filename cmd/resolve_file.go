@@ -9,29 +9,23 @@ import (
     "github.com/helviojunior/enumdns/internal/ascii"
     "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
-    "github.com/helviojunior/enumdns/pkg/runner"
+    //"github.com/helviojunior/enumdns/pkg/runner"
     "github.com/helviojunior/enumdns/pkg/database"
     "github.com/helviojunior/enumdns/pkg/writers"
     "github.com/helviojunior/enumdns/pkg/readers"
     "github.com/spf13/cobra"
 )
 
-var resolveFileRunner *runner.Runner
-
 var resolveFileWriters = []writers.Writer{}
 var resolveFileCmd = &cobra.Command{
-    Use:   "resolve",
+    Use:   "file",
     Short: "Perform resolve roperations",
     Long: ascii.LogoHelp(ascii.Markdown(`
-# resolve
+# resolve file
 
 Perform resolver operations.
 `)),
     Example: `
-   - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
-   - enumdns resolve bloodhound -L /tmp/bloodhound_files.zip --write-jsonl
-   - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json --write-db
-
    - enumdns resolve file -L /tmp/host_list.txt -o enumdns.txt
    - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
    - enumdns resolve file -L /tmp/host_list.txt --write-db`,
@@ -46,22 +40,12 @@ Perform resolver operations.
         return nil
     },
     PreRunE: func(cmd *cobra.Command, args []string) error {
-        if opts.DnsSuffix == "" && fileOptions.DnsSuffixFile == "" {
-            return errors.New("a DNS suffix or DNS suffix file must be specified")
-        }
-
-        if fileOptions.DnsSuffixFile != "" {
-            if !tools.FileExists(fileOptions.DnsSuffixFile) {
-                return errors.New("DNS suffix file is not readable")
-            }
-        }
-
         if fileOptions.HostFile == "" {
-            return errors.New("a wordlist file must be specified")
+            return errors.New("a hosts list file must be specified")
         }
 
         if !tools.FileExists(fileOptions.HostFile) {
-            return errors.New("wordlist file is not readable")
+            return errors.New("hosts list file is not readable")
         }
 
         if err := resolveCmd.PreRunE(cmd, args); err != nil {
@@ -96,7 +80,7 @@ Perform resolver operations.
         conn, _ := database.Connection("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", true, false)
 
         go func() {
-            defer close(resolveFileRunner.Targets)
+            defer close(resolveRunner.Targets)
 
             ascii.HideCursor()
 
@@ -117,17 +101,17 @@ Perform resolver operations.
                 }
 
                 if i || forceCheck{
-                    resolveFileRunner.Targets <- host
+                    resolveRunner.Targets <- host
                 }else{
-                    resolveFileRunner.AddSkiped()
+                    resolveRunner.AddSkiped()
                 }
             }
         
         
         }()
 
-        resolveFileRunner.Run(total)
-        resolveFileRunner.Close()
+        resolveRunner.Run(total)
+        resolveRunner.Close()
 
     },
 }
