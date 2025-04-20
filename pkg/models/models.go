@@ -24,6 +24,9 @@ type Result struct {
 	CloudProduct          string    `json:"cloud_product,omitempty"`
 	ProbedAt              time.Time `json:"probed_at"`
 
+	DC      	 		  bool   	`json:"dc"`
+	GC  	       		  bool   	`json:"gc"`
+
 	Exists       		  bool   	`json:"exists"`
 
 	// Failed flag set if the result should be considered failed
@@ -43,6 +46,8 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		Ptr                   string    `json:"ptr,omitempty"`
 		Txt                   string    `json:"txt,omitempty"`
 		CloudProduct          string    `json:"cloud_product,omitempty"`
+		DC      	 		  bool   	`json:"dc"`
+		GC  	       		  bool   	`json:"gc"`
 		ProbedAt              string    `json:"probed_at"`
 
 	}{
@@ -54,6 +59,8 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		Target 				: strings.Trim(strings.ToLower(result.Target), ". "),
 		Ptr 				: strings.Trim(strings.ToLower(result.Ptr), ". "),
 		Txt 				: result.Txt,
+		DC 					: result.DC,
+		GC 					: result.GC,
 		CloudProduct 		: result.CloudProduct,
 	})
 }
@@ -68,12 +75,50 @@ func (result Result) Clone() *Result {
 		Target 				: result.Target,
 		Ptr 				: result.Ptr,
 		Txt 				: result.Txt,
+		DC 					: result.DC,
+		GC 					: result.GC,
 		CloudProduct 		: result.CloudProduct,
 		ProbedAt 			: result.ProbedAt,
 		Exists 				: result.Exists,
 		Failed 				: result.Failed,
 		FailedReason 		: result.FailedReason,
 	}
+}
+
+func (result Result) Equal(r1 Result) bool {
+	if result.RType != r1.RType {
+		return false
+	}
+	if result.FQDN != r1.FQDN {
+		return false
+	}
+	switch result.RType {
+	case "A":
+		return result.IPv4 == r1.IPv4
+	case "AAAA":
+		return result.IPv6 == r1.IPv6
+	case "CNAME", "SRV", "NS", "SOA":
+		return strings.Trim(strings.ToLower(result.Target), ". ") == strings.Trim(strings.ToLower(r1.Target), ". ")
+	case "PTR":
+		r2 := strings.Trim(strings.ToLower(result.Ptr), ". ") == strings.Trim(strings.ToLower(r1.Ptr), ". ")
+		if result.IPv6 != "" {
+			return result.IPv6 == r1.IPv6 && r2
+		}else{
+			return result.IPv4 == r1.IPv4 && r2
+		}
+	default:
+		if result.IPv6 != "" {
+			return result.IPv6 == r1.IPv6
+		}else if result.IPv4 != "" {
+			return result.IPv4 == r1.IPv4
+		}else if result.Target != "" {
+			return strings.Trim(strings.ToLower(result.Target), ". ") == strings.Trim(strings.ToLower(r1.Target), ". ")
+		}else if result.Ptr != "" {
+			return strings.Trim(strings.ToLower(result.Ptr), ". ") == strings.Trim(strings.ToLower(r1.Ptr), ". ")
+		}
+	}
+
+	return false
 }
 
 func (result Result) String() string {
@@ -107,6 +152,16 @@ func (result Result) String() string {
 	if result.CloudProduct != "" {
 		r += " (Cloud = " + result.CloudProduct + ")"
 	}
+	if result.DC || result.GC {
+		ad := []string{}
+		if result.GC {
+			ad = append(ad, "GC")
+		}
+		if result.DC {
+			ad = append(ad, "DC")
+		}
+		r += " (" + strings.Join(ad, ", ") + ")"
+	}
 	return r
 }
 
@@ -115,8 +170,41 @@ func (result Result) GetHash() string {
 	return tools.GetHash(b_data)
 }
 
+func (result Result) GetCompHash() string {
+	r := ""
+	switch result.RType {
+	case "SOA":
+		r += "000"
+	case "SRV":
+		r += "010"
+	case "NS":
+		r += "020"
+	case "CNAME":
+		r += "030"
+	case "A":
+		r += "040"
+	case "AAAA":
+		r += "050"
+	case "PTR":
+		r += "060"
+	default:
+		if !result.Exists {
+			r += "990"
+		}else{
+			r += "900"
+		}
+	}
+
+	r += result.String()
+	return r
+}
+
 func SliceHasResult(s []*Result, r *Result) bool {
     for _, a := range s {
+    	if r.Equal(*a) {
+    		return true
+    	}
+    	/*
     	if a.FQDN != r.FQDN || a.RType != r.RType || a.Ptr != r.Ptr {
     		continue
     	}
@@ -133,7 +221,7 @@ func SliceHasResult(s []*Result, r *Result) bool {
     		if a.Target == r.Target {
     			return true
     		}
-    	}
+    	}*/
     }
     return false
 }

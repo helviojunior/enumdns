@@ -156,6 +156,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         log.Debug("starting DNS recon")
 
         dnsSuffix := []string{}
+        enumeratedDomains := []string{}
         reader := readers.NewFileReader(fileOptions)
         total := 0
 
@@ -184,19 +185,39 @@ multiple writers using the _--writer-*_ flags (see --help).
             os.Exit(2)
         }
 
-        log.Infof("Enumerating %s DNS hosts", tools.FormatInt(total))
+        for len(dnsSuffix) > 0 {
+            log.Warnf("Enumerating %s DNS hosts", tools.FormatInt(total))
 
-        go func() {
-            defer close(reconRunner.Targets)
+            go func() {
+                defer close(reconRunner.Targets)
 
-            ascii.HideCursor()
-            for _, s := range dnsSuffix {
-                reconRunner.Targets <- s
+                ascii.HideCursor()
+
+                for _, s := range dnsSuffix {
+                    reconRunner.Targets <- s
+                    enumeratedDomains = append(enumeratedDomains, s)
+                }
+
+            }()
+
+            reconRunner.Run(total)
+
+            dnsSuffix = []string{}
+
+            for _, d := range reconRunner.Domains {
+                if !tools.SliceHasStr(enumeratedDomains, d) && !tools.SliceHasStr(dnsSuffix, d) {
+                    dnsSuffix = append(dnsSuffix, d)
+                }
             }
-        
-        }()
 
-        reconRunner.Run(total)
+            total = len(dnsSuffix)
+            if total > 0 {
+                log.Infof("%s new domain(s) found", tools.FormatInt(total))
+                reconRunner.Reset()
+            }
+
+        }
+
         reconRunner.Close()
 
     },

@@ -118,5 +118,15 @@ func (t *TextWriter) formatResult(result *models.Result) string {
 	if result.CloudProduct != "" {
 		r += " (Cloud = " + result.CloudProduct + ")"
 	}
+	if result.DC || result.GC {
+		ad := []string{}
+		if result.GC {
+			ad = append(ad, "GC")
+		}
+		if result.DC {
+			ad = append(ad, "DC")
+		}
+		r += " (" + strings.Join(ad, ", ") + ")"
+	}
 	return r
 }

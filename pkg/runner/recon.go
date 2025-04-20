@@ -16,9 +16,11 @@ import (
     "syscall"
     //"strconv"
     "errors"
+    "sort"
 
 	"github.com/helviojunior/enumdns/internal"
 	//"github.com/helviojunior/enumdns/internal/ascii"
+	"github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/helviojunior/enumdns/pkg/writers"
@@ -55,6 +57,8 @@ type Recon struct {
 
 	//Running
 	Running bool
+
+	Domains []string
 }
 
 // New gets a new Recon ready for probing.
@@ -73,6 +77,7 @@ func NewRecon(logger *slog.Logger, opts Options, writers []writers.Writer) (*Rec
 		searchOrder: []uint16{ dns.TypeSOA, dns.TypeCNAME, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV, dns.TypeA, dns.TypeAAAA, dns.TypeANY },
 		dnsServer: opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
 		Running: true,
+		Domains: []string{},
 	}, nil
 }
 
@@ -87,8 +92,13 @@ func (run *Recon) runWriters(result *models.Result) error {
 	return nil
 }
 
+func (run *Recon) Reset() {
+	run.Targets = make(chan string)
+}
+
 func (run *Recon) Run(total int) {
 	wg := sync.WaitGroup{}
+	run.Running = true
 
     c := make(chan os.Signal)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -126,27 +136,88 @@ func (run *Recon) Run(total int) {
 						logger = run.log.With("FQDN", soa)
 					}
 
+					run.Domains = append(run.Domains, strings.Trim(soa, ". ") + ".")
+
 					//Check if has LDAP registers
 					//nslookup -q=SRV _ldap._tcp.sec4us.com.br
 					results := run.Probe("_ldap._tcp." + soa)
+					isAD := false
 					if run.Running {
 						for _, res := range results {
-        					
-        					if err := run.runWriters(res); err != nil {
-        						logger.Error("failed to write result", "err", err)
+        					isAD = true
+        					if res.RType == "SRV" {
+        						res.DC = true
         					}
                         }
                     }
 
-					results = run.Probe(soa)
-					if run.Running {
-						for _, res := range results {
-        					
-        					if err := run.runWriters(res); err != nil {
-        						logger.Error("failed to write result", "err", err)
-        					}
-                        }
+                    if isAD {
+                    	resultsAd := run.Probe("_gc._tcp." + soa)
+                    	cnt := len(strings.Split(strings.Trim(soa, ". "), "."))
+						if run.Running {
+
+							if len(resultsAd) == 0 || (len(resultsAd) == 1 && resultsAd[0].Exists == false) { // May be it is not a root domain
+								p := strings.Split(strings.Trim(soa, ". "), ".")
+								d1 := strings.Join(p[1:], ".") + "."
+								resultsAd = run.Probe("_gc._tcp." + d1)
+							} 
+
+							for _, res := range resultsAd {
+								if res.RType == "SRV" {
+	        						res.GC = true
+	        						res.DC = true
+	        					}
+	        					rNew := !models.SliceHasResult(results, res)
+	        					if rNew {
+	        						results = append(results, res)
+	        					}
+								if res.RType == "SRV" || res.RType == "CNAME" {
+									if !rNew {
+										for _, res1 := range results {
+		        							if (!res1.GC || !res1.DC) && (res1.RType == "SRV" || res1.RType == "CNAME") && (res1.Target == res.Target) {
+		        								res1.GC = res.GC
+		        								res1.DC = res.DC
+		        							}
+		        						}
+		        					}
+									d := strings.Trim(strings.Replace(strings.ToLower(res.Target), "_gc._tcp.", "", -1), ". ")
+									p := strings.Split(strings.Trim(d, ". "), ".")
+									if len(p) != (cnt + 1) {
+										d1 := strings.Join(p[1:], ".") + "."
+										if !tools.SliceHasStr(run.Domains, d1) {
+											run.Domains = append(run.Domains, d1)
+											log.Warnf("New domain found: %s", d1)
+										}
+									}
+								}
+
+	                        }
+	                    
+	                    }
+
                     }
+
+					resultsGeneral := run.Probe(soa)
+					if isAD {
+						for _, res := range resultsGeneral {
+	    					if !models.SliceHasResult(results, res) {
+	    						results = append(results, res)
+	    					}
+	    				}
+					}else{
+						results = resultsGeneral
+					}
+
+					sort.Slice(results[:], func(i, j int) bool {
+					  return results[i].GetCompHash() < results[j].GetCompHash()
+					})
+					
+					for _, res := range results {
+    					if err := run.runWriters(res); err != nil {
+    						logger.Error("failed to write result", "err", err)
+    					}
+                    }
+                
 				}
 			}
 
@@ -155,11 +226,6 @@ func (run *Recon) Run(total int) {
 
 	wg.Wait()
 	run.Running = false
-
-    fmt.Fprintf(os.Stderr, "\n%s\n%s\r", 
-        "                                                                                ",
-        "                                                                                ",
-    )
 
 	return
 }
