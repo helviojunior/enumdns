@@ -128,7 +128,7 @@ func (result Result) String() string {
 		r += result.IPv4
 	case "AAAA":
 		r += result.IPv6
-	case "CNAME", "SRV", "NS", "SOA":
+	case "CNAME", "SRV", "NS", "SOA", "MX":
 		r += strings.Trim(strings.ToLower(result.Target), ". ")
 	case "PTR":
 		r += strings.Trim(strings.ToLower(result.Ptr), ". ") + " -> "
