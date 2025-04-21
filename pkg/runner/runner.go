@@ -59,6 +59,7 @@ type Runner struct {
 type Status struct {
 	Total int
 	Complete int
+	Skiped int
 	Error int
 	Spin string
 	Running bool
@@ -74,8 +75,14 @@ func (st *Status) Print() {
 	
 } 
 
+func (run *Runner) GetLog() *slog.Logger{ 
+    return run.log
+}
+
+
 func (run *Runner) AddSkiped() { 
     run.status.Complete += 1
+    run.status.Skiped += 1
 }
 
 func (st *Status) AddResult(result *models.Result) { 
@@ -105,6 +112,7 @@ func NewRunner(logger *slog.Logger, opts Options, writers []writers.Writer) (*Ru
 			Total: 0,
 			Complete: 0,
 			Error: 0,
+			Skiped: 0,
 			Spin: "",
 			Running: true,
 		},
@@ -206,11 +214,6 @@ func (run *Runner) Run(total int) Status {
 	wg.Wait()
 	run.status.Running = false
 	swg.Wait()
-
-    fmt.Fprintf(os.Stderr, "\n%s\n%s\r", 
-        "                                                                                ",
-        "                                                                                ",
-    )
 
 	return *run.status
 }

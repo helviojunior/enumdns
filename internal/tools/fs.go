@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"math/rand"
 	"archive/zip"
+	"bufio"
     
     "github.com/helviojunior/enumdns/pkg/log"
     "github.com/helviojunior/enumdns/internal/disk"
@@ -285,4 +286,24 @@ func Unzip(src, dest string) error {
         }
     }
     return nil
+}
+
+func HasBOM(fileName string) bool {
+	f, err := os.Open(fileName)
+    if err != nil {
+        return false
+    }
+    defer f.Close()
+
+    br := bufio.NewReader(f)
+    r, _, err := br.ReadRune()
+    if err != nil {
+        return false
+    }
+    if r != '\uFEFF' {
+        //br.UnreadRune() // Not a BOM -- put the rune back
+        return false
+    }
+
+    return true
 }

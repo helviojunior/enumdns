@@ -3,16 +3,17 @@ package cmd
 import (
     "errors"
     //"log/slog"
+    "io"
     "os"
     "strings"
     "path/filepath"
-
+    "bufio"
     "encoding/json"
 
     "github.com/helviojunior/enumdns/internal/ascii"
     "github.com/helviojunior/enumdns/internal/tools"
     "github.com/helviojunior/enumdns/pkg/log"
-    //"github.com/helviojunior/enumdns/pkg/runner"
+    "github.com/helviojunior/enumdns/pkg/runner"
     "github.com/helviojunior/enumdns/pkg/database"
     "github.com/helviojunior/enumdns/pkg/writers"
     //"github.com/helviojunior/enumdns/pkg/readers"
@@ -124,7 +125,26 @@ Perform resolver operations.
             }
         }
 
-        log.Infof("Enumerating %s DNS hosts", tools.FormatInt(total))
+        log.Warnf("Enumerating %s Domains", tools.FormatInt(len(domainList)))
+    
+        reconRunner, err := runner.NewRecon(resolveRunner.GetLog(), *opts, resolveWriters)
+        if err == nil {
+                
+            go func() {
+                defer close(reconRunner.Targets)
+
+                ascii.HideCursor()
+
+                for _, d := range domainList {
+                    reconRunner.Targets <- d
+                }
+
+            }()
+
+            reconRunner.Run(total)
+        }
+
+        log.Warnf("Enumerating %s DNS hosts", tools.FormatInt(total))
 
         // Check runned items
         conn, _ := database.Connection("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", true, false)
@@ -160,8 +180,13 @@ Perform resolver operations.
         
         }()
 
-        resolveRunner.Run(total)
+        st := resolveRunner.Run(total)
         resolveRunner.Close()
+
+        if st.Skiped > 0 {
+            log.Warnf("%d hosts were skipped because they were already scanned. Use the --force parameter to rescan them.", st.Skiped)
+            ascii.ClearLine()
+        }
 
     },
 }
@@ -224,7 +249,22 @@ func getComputersFile(file_path string) (string, error) {
 
 func readComputerFile(fileName string, outList *[]string, domainList *[]string) error {
 
-    fileBytes, err := os.ReadFile(fileName)
+    f, err := os.Open(fileName)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+
+    br := bufio.NewReader(f)
+    r, _, err := br.ReadRune()
+    if err != nil {
+        return err
+    }
+    if r != '\uFEFF' {
+        br.UnreadRune() // Not a BOM -- put the rune back
+    }
+
+    fileBytes, err := io.ReadAll(br)
     if err != nil {
         return err
     }
