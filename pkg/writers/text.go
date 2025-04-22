@@ -84,10 +84,16 @@ func (t *TextWriter) Write(result *models.Result) error {
 func (t *TextWriter) formatResult(result *models.Result) string {
 
 	r := strings.Trim(strings.ToLower(result.FQDN), ". ")
-	r += strings.Repeat(" ", 71 - len(strings.Trim(strings.ToLower(result.FQDN), ". ")))
+	s := 71 - len(strings.Trim(strings.ToLower(result.FQDN), ". "))
+	if s > 0 {
+		r += strings.Repeat(" ", s)
+	}
 
 	r += result.RType
-	r += strings.Repeat(" ", 11 - len(result.RType))
+	s = 11 - len(result.RType)
+	if s > 0 {
+		r += strings.Repeat(" ", s)
+	}
 
 	switch result.RType {
 	case "A":
