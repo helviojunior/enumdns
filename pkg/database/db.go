@@ -45,11 +45,14 @@ func Connection(uri string, shouldExist, debug bool) (*gorm.DB, error) {
 			}
 		}
 
+		//config.SkipDefaultTransaction = true
+
 		c, err = gorm.Open(sqlite.Open(db.Host+db.Path+"?cache=shared"), config)
 		if err != nil {
 			return nil, err
 		}
 		c.Exec("PRAGMA foreign_keys = ON")
+		c.Exec("PRAGMA cache_size = 10000")
 	case "postgres":
 		c, err = gorm.Open(postgres.Open(uri), config)
 		if err != nil {
