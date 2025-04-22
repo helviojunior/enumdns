@@ -35,7 +35,7 @@ multiple writers using the _--writer-*_ flags (see --help).
     Example: `
    - enumdns recon -d helviojunior.com.br -o enumdns.txt
    - enumdns recon -d helviojunior.com.br --write-jsonl
-   - enumdns recon -D domains.txt --write-db`,
+   - enumdns recon -L domains.txt --write-db`,
     PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
         var err error
 

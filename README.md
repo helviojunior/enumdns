@@ -45,11 +45,11 @@ Examples:
 
    - enumdns recon -d helviojunior.com.br -o enumdns.txt
    - enumdns recon -d helviojunior.com.br --write-jsonl
-   - enumdns recon -D domains.txt --write-db
+   - enumdns recon -L domains.txt --write-db
 
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
    - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
-   - enumdns brute -D domains.txt -w /tmp/wordlist.txt --write-db
+   - enumdns brute -L domains.txt -w /tmp/wordlist.txt --write-db
 
    - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
    - enumdns resolve bloodhound -L /tmp/bloodhound_files.zip --write-jsonl
