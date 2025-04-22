@@ -12,6 +12,13 @@ import (
 	"github.com/helviojunior/enumdns/internal"
 )
 
+var privateNets = []string{
+	    "192.168.0.0/16",
+	    "10.0.0.0/8",
+	    "172.16.0.0/12",
+	    "127.0.0.0/8",
+	}
+
 // IpsInCIDR returns a list of usable IP addresses in a given CIDR block
 // excluding network and broadcast addresses for CIDRs larger than /31.
 func IpsInCIDR(cidr string) ([]string, error) {
@@ -77,3 +84,28 @@ func GetValidDnsSuffix(dnsServer string, suffix string, proxyUri *url.URL) (stri
 
 }
 
+func IsPrivateIP(ipAddr string) bool {
+	ip := net.ParseIP(ipAddr)
+	for _, netip := range privateNets {
+		_, subnet, _ := net.ParseCIDR(netip)
+		if subnet.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
+
+
+func GetDefaultDnsServer(fallback string) string {
+    if fallback == "" {
+        fallback = "8.8.8.8"
+    }
+
+    srv := GetDNSServers()
+    if len(srv) == 0 {
+        return fallback
+    }
+
+    return srv[0].Addr().String()
+}

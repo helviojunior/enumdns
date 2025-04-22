@@ -250,30 +250,5 @@ func init() {
     bruteCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
 
     bruteCmd.Flags().BoolVarP(&opts.Quick, "quick", "Q", false, "Request just A registers.")
-
-    bruteCmd.Flags().StringVarP(&opts.DnsServer, "server", "s", "8.8.8.8", "DNS Server")
-    bruteCmd.Flags().IntVar(&opts.DnsPort, "port", 53, "DNS Server Port")
-    bruteCmd.Flags().StringVarP(&opts.DnsProtocol, "protocol", "", "UDP", "DNS Server protocol (TCP/UDP)")
     
-    // Logging control for subcommands
-    bruteCmd.Flags().BoolVar(&opts.Logging.LogScanErrors, "log-scan-errors", false, "Log scan errors (timeouts, DNS errors, etc.) to stderr (warning: can be verbose!)")
-
-    // "Threads" & other
-    bruteCmd.Flags().IntVarP(&opts.Scan.Threads, "threads", "t", 8, "Number of concurrent threads (goroutines) to use")
-    bruteCmd.Flags().IntVarP(&opts.Scan.Timeout, "timeout", "T", 60, "Number of seconds before considering a page timed out")
-    bruteCmd.Flags().IntVar(&opts.Scan.Delay, "delay", 3, "Number of seconds delay between navigation and screenshotting")
-
-    // Write options for scan subcommands
-    bruteCmd.Flags().BoolVar(&opts.Writer.Db, "write-db", false, "Write results to a SQLite database")
-    bruteCmd.Flags().StringVar(&opts.Writer.DbURI, "write-db-uri", "sqlite://enumdns.sqlite3", "The database URI to use. Supports SQLite, Postgres, and MySQL (e.g., postgres://user:pass@host:port/db)")
-    bruteCmd.Flags().BoolVar(&opts.Writer.DbDebug, "write-db-enable-debug", false, "Enable database query debug logging (warning: verbose!)")
-    bruteCmd.Flags().BoolVar(&opts.Writer.Csv, "write-csv", false, "Write results as CSV (has limited columns)")
-    bruteCmd.Flags().StringVar(&opts.Writer.CsvFile, "write-csv-file", "enumdns.csv", "The file to write CSV rows to")
-    bruteCmd.Flags().BoolVar(&opts.Writer.Jsonl, "write-jsonl", false, "Write results as JSON lines")
-    bruteCmd.Flags().StringVar(&opts.Writer.JsonlFile, "write-jsonl-file", "enumdns.jsonl", "The file to write JSON lines to")
-    bruteCmd.Flags().BoolVar(&opts.Writer.None, "write-none", false, "Use an empty writer to silence warnings")
-
-    bruteCmd.Flags().BoolVar(&opts.Writer.ELastic, "write-elastic", false, "Write results to a SQLite database")
-    bruteCmd.Flags().StringVar(&opts.Writer.ELasticURI, "write-elasticsearch-uri", "http://localhost:9200/enumdns", "The elastic search URI to use. (e.g., http://user:pass@host:9200/index)")
-
 }

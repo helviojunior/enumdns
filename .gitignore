@@ -6,6 +6,7 @@
 *.sqlite3
 *.jsonl
 enumdns
+enumdns.exe
 # dep vendor/
 vendor/
 

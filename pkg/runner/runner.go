@@ -188,6 +188,7 @@ func (run *Runner) Run(total int) Status {
 		// start a worker
 		go func() {
 			defer wg.Done()
+			tools.RandSleep()
 			for run.status.Running {
 				select {
 				case <-run.ctx.Done():
@@ -226,6 +227,11 @@ func (run *Runner) Run(total int) Status {
 	                        }
                         }
                     }
+
+                	//We must put this to slow down the requests to prevent block from DNS Server
+                	if !run.options.PrivateDns {
+	                    tools.RandSleep()
+	                }
 				}
 			}
 
@@ -320,6 +326,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a1 := resultBase.Clone()
 										a1.RType = "A"
 										a1.IPv4 = a.A.String()
+										a1.CloudProduct = c1.CloudProduct
 										if !models.SliceHasResult(resList, a1) {
 											resList = append(resList, a1)
 										}
@@ -329,6 +336,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a1.FQDN = cname.Target
 										a1.RType = "A"
 										a1.IPv4 = a.A.String()
+										a1.CloudProduct = c1.CloudProduct
 										if !models.SliceHasResult(resList, a1) {
 											resList = append(resList, a1)
 										}
@@ -343,6 +351,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a2 := resultBase.Clone()
 										a2.RType = "AAAA"
 										a2.IPv6 = aaaa.AAAA.String()
+										a2.CloudProduct = c1.CloudProduct
 										if !models.SliceHasResult(resList, a2) {
 											resList = append(resList, a2)
 										}
@@ -352,6 +361,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a2.FQDN = cname.Target
 										a2.RType = "AAAA"
 										a2.IPv6 = aaaa.AAAA.String()
+										a2.CloudProduct = c1.CloudProduct
 										if !models.SliceHasResult(resList, a2) {
 											resList = append(resList, a2)
 										}

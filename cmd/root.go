@@ -12,6 +12,7 @@ import (
     "time"
 
 	"github.com/helviojunior/enumdns/internal"
+	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/internal/ascii"
 	"github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/pkg/runner"
@@ -77,6 +78,18 @@ var rootCmd = &cobra.Command{
 	        }
 
             opts.Writer.Text = true
+        }
+
+        if opts.DnsServer == "" {
+        	opts.DnsServer = tools.GetDefaultDnsServer("")
+        }
+        opts.PrivateDns = tools.IsPrivateIP(opts.DnsServer)
+        
+        fileOptions.DnsServer = opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort)
+        if opts.PrivateDns {
+        	log.Warnf("DNS server: %s (private)", fileOptions.DnsServer)
+        }else{
+        	log.Warn("DNS server: " + fileOptions.DnsServer)
         }
 
         //Check Proxy config
@@ -158,9 +171,16 @@ func init() {
 	// Disable Certificate Validation (Globally)
 	//http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
+    rootCmd.PersistentFlags().StringVarP(&opts.DnsServer, "server", "s", "", "DNS Server")
+    rootCmd.PersistentFlags().IntVar(&opts.DnsPort, "port", 53, "DNS Server Port")
+    rootCmd.PersistentFlags().StringVarP(&opts.DnsProtocol, "protocol", "", "UDP", "DNS Server protocol (TCP/UDP)")
+
 	rootCmd.PersistentFlags().BoolVarP(&opts.Logging.Debug, "debug-log", "D", false, "Enable debug logging")
 	rootCmd.PersistentFlags().BoolVarP(&opts.Logging.Silence, "quiet", "q", false, "Silence (almost all) logging")
 	rootCmd.PersistentFlags().BoolVarP(&forceCheck, "force", "F", false, "Force to check all hosts again.")
+
+    // Logging control for subcommands
+    rootCmd.PersistentFlags().BoolVar(&opts.Logging.LogScanErrors, "log-scan-errors", false, "Log scan errors (timeouts, DNS errors, etc.) to stderr (warning: can be verbose!)")
 
 	rootCmd.PersistentFlags().StringVarP(&opts.Writer.TextFile, "write-text-file", "o", "", "The file to write Text lines to")
     
@@ -170,4 +190,22 @@ func init() {
 	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.ProxyUser, "proxy-user", "", "", "Proxy User")
 	//rootCmd.PersistentFlags().StringVarP(&opts.DnsOverHttps.ProxyPassword, "proxy-pass", "", "", "Proxy Password")
 
+    // "Threads" & other
+    rootCmd.PersistentFlags().IntVarP(&opts.Scan.Threads, "threads", "t", 6, "Number of concurrent threads (goroutines) to use")
+    rootCmd.PersistentFlags().IntVarP(&opts.Scan.Timeout, "timeout", "T", 60, "Number of seconds before considering a page timed out")
+
+    // Write options for scan subcommands
+    rootCmd.PersistentFlags().BoolVar(&opts.Writer.Db, "write-db", false, "Write results to a SQLite database")
+    rootCmd.PersistentFlags().StringVar(&opts.Writer.DbURI, "write-db-uri", "sqlite://enumdns.sqlite3", "The database URI to use. Supports SQLite, Postgres, and MySQL (e.g., postgres://user:pass@host:port/db)")
+    rootCmd.PersistentFlags().BoolVar(&opts.Writer.DbDebug, "write-db-enable-debug", false, "Enable database query debug logging (warning: verbose!)")
+    rootCmd.PersistentFlags().BoolVar(&opts.Writer.Csv, "write-csv", false, "Write results as CSV (has limited columns)")
+    rootCmd.PersistentFlags().StringVar(&opts.Writer.CsvFile, "write-csv-file", "enumdns.csv", "The file to write CSV rows to")
+    rootCmd.PersistentFlags().BoolVar(&opts.Writer.Jsonl, "write-jsonl", false, "Write results as JSON lines")
+    rootCmd.PersistentFlags().StringVar(&opts.Writer.JsonlFile, "write-jsonl-file", "enumdns.jsonl", "The file to write JSON lines to")
+    rootCmd.PersistentFlags().BoolVar(&opts.Writer.None, "write-none", false, "Use an empty writer to silence warnings")
+
+    rootCmd.PersistentFlags().BoolVar(&opts.Writer.ELastic, "write-elastic", false, "Write results to a SQLite database")
+    rootCmd.PersistentFlags().StringVar(&opts.Writer.ELasticURI, "write-elasticsearch-uri", "http://localhost:9200/enumdns", "The elastic search URI to use. (e.g., http://user:pass@host:9200/index)")
+
+    
 }

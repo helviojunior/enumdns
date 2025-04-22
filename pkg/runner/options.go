@@ -21,6 +21,7 @@ type Options struct {
     DnsServer string
     DnsPort int
     DnsProtocol string
+    PrivateDns bool
 
     Proxy *url.URL
 
@@ -98,5 +99,6 @@ func NewDefaultOptions() *Options {
         },
         DnsSuffix: "",
         Quick: false,
+        PrivateDns: false,
     }
 }
