@@ -2,8 +2,8 @@ package runner
 
 var products = map[string][]string{
     "CloudFront": []string{ "cloudfront.net", "cloudfront", },
-    "CloudFlare": []string{ "cloudflare.com", "cloudflare", },
-    "Akamai": []string{ "akamaitechnologies.com", },
+    "CloudFlare": []string{ "cloudflare.com", "cloudflare", "cc-ecdn.net" },
+    "Akamai": []string{ "akamaitechnologies.com", "edgekey.net", "akamaiedge.net" },
     "Imperva": []string{ "incapsula.com" },
     "Sucuri": []string{ "sucuri.net" },
     "Bunny": []string{ "bunnyinfra.net" },
