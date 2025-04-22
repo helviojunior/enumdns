@@ -23,6 +23,8 @@ type Options struct {
     DnsProtocol string
 
     Proxy *url.URL
+
+    Quick bool
 }
 
 // Logging is log related options
@@ -95,5 +97,6 @@ func NewDefaultOptions() *Options {
             LogScanErrors: true,
         },
         DnsSuffix: "",
+        Quick: false,
     }
 }

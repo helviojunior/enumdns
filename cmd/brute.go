@@ -249,6 +249,8 @@ func init() {
     
     bruteCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
 
+    bruteCmd.Flags().BoolVarP(&opts.Quick, "quick", "Q", false, "Request just A registers.")
+
     bruteCmd.Flags().StringVarP(&opts.DnsServer, "server", "s", "8.8.8.8", "DNS Server")
     bruteCmd.Flags().IntVar(&opts.DnsPort, "port", 53, "DNS Server Port")
     bruteCmd.Flags().StringVarP(&opts.DnsProtocol, "protocol", "", "UDP", "DNS Server protocol (TCP/UDP)")

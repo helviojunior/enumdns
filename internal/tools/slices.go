@@ -28,6 +28,19 @@ func SliceHasInt(slice []int, item int) bool {
 	return false
 }
 
+
+// SliceHasInt checks if a slice has an int
+func SliceHasUInt16(slice []uint16, item uint16) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+
+	return false
+}
+
+
 // UniqueIntSlice returns a slice of unique ints
 func UniqueIntSlice(slice []int) []int {
 	seen := make(map[int]bool)

@@ -106,7 +106,7 @@ func NewRunner(logger *slog.Logger, opts Options, writers []writers.Writer) (*Ru
 		log:        logger,
 		writers:    writers,
 		options:    opts,
-		searchOrder: []uint16{ dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY },
+		searchOrder: []uint16{ dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
 		dnsServer: opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
 		status:     &Status{
 			Total: 0,
@@ -148,6 +148,16 @@ func (run *Runner) Run(total int) Status {
 
 	run.status.Total = total
 
+	complementarySearchOrder := []uint16{}
+	if run.options.Quick {
+		for _, t := range run.searchOrder {
+			if t != dns.TypeA {
+				complementarySearchOrder = append(complementarySearchOrder, t)
+			}
+		}
+		run.searchOrder = []uint16{ dns.TypeA }
+	}
+
     c := make(chan os.Signal)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
     go func() {
@@ -188,9 +198,11 @@ func (run *Runner) Run(total int) Status {
 					}
 					logger := run.log.With("FQDN", host)
 
-					results := run.Probe(host)
+					results := run.Probe(host, run.searchOrder)
 					if run.status.Running {
 						
+						// // May be it is not a root domain
+
 						if len(results) == 0 {
 							//Host not found
 							run.status.Complete += 1
@@ -199,10 +211,19 @@ func (run *Runner) Run(total int) Status {
 						}
 						
 						for _, res := range results {
-        					
         					if err := run.runWriters(res); err != nil {
         						logger.Error("failed to write result", "err", err)
         					}
+                        }
+
+                        if len(results) >= 1 && results[0].Exists == true && len(complementarySearchOrder) > 0 {
+                        	logger.Debug("Doing complementary search...")
+                        	results := run.Probe(host, complementarySearchOrder)
+                        	for _, res := range results {
+	        					if err := run.runWriters(res); err != nil {
+	        						logger.Error("failed to write result", "err", err)
+	        					}
+	                        }
                         }
                     }
 				}
@@ -218,7 +239,7 @@ func (run *Runner) Run(total int) Status {
 	return *run.status
 }
 
-func (run *Runner) Probe(host string) []*models.Result {
+func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 	logger := run.log.With("FQDN", host)
 	resList := []*models.Result{}
 
@@ -231,7 +252,7 @@ func (run *Runner) Probe(host string) []*models.Result {
     
 	ips := []string{}
 
-    for _, t := range run.searchOrder {
+    for _, t := range searchOrder {
     	tName := dns.Type(t).String()
     	logger := run.log.With("FQDN", host, "Type", tName)
     	resultBase.RType = tName
