@@ -1,6 +1,6 @@
 # EnumDNS
 
-EnumDNS is a modular DNS recon tool! 
+EnumDNS is a modular DNS reconnaissance tool capable of resolving hosts from various sources, including wordlists, BloodHound files, and Active Directory environments.
 
 Available modules:
 
