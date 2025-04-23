@@ -111,6 +111,8 @@ func (t *TextWriter) formatResult(result *models.Result) string {
 		}else{
 			r += result.IPv4
 		}
+	case "TXT":
+		r += result.Txt
 	default:
 		r = r + result.RType + " "
 		if result.IPv6 != "" {

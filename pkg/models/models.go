@@ -137,6 +137,8 @@ func (result Result) String() string {
 		}else{
 			r += result.IPv4
 		}
+	case "TXT":
+		r += result.Txt
 	default:
 		r = r + result.RType + " "
 		if result.IPv6 != "" {
