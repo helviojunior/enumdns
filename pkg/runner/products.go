@@ -20,4 +20,5 @@ var products = map[string][]string{
     "Heroku": []string{ "herokuapp.com", "herokudns.com" },
     "Registro.BR": []string { "dns.br" },
     "Trend Micro Email Security": []string { "tmes.trendmicro.com" },
+    "Wix": []string{ "wixsite.com", "wixdns.net" },
 }
