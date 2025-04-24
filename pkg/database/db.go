@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	"github.com/helviojunior/enumdns/pkg/models"
@@ -69,10 +70,36 @@ func Connection(uri string, shouldExist, debug bool) (*gorm.DB, error) {
 
 	// run database migrations on the connection
 	if err := c.AutoMigrate(
+		&Application{},
 		&models.Result{},
 	); err != nil {
 		return nil, err
 	}
 
+	//Check if app name was inserted at application info table
+	var count int64
+    if err := c.Model(&Application{}).Count(&count).Error; err != nil {
+        return nil, err
+    }
+
+    if count == 0 {
+        defaultApp := Application{
+            Application:  "enumdns",
+            CreatedAt: time.Now(),
+        }
+        if err := c.Create(&defaultApp).Error; err != nil {
+            return nil, err
+        }
+    }
+
 	return c, nil
+}
+
+type Application struct {
+	Application           string    `json:"application"`
+	CreatedAt             time.Time `json:"created_at"`
+}
+
+func (Application) TableName() string {
+    return "application_info"
 }
