@@ -21,4 +21,5 @@ var products = map[string][]string{
     "Registro.BR": []string { "dns.br" },
     "Trend Micro Email Security": []string { "tmes.trendmicro.com" },
     "Wix": []string{ "wixsite.com", "wixdns.net" },
+    "Github": []string{ "github.io" },
 }
