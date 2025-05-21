@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/term"
+
 	"github.com/helviojunior/enumdns/pkg/models"
 	logger "github.com/helviojunior/enumdns/pkg/log"
 )
@@ -11,18 +13,22 @@ import (
 // StdoutWriter is a Stdout writer
 type StdoutWriter struct {
 	WriteAll  bool
+	IsTerminal bool
 }
 
 // NewStdoutWriter initialises a stdout writer
 func NewStdoutWriter() (*StdoutWriter, error) {
 	return &StdoutWriter{
 		WriteAll: false,
+		IsTerminal: term.IsTerminal(int(os.Stdin.Fd())),
 	}, nil
 }
 
 // Write results to stdout
 func (s *StdoutWriter) Write(result *models.Result) error {
-	fmt.Fprintf(os.Stderr, "                                                                               \r")
+	if s.IsTerminal {
+		fmt.Fprintf(os.Stderr, "                                                                               \r")
+	}
 	if result.Failed {
 		logger.Errorf("[%s] FQDN=%s", result.FailedReason, result.FQDN)
 		return nil
