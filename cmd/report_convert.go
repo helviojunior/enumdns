@@ -35,8 +35,9 @@ A --from-file and --to-file must be specified. The extension used for the
 specified filenames will be used to determine the conversion direction and
 target.`)),
     Example: ascii.Markdown(`
-- gowitness report convert --from-file gowitness.sqlite3 --to-file data.jsonl
-- gowitness report convert --from-file gowitness.jsonl --to-file db.sqlite3`),
+- enumdns report convert --from-file enumdns.sqlite3 --to-file enumdns.txt
+- enumdns report convert --from-file enumdns.sqlite3 --to-file data.jsonl
+- enumdns report convert --from-file enumdns.jsonl --to-file db.sqlite3`),
     PreRunE: func(cmd *cobra.Command, args []string) error {
         var err error
         
@@ -90,10 +91,6 @@ target.`)),
                 log.Error("could not get a database writer up", "err", err)
                 return
             }
-            if err := convertFromJsonlTo(convertCmdFlags.fromFile, writer); err != nil {
-                log.Error("failed to convert to SQLite", "err", err)
-                return
-            }
         } else if convertCmdFlags.toExt == ".jsonl" {
             toFile, err := tools.CreateFileWithDir(convertCmdFlags.toFile)
             if err != nil {
@@ -105,10 +102,36 @@ target.`)),
                 log.Error("could not get a JSON writer up", "err", err)
                 return
             }
-            if err := convertFromDbTo(convertCmdFlags.fromFile, writer); err != nil {
-                log.Error("failed to convert to JSON Lines", "err", err)
+        } else if convertCmdFlags.toExt == ".txt" {
+            toFile, err := tools.CreateFileWithDir(convertCmdFlags.toFile)
+            if err != nil {
+                log.Error("could not create target file", "err", err)
                 return
             }
+            writer, err = writers.NewTextWriter(toFile)
+            if err != nil {
+                log.Error("could not get a JSON writer up", "err", err)
+                return
+            }
+
+        }
+
+        rptWriters = append(rptWriters, writer)
+
+        if convertCmdFlags.fromExt == ".sqlite3" || convertCmdFlags.fromExt == ".db" {
+            if err := convertFromDbTo(convertCmdFlags.fromFile, rptWriters); err != nil {
+                log.Error("failed to convert from SQLite", "err", err)
+                return
+            }
+        } else if convertCmdFlags.fromExt == ".jsonl" {
+            if err := convertFromJsonlTo(convertCmdFlags.fromFile, rptWriters); err != nil {
+                log.Error("failed to convert from JSON Lines", "err", err)
+                return
+            }
+        }
+
+        for _, w := range rptWriters {
+            w.Finish()
         }
     },
 }

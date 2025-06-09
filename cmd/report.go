@@ -16,6 +16,7 @@ import (
     "gorm.io/gorm/clause"
 )
 
+var rptWriters = []writers.Writer{}
 var reportCmd = &cobra.Command{
     Use:   "report",
     Short: "Work with enumdns reports",
@@ -31,7 +32,7 @@ func init() {
 }
 
 
-func convertFromDbTo(from string, writer writers.Writer) error {
+func convertFromDbTo(from string, writers []writers.Writer) error {
 	log.Info("starting conversion...")
 
     var results = []*models.Result{}
@@ -45,16 +46,25 @@ func convertFromDbTo(from string, writer writers.Writer) error {
     }
 
     for _, result := range results {
-        if err := writer.Write(result); err != nil {
-            return err
+        for _, w := range writers {
+            if err := w.Write(result); err != nil {
+                return err
+            }
         }
     }
 
     log.Info("converted from a database", "rows", len(results))
     return nil
 }
-func convertFromJsonlTo(from string, writer writers.Writer) error {
-	log.Info("starting conversion...")
+
+
+func convertFromJsonlTo(from string, writers []writers.Writer) error {
+
+    if len(writers) == 0 {
+        log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
+    }
+
+    log.Info("starting conversion...")
 
     file, err := os.Open(from)
     if err != nil {
@@ -84,9 +94,12 @@ func convertFromJsonlTo(from string, writer writers.Writer) error {
             continue
         }
 
-        if err := writer.Write(&result); err != nil {
-            return err
+        for _, w := range writers {
+            if err := w.Write(&result); err != nil {
+                return err
+            }
         }
+
         c++
 
         if err == io.EOF {

@@ -67,13 +67,15 @@ A --from-file and --elasticsearch-uri must be specified.`)),
             return
         }
 
+        rptWriters = append(rptWriters, writer)
+
         if elkCmdFlags.fromExt == ".sqlite3" || elkCmdFlags.fromExt == ".db" {
-            if err := convertFromDbTo(elkCmdFlags.fromFile, writer); err != nil {
+            if err := convertFromDbTo(elkCmdFlags.fromFile, rptWriters); err != nil {
                 log.Error("failed to convert from SQLite", "err", err)
                 return
             }
         } else if elkCmdFlags.fromExt == ".jsonl" {
-            if err := convertFromJsonlTo(elkCmdFlags.fromFile, writer); err != nil {
+            if err := convertFromJsonlTo(elkCmdFlags.fromFile, rptWriters); err != nil {
                 log.Error("failed to convert from JSON Lines", "err", err)
                 return
             } 
