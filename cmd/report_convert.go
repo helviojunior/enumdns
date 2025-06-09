@@ -76,7 +76,7 @@ target.`)),
         if !tools.SliceHasStr(conversionCmdExtensions, convertCmdFlags.fromExt) {
             return errors.New("unsupported from file type")
         }
-        if !tools.SliceHasStr(conversionCmdExtensions, convertCmdFlags.toExt) {
+        if !tools.SliceHasStr(conversionCmdExtensions, convertCmdFlags.toExt) &&  convertCmdFlags.toExt != ".txt" {
             return errors.New("unsupported to file type")
         }
 

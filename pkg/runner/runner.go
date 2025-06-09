@@ -142,6 +142,18 @@ func ContainsCloudProduct(s string) (bool, string, string) {
     return false, "", ""
 }
 
+func ContainsSaaS(s string) (bool, string, string) {
+    s = strings.Trim(strings.ToLower(s), ". ")
+    for prodName, identifiers := range saas_products {
+    	for _, id := range identifiers {
+	        if strings.Contains(s, strings.ToLower(id)) {
+	            return true, prodName, id
+	        }
+	    }
+    }
+    return false, "", ""
+}
+
 // runWriters takes a result and passes it to writers
 func (run *Runner) runWriters(result *models.Result) error {
 	for _, writer := range run.writers {
@@ -320,6 +332,11 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 							if cc {
 								c1.CloudProduct = prodName
 							}
+							ss, saasName, _ := ContainsSaaS(cname.Target)
+							if ss {
+								c1.SaaSProduct = saasName
+							}
+
 							resList = append(resList, c1)
 
 							m1 := new(dns.Msg)
@@ -342,6 +359,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a1.RType = "A"
 										a1.IPv4 = a.A.String()
 										a1.CloudProduct = c1.CloudProduct
+										a1.SaaSProduct = c1.SaaSProduct
 										if !models.SliceHasResult(resList, a1) {
 											resList = append(resList, a1)
 										}
@@ -352,6 +370,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a1.RType = "A"
 										a1.IPv4 = a.A.String()
 										a1.CloudProduct = c1.CloudProduct
+										a1.SaaSProduct = c1.SaaSProduct
 										if !models.SliceHasResult(resList, a1) {
 											resList = append(resList, a1)
 										}
@@ -367,6 +386,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a2.RType = "AAAA"
 										a2.IPv6 = aaaa.AAAA.String()
 										a2.CloudProduct = c1.CloudProduct
+										a2.SaaSProduct = c1.SaaSProduct
 										if !models.SliceHasResult(resList, a2) {
 											resList = append(resList, a2)
 										}
@@ -377,6 +397,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 										a2.RType = "AAAA"
 										a2.IPv6 = aaaa.AAAA.String()
 										a2.CloudProduct = c1.CloudProduct
+										a2.SaaSProduct = c1.SaaSProduct
 										if !models.SliceHasResult(resList, a2) {
 											resList = append(resList, a2)
 										}
@@ -449,11 +470,16 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 						}
 
 						cc, prodName, _ := ContainsCloudProduct(ptr.Ptr)
+						ss, saasName, _ := ContainsSaaS(ptr.Ptr)
+
 						for _, res := range resList {
 							if res.RType != "PTR" && (res.IPv4 == ip || res.IPv6 == ip) {
 								res.Ptr = ptr.Ptr
 								if cc {
 									res.CloudProduct = prodName
+								}
+								if ss {
+									res.SaaSProduct = saasName
 								}
 							}
 						}

@@ -22,6 +22,7 @@ type Result struct {
 	Ptr                   string    `json:"ptr,omitempty"`
 	Txt                   string    `json:"txt,omitempty"`
 	CloudProduct          string    `json:"cloud_product,omitempty"`
+	SaaSProduct           string    `json:"saas_product,omitempty" gorm:"column:saas_product"`
 	ProbedAt              time.Time `json:"probed_at"`
 
 	DC      	 		  bool   	`json:"dc"`
@@ -46,6 +47,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		Ptr                   string    `json:"ptr,omitempty"`
 		Txt                   string    `json:"txt,omitempty"`
 		CloudProduct          string    `json:"cloud_product,omitempty"`
+		SaaSProduct           string    `json:"saas_product,omitempty"`
 		DC      	 		  bool   	`json:"dc"`
 		GC  	       		  bool   	`json:"gc"`
 		ProbedAt              string    `json:"probed_at"`
@@ -62,6 +64,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		DC 					: result.DC,
 		GC 					: result.GC,
 		CloudProduct 		: result.CloudProduct,
+		SaaSProduct 		: result.SaaSProduct,
 	})
 }
 
@@ -78,6 +81,7 @@ func (result Result) Clone() *Result {
 		DC 					: result.DC,
 		GC 					: result.GC,
 		CloudProduct 		: result.CloudProduct,
+		SaaSProduct 		: result.SaaSProduct,
 		ProbedAt 			: result.ProbedAt,
 		Exists 				: result.Exists,
 		Failed 				: result.Failed,
