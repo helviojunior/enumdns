@@ -81,6 +81,11 @@ func (t *TextWriter) Write(result *models.Result) error {
 	return nil
 }
 
+func (t *TextWriter) WriteFqdn(result *models.FQDN) error {
+	return nil
+}
+
+
 func (t *TextWriter) formatResult(result *models.Result) string {
 
 	r := strings.Trim(strings.ToLower(result.FQDN), ". ")

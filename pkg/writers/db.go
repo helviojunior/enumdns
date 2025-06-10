@@ -50,12 +50,23 @@ func (dw *DbWriter) Write(result *models.Result) error {
 			dw.registers = []models.Result{}
 		}
 	}else{
+		fqdn := result.ToFqdn()
+		if fqdn != nil {
+			dw.WriteFqdn(fqdn)
+		}
+
 		return dw.conn.Create(result).Error
 	}
 
 	return err
 }
 
+func (dw *DbWriter) WriteFqdn(result *models.FQDN) error {
+	dw.mutex.Lock()
+	defer dw.mutex.Unlock()
+	
+	return dw.conn.Create(result).Error
+}
 
 func (dw *DbWriter) Finish() error {
 	return nil

@@ -77,6 +77,10 @@ func (s *MemoryWriter) GetAllResults() []*models.Result {
 	return resultsCopy
 }
 
+func (s *MemoryWriter) WriteFqdn(result *models.FQDN) error {
+	return nil
+}
+
 
 func (s *MemoryWriter) Finish() error {
     return nil

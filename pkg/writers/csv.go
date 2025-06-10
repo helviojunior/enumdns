@@ -87,6 +87,10 @@ func (cw *CsvWriter) Write(result *models.Result) error {
 	return writer.Write(values)
 }
 
+func (cw *CsvWriter) WriteFqdn(result *models.FQDN) error {
+	return nil
+}
+
 // headers returns the headers a CSV file should have.
 func csvHeaders() []string {
 	val := reflect.ValueOf(models.Result{})

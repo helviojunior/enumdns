@@ -13,6 +13,7 @@ import (
     "github.com/helviojunior/enumdns/pkg/database"
     "github.com/helviojunior/enumdns/pkg/writers"
     "github.com/helviojunior/enumdns/pkg/readers"
+    "github.com/helviojunior/enumdns/pkg/models"
     resolver "github.com/helviojunior/gopathresolver"
     "github.com/spf13/cobra"
 )
@@ -136,6 +137,18 @@ multiple writers using the _--writer-*_ flags (see --help).
         }
 
         total = len(dnsSuffix) * len(hostWordList)
+
+        t := time.Now()
+        for _, s := range fqdnList {
+            for _, w := range resolveWriters {
+                fqdn := &models.FQDN{
+                    FQDN      : s,
+                    Source    : "crt.sh",
+                    ProbedAt  : t,
+                }
+                w.WriteFqdn(fqdn)
+            }
+        }
 
         if fqdnOutFile != "" {
             file, err := os.OpenFile(fqdnOutFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)

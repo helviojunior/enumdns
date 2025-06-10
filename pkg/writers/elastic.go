@@ -426,6 +426,10 @@ func (ew *ElasticWriter) Marshal(v any) ([]byte, error) {
     return j_data[:], nil
 }
 
+func (ew *ElasticWriter) WriteFqdn(result *models.FQDN) error {
+    return nil
+}
+
 func (ew *ElasticWriter) Finish() error {
     return nil
 }

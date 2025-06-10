@@ -93,6 +93,29 @@ func (result Result) Clone() *Result {
 	}
 }
 
+type FQDN struct {
+	FQDN                  string    `json:"fqdn" gorm:"primarykey"`
+	Source                string    `json:"source,omitempty" gorm:"column:source"`
+	ProbedAt              time.Time `json:"probed_at"`
+}
+
+func (FQDN) TableName() string {
+    return "fqdn"
+}
+
+func (result Result) ToFqdn() *FQDN {
+
+	if !result.Exists {
+		return nil
+	}
+
+	return &FQDN{
+		FQDN 				: result.FQDN,
+		Source 				: "Enum",
+		ProbedAt 			: result.ProbedAt,
+	}
+}
+
 func (result Result) Equal(r1 Result) bool {
 	if result.RType != r1.RType {
 		return false

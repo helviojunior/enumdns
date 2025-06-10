@@ -50,9 +50,36 @@ func (jw *JsonWriter) Write(result *models.Result) error {
 		return err
 	}
 
+	fqdn := result.ToFqdn()
+	if fqdn != nil {
+		jw.WriteFqdn(fqdn)
+	}
+	
 	return nil
 }
 
+
+func (jw *JsonWriter) WriteFqdn(result *models.FQDN) error {
+
+	j, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+
+	// Open the file in append mode, create it if it doesn't exist
+	file, err := os.OpenFile(jw.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Append the JSON data as a new line
+	if _, err := file.Write(append(j, '\n')); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (jw *JsonWriter)Finish() error {
     return nil

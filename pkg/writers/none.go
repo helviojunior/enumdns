@@ -18,6 +18,10 @@ func (s *NoneWriter) Write(result *models.Result) error {
 	return nil
 }
 
+func (s *NoneWriter)WriteFqdn(result *models.FQDN) error {
+	return nil
+}
+
 func (s *NoneWriter) Finish() error {
     return nil
 }
