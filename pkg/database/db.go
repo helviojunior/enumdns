@@ -72,7 +72,7 @@ func Connection(uri string, shouldExist, debug bool) (*gorm.DB, error) {
 	if err := c.AutoMigrate(
 		&Application{},
 		&models.Result{},
-		&models.FQDN{},
+		&models.FQDNData{},
 	); err != nil {
 		return nil, err
 	}

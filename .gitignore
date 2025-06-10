@@ -5,6 +5,7 @@
 *.dylib
 *.sqlite3
 *.jsonl
+*.txt
 enumdns
 enumdns.exe
 # dep vendor/

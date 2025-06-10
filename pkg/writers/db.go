@@ -6,7 +6,6 @@ import (
 	"github.com/helviojunior/enumdns/pkg/database"
 	"github.com/helviojunior/enumdns/pkg/models"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var hammingThreshold = 10
@@ -26,9 +25,11 @@ func NewDbWriter(uri string, debug bool) (*DbWriter, error) {
 	if err != nil {
 		return nil, err
 	}
+	/*
 	if _, ok := c.Statement.Clauses["ON CONFLICT"]; !ok {
 		c = c.Clauses(clause.OnConflict{UpdateAll: true})
-	}
+	}*/
+
 	return &DbWriter{
 		URI:           uri,
 		conn:          c,
@@ -42,7 +43,7 @@ func (dw *DbWriter) Write(result *models.Result) error {
 	dw.mutex.Lock()
 	defer dw.mutex.Unlock()
 	var err error
-	
+
 	if !result.Exists {
 		dw.registers = append(dw.registers, *result)
 		if len(dw.registers) >= regThreshold {
@@ -50,23 +51,29 @@ func (dw *DbWriter) Write(result *models.Result) error {
 			dw.registers = []models.Result{}
 		}
 	}else{
+		err = dw.conn.CreateInBatches(result, 50).Error
+
+		//err = dw.conn.Table("results").CreateInBatches( []models.Result{ *result }, 50).Error
+		
 		fqdn := result.ToFqdn()
 		if fqdn != nil {
 			// Not call WriteFqdn function because it will cause an deadlock at mutex
-			dw.conn.Create(fqdn)
+			err1 := dw.conn.CreateInBatches(fqdn, 50).Error
+			if err1 != nil  && err == nil{
+				err = err1
+			}
 		}
 
-		return dw.conn.Create(result).Error
 	}
 
 	return err
 }
 
-func (dw *DbWriter) WriteFqdn(result *models.FQDN) error {
+func (dw *DbWriter) WriteFqdn(fqdn *models.FQDNData) error {
 	dw.mutex.Lock()
 	defer dw.mutex.Unlock()
 	
-	return dw.conn.Create(result).Error
+	return dw.conn.Create(fqdn).Error
 }
 
 func (dw *DbWriter) Finish() error {

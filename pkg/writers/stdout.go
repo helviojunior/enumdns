@@ -61,7 +61,7 @@ func (s *StdoutWriter) Write(result *models.Result) error {
 	return nil
 }
 
-func (s *StdoutWriter) WriteFqdn(result *models.FQDN) error {
+func (s *StdoutWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 

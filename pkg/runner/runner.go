@@ -14,6 +14,7 @@ import (
 	"math/rand/v2"
 	"os/signal"
     "syscall"
+    "reflect"
     //"strconv"
 
     "golang.org/x/term"
@@ -170,6 +171,7 @@ func ContainsDatacenter(s string) (bool, string, string) {
 func (run *Runner) runWriters(result *models.Result) error {
 	for _, writer := range run.writers {
 		if err := writer.Write(result); err != nil {
+			run.log.Debug("Error at writer", "type", reflect.TypeOf(writer).Name(), "err", err)
 			return err
 		}
 	}

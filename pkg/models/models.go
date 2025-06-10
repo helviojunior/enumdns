@@ -3,38 +3,59 @@ package models
 import (
 	"time"
 	"encoding/json"
-	//"fmt"
 	"strings"
 
+	"fmt"
+	"crypto/sha1"
+	"encoding/hex"
+
 	"github.com/helviojunior/enumdns/internal/tools"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Result is a github.com/helviojunior/enumdnsenumdns result
 type Result struct {
 	ID uint `json:"id" gorm:"primarykey"`
 
-	TestId                string    `json:"test_id"`
-	FQDN                  string    `json:"fqdn" gorm:"index:idx_exists"`
-	RType                 string    `json:"result_type"`
-	IPv4                  string    `json:"ipv4,omitempty"`
-	IPv6                  string    `json:"ipv6,omitempty"`
-	Target                string    `json:"target,omitempty"`
-	Ptr                   string    `json:"ptr,omitempty"`
-	Txt                   string    `json:"txt,omitempty"`
-	CloudProduct          string    `json:"cloud_product,omitempty"`
-	SaaSProduct           string    `json:"saas_product,omitempty" gorm:"column:saas_product"`
-	Datacenter            string    `json:"datacenter,omitempty" gorm:"column:datacenter"`
-	ProbedAt              time.Time `json:"probed_at"`
+	TestId                string    `gorm:"column:test_id"`
+	Hash				  string    `gorm:"column:hash;index:,unique;"`
+	FQDN                  string    `gorm:"column:fqdn"`
+	RType                 string    `gorm:"column:result_type"`
+	IPv4                  string    `gorm:"column:ipv4"`
+	IPv6                  string    `gorm:"column:ipv6"`
+	Target                string    `gorm:"column:target"`
+	Ptr                   string    `gorm:"column:ptr"`
+	Txt                   string    `gorm:"column:txt"`
+	CloudProduct          string    `gorm:"column:cloud_product"`
+	SaaSProduct           string    `gorm:"column:saas_product"`
+	Datacenter            string    `gorm:"column:datacenter"`
+	ProbedAt              time.Time `gorm:"column:probed_at"`
 
-	DC      	 		  bool   	`json:"dc"`
-	GC  	       		  bool   	`json:"gc"`
+	DC      	 		  bool   	`gorm:"column:dc"`
+	GC  	       		  bool   	`gorm:"column:gc"`
 
-	Exists       		  bool   	`json:"exists"`
+	Exists       		  bool   	`gorm:"column:exists"`
 
 	// Failed flag set if the result should be considered failed
-	Failed       bool   `json:"failed" gorm:"index:idx_exists"`
-	FailedReason string `json:"failed_reason,omitempty"`
+	Failed       bool   `gorm:"column:failed" gorm:"index:idx_exists"`
+	FailedReason string `gorm:"column:failed_reason"`
 
+}
+
+func (*Result) TableName() string {
+    return "results"
+}
+
+func (result *Result) BeforeCreate(tx *gorm.DB) (err error) {
+	_calcHash(&result.Hash, result.String())
+
+	tx.Statement.AddClause(clause.OnConflict{
+		//Columns:   cols,
+		Columns:   []clause.Column{{Name: "hash"}},
+		UpdateAll: true,
+	})
+	return nil
 }
 
 /* Custom Marshaller for Result */
@@ -93,24 +114,38 @@ func (result Result) Clone() *Result {
 	}
 }
 
-type FQDN struct {
-	FQDN                  string    `json:"fqdn" gorm:"primarykey"`
-	Source                string    `json:"source,omitempty" gorm:"column:source"`
-	ProbedAt              time.Time `json:"probed_at"`
+type FQDNData struct {
+	ID uint `json:"id" gorm:"primarykey"`
+
+	Hash				  string    `gorm:"column:hash;index:,unique;"`
+	FQDN                  string    `gorm:"column:fqdn"`
+	Source                string    `gorm:"column:source"`
+	ProbedAt              time.Time `gorm:"column:probed_at"`
 }
 
-func (FQDN) TableName() string {
-    return "fqdn"
+func (*FQDNData) TableName() string {
+    return "fqdn_results"
 }
 
-func (result Result) ToFqdn() *FQDN {
+func (fqdn *FQDNData) BeforeCreate(tx *gorm.DB) (err error) {
+	_calcHash(&fqdn.Hash, fqdn.FQDN)
+
+	tx.Statement.AddClause(clause.OnConflict{
+		//Columns:   cols,
+		Columns:   []clause.Column{{Name: "hash"}},
+		DoNothing: true,
+	})
+	return nil
+}
+
+func (result Result) ToFqdn() *FQDNData {
 
 	if !result.Exists {
 		return nil
 	}
 
-	return &FQDN{
-		FQDN 				: result.FQDN,
+	return &FQDNData{
+		FQDN 				: strings.Trim(strings.ToLower(result.FQDN), ". "),
 		Source 				: "Enum",
 		ProbedAt 			: result.ProbedAt,
 	}
@@ -275,4 +310,23 @@ func SliceHasResult(s []*Result, r *Result) bool {
     	}*/
     }
     return false
+}
+
+
+func _calcHash(outValue *string, keyvals ...interface{}) {
+
+	data := ""
+	for _, v := range keyvals {
+		if _, ok := v.(int); ok {
+			data += fmt.Sprintf("%d,", v)
+		}else{
+			data += fmt.Sprintf("%s,", v)
+		}
+	}
+
+	h := sha1.New()
+	h.Write([]byte(data))
+
+	*outValue = hex.EncodeToString(h.Sum(nil))
+
 }

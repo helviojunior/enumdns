@@ -18,7 +18,7 @@ func (s *NoneWriter) Write(result *models.Result) error {
 	return nil
 }
 
-func (s *NoneWriter)WriteFqdn(result *models.FQDN) error {
+func (s *NoneWriter)WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 

@@ -14,9 +14,10 @@ require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/net v0.31.0
 	golang.org/x/sys v0.30.0
+	golang.org/x/term v0.26.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.30.0
 )
 
 require (
@@ -59,7 +60,6 @@ require (
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/tools v0.22.0 // indirect
 	modernc.org/libc v1.22.5 // indirect

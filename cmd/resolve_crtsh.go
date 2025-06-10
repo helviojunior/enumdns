@@ -49,6 +49,11 @@ multiple writers using the _--writer-*_ flags (see --help).
         // An slog-capable logger to use with drivers and runners
         logger := slog.New(log.Logger)
 
+
+        if len(resolveWriters) == 0 {
+            log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
+        }
+
         // Get the runner up. Basically, all of the subcommands will use this.
         bruteRunner, err = runner.NewRunner(logger, *opts, resolveWriters)
         if err != nil {
@@ -138,10 +143,11 @@ multiple writers using the _--writer-*_ flags (see --help).
 
         total = len(dnsSuffix) * len(hostWordList)
 
+        
         t := time.Now()
         for _, s := range fqdnList {
             for _, w := range resolveWriters {
-                fqdn := &models.FQDN{
+                fqdn := &models.FQDNData{
                     FQDN      : s,
                     Source    : "crt.sh",
                     ProbedAt  : t,
@@ -214,6 +220,12 @@ multiple writers using the _--writer-*_ flags (see --help).
 
         bruteRunner.Run(total)
         bruteRunner.Close()
+
+        for _, writer := range resolveWriters {
+            writer.Finish()
+        }
+
+        log.Info("Execution done!")
     },
 }
 

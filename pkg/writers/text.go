@@ -81,7 +81,7 @@ func (t *TextWriter) Write(result *models.Result) error {
 	return nil
 }
 
-func (t *TextWriter) WriteFqdn(result *models.FQDN) error {
+func (t *TextWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 

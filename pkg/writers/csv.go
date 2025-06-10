@@ -87,7 +87,7 @@ func (cw *CsvWriter) Write(result *models.Result) error {
 	return writer.Write(values)
 }
 
-func (cw *CsvWriter) WriteFqdn(result *models.FQDN) error {
+func (cw *CsvWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 

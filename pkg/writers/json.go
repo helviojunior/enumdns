@@ -50,16 +50,17 @@ func (jw *JsonWriter) Write(result *models.Result) error {
 		return err
 	}
 
+	/*
 	fqdn := result.ToFqdn()
 	if fqdn != nil {
 		jw.WriteFqdn(fqdn)
-	}
+	}*/
 	
 	return nil
 }
 
 
-func (jw *JsonWriter) WriteFqdn(result *models.FQDN) error {
+func (jw *JsonWriter) WriteFqdn(result *models.FQDNData) error {
 
 	j, err := json.Marshal(result)
 	if err != nil {
