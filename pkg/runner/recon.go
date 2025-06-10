@@ -140,26 +140,34 @@ func (run *Recon) Run(total int) {
 
 					//Check if has LDAP registers
 					//nslookup -q=SRV _ldap._tcp.sec4us.com.br
-					results := run.Probe("_ldap._tcp." + soa)
+					logger.Debug("Getting _ldap._tcp...")
+					results := run.Probe("_ldap._tcp." + soa, &[]uint16{ dns.TypeSRV, dns.TypeA })
 					isAD := false
 					if run.Running {
 						for _, res := range results {
-        					isAD = true
-        					if res.RType == "SRV" {
-        						res.DC = true
-        					}
+							if res.Exists {
+								logger.Debug("Result (_ldap._tcp...)", "target", res)
+	        					if res.RType == "SRV" && res.Target != "" {
+	        						isAD = true
+	        						res.DC = true
+	        					}
+	        					if res.RType == "A" && res.IPv4 != "" {
+	        						isAD = true
+	        					}
+	        				}
                         }
                     }
 
+                    logger.Debug("Is AD?", "ad", isAD)
                     if isAD {
-                    	resultsAd := run.Probe("_gc._tcp." + soa)
+                    	resultsAd := run.Probe("_gc._tcp." + soa, nil)
                     	cnt := len(strings.Split(strings.Trim(soa, ". "), "."))
 						if run.Running {
 
 							if len(resultsAd) == 0 || (len(resultsAd) == 1 && resultsAd[0].Exists == false) { // May be it is not a root domain
 								p := strings.Split(strings.Trim(soa, ". "), ".")
 								d1 := strings.Join(p[1:], ".") + "."
-								resultsAd = run.Probe("_gc._tcp." + d1)
+								resultsAd = run.Probe("_gc._tcp." + d1, nil)
 							} 
 
 							for _, res := range resultsAd {
@@ -197,7 +205,8 @@ func (run *Recon) Run(total int) {
 
                     }
 
-					resultsGeneral := run.Probe(soa)
+                    logger.Debug("Getting data by SOA", "soa", soa)
+					resultsGeneral := run.Probe(soa, nil)
 					if isAD {
 						for _, res := range resultsGeneral {
 	    					if !models.SliceHasResult(results, res) {
@@ -208,10 +217,12 @@ func (run *Recon) Run(total int) {
 						results = resultsGeneral
 					}
 
+					logger.Debug("Sorting results")
 					sort.Slice(results[:], func(i, j int) bool {
 					  return results[i].GetCompHash() < results[j].GetCompHash()
 					})
 					
+					logger.Debug("Writting results to DB")
 					for _, res := range results {
     					if err := run.runWriters(res); err != nil {
     						logger.Error("failed to write result", "err", err)
@@ -268,7 +279,7 @@ func (run *Recon) GetSOAName(host string) (string, error) {
 
 }
 
-func (run *Recon) Probe(host string) []*models.Result {
+func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 	host = strings.Trim(host, ". ")
 	host = strings.ToLower(host) + "."
 
@@ -285,7 +296,13 @@ func (run *Recon) Probe(host string) []*models.Result {
 	ips := []string{}
 	names := []string{}
 
-    for _, t := range run.searchOrder {
+	searchTypes := run.searchOrder
+
+	if customTypes != nil && len(*customTypes) > 0 {
+		searchTypes = *customTypes
+	}
+
+    for _, t := range searchTypes {
     	tName := dns.Type(t).String()
     	logger := run.log.With("FQDN", host, "Type", tName)
     	resultBase.RType = tName
@@ -299,6 +316,7 @@ func (run *Recon) Probe(host string) []*models.Result {
 
 			//m.Question = make([]dns.Question, 1)
 			//m.Question[0] = dns.Question{host, t, dns.ClassINET}
+			logger.Debug("Quering", "host", host, "type", t)
 			m.SetQuestion(host, t)
 
 			//r, err := dns.Exchange(m, run.dnsServer); 

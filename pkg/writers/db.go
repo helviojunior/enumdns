@@ -52,7 +52,8 @@ func (dw *DbWriter) Write(result *models.Result) error {
 	}else{
 		fqdn := result.ToFqdn()
 		if fqdn != nil {
-			dw.WriteFqdn(fqdn)
+			// Not call WriteFqdn function because it will cause an deadlock at mutex
+			dw.conn.Create(fqdn)
 		}
 
 		return dw.conn.Create(result).Error

@@ -152,6 +152,7 @@ func Execute() {
         log.Warn("interrupted, shutting down...                            ")
         ascii.ClearLine()
         fmt.Printf("\n")
+        tools.RemoveFolder(tempFolder)
         os.Exit(2)
     }()
 
