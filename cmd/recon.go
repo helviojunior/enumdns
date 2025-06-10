@@ -53,7 +53,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         // a runner instance.
 
         //The first one is the general writer (global user)
-        w, err := writers.NewDbWriter("sqlite:///" + opts.Writer.UserPath +"/.enumdns.db", false)
+        w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, false)
         if err != nil {
             return err
         }

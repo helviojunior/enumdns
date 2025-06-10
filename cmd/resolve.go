@@ -52,7 +52,7 @@ Perform resolver operations.
         // a runner instance.
 
         //The first one is the general writer (global user)
-        w, err := writers.NewDbWriter(controlDb, false)
+        w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, false)
         if err != nil {
             return err
         }

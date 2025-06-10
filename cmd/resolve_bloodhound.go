@@ -147,7 +147,7 @@ Perform resolver operations.
         log.Warnf("Enumerating %s DNS hosts", tools.FormatInt(total))
 
         // Check runned items
-        conn, _ := database.Connection(controlDb, true, false)
+        conn, _ := database.Connection(opts.Writer.CtrlDbURI, true, false)
 
         go func() {
             defer close(resolveRunner.Targets)

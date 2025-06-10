@@ -27,6 +27,7 @@ type Options struct {
 
     Quick bool
     StoreTempAsWorkspace bool
+    LocalWorkspace bool
 }
 
 // Logging is log related options
@@ -56,6 +57,7 @@ type Writer struct {
     Stdout    bool
     None      bool
     NoControlDb bool
+    CtrlDbURI string
 }
 
 // DNS Over HTTPs related options

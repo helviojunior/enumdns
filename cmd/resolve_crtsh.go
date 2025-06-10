@@ -178,7 +178,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         }
 
         // Check runned items
-        conn, _ := database.Connection(controlDb, true, false)
+        conn, _ := database.Connection(opts.Writer.CtrlDbURI, true, false)
 
         go func() {
             defer close(bruteRunner.Targets)

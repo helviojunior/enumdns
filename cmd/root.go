@@ -26,7 +26,6 @@ var (
 	fileOptions = &readers.FileReaderOptions{}
 	tProxy = ""
 	forceCheck = false
-	controlDb = ""
 	tempFolder = ""
 )
 
@@ -52,29 +51,6 @@ var rootCmd = &cobra.Command{
    - enumdns resolve file -L /tmp/host_list.txt --write-db`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		
-		usr, err := user.Current()
-	    if err != nil {
-	       return err
-	    }
-
-	    opts.Writer.UserPath = usr.HomeDir
-
-	    controlDb = "sqlite:///" + opts.Writer.UserPath +"/.enumdns.db"
-
-        basePath := ""
-        if opts.StoreTempAsWorkspace {
-            basePath = "./"
-        }
-
-        if tempFolder, err = tools.CreateDir(tools.TempFileName(basePath, "enumdns_", "")); err != nil {
-            log.Error("error creatting temp folder", "err", err)
-            os.Exit(2)
-        }
-
-        if opts.Writer.NoControlDb {
-            controlDb = "sqlite:///"+ tools.TempFileName(tempFolder, "enumdns_", ".db")
-        }
-
 	    if cmd.CalledAs() != "version" && !opts.Logging.Silence {
 			fmt.Println(ascii.Logo())
 		}
@@ -87,6 +63,40 @@ var rootCmd = &cobra.Command{
 			log.EnableDebug()
 			log.Debug("debug logging enabled")
 		}
+
+
+		usr, err := user.Current()
+	    if err != nil {
+	       return err
+	    }
+
+	    opts.Writer.UserPath = usr.HomeDir
+
+	    opts.Writer.CtrlDbURI = "sqlite:///" + opts.Writer.UserPath +"/.enumdns.db"
+
+        basePath := ""
+        if opts.StoreTempAsWorkspace {
+            basePath = "./"
+        }
+
+        if tempFolder, err = tools.CreateDir(tools.TempFileName(basePath, "enumdns_", "")); err != nil {
+            log.Error("error creatting temp folder", "err", err)
+            os.Exit(2)
+        }
+
+        if opts.LocalWorkspace {
+        	tmp, err := resolver.ResolveFullPath("./enumdns_ctrl.db")
+	        if err != nil {
+	            return err
+	        }
+
+	        opts.Writer.CtrlDbURI = "sqlite:///" + tmp
+	        log.Info("Control DB", "Path", tmp)
+        }
+
+        if opts.Writer.NoControlDb {
+            opts.Writer.CtrlDbURI = "sqlite:///"+ tools.TempFileName(tempFolder, "enumdns_", ".db")
+        }
 
         if opts.Writer.TextFile != "" {
 
@@ -216,6 +226,7 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVar(&opts.Writer.NoControlDb, "disable-control-db", false, "Disable utilization of database ~/.enumdns.db.")
     rootCmd.PersistentFlags().BoolVar(&opts.StoreTempAsWorkspace, "local-temp", false, "Use execution path to store temp files")
+    rootCmd.PersistentFlags().BoolVar(&opts.LocalWorkspace, "local-workspace", false, "Use execution path to store .enumdns.db intead of user home")
 
     // Write options for scan subcommands
     rootCmd.PersistentFlags().BoolVar(&opts.Writer.Db, "write-db", false, "Write results to a SQLite database")

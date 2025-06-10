@@ -53,7 +53,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         // a runner instance.
 
         //The first one is the general writer (global user)
-        w, err := writers.NewDbWriter(controlDb, false)
+        w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, false)
         if err != nil {
             return err
         }
@@ -200,7 +200,7 @@ multiple writers using the _--writer-*_ flags (see --help).
         log.Infof("Enumerating %s DNS hosts", tools.FormatInt(total))
 
         // Check runned items
-        conn, _ := database.Connection(controlDb, true, false)
+        conn, _ := database.Connection(opts.Writer.CtrlDbURI, true, false)
 
         go func() {
             defer close(bruteRunner.Targets)
