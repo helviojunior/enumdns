@@ -26,6 +26,7 @@ var (
 	fileOptions = &readers.FileReaderOptions{}
 	tProxy = ""
 	forceCheck = false
+	controlDb = ""
 )
 
 var rootCmd = &cobra.Command{
@@ -56,6 +57,8 @@ var rootCmd = &cobra.Command{
 	    }
 
 	    opts.Writer.UserPath = usr.HomeDir
+
+	    controlDb = "sqlite:///" + opts.Writer.UserPath +"/.enumdns.db"
 
 	    if cmd.CalledAs() != "version" && !opts.Logging.Silence {
 			fmt.Println(ascii.Logo())

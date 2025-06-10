@@ -163,19 +163,19 @@ func (result Result) String() string {
 		prod := ""
 		
 		if result.CloudProduct != "" {
-			r += "Cloud = " + result.CloudProduct
+			prod += "Cloud = " + result.CloudProduct
 		}
 		if result.SaaSProduct != "" {
 			if prod != "" {
 				prod += ", "
 			}
-			r += "SaaS = " + result.SaaSProduct
+			prod += "SaaS = " + result.SaaSProduct
 		}
 		if result.Datacenter != "" {
 			if prod != "" {
 				prod += ", "
 			}
-			r += "Datacenter = " + result.Datacenter
+			prod += "Datacenter = " + result.Datacenter
 		}
 
 		r += " (" + prod + ")"
