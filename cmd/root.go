@@ -27,6 +27,7 @@ var (
 	tProxy = ""
 	forceCheck = false
 	controlDb = ""
+	tempFolder = ""
 )
 
 var rootCmd = &cobra.Command{
@@ -59,6 +60,20 @@ var rootCmd = &cobra.Command{
 	    opts.Writer.UserPath = usr.HomeDir
 
 	    controlDb = "sqlite:///" + opts.Writer.UserPath +"/.enumdns.db"
+
+        basePath := ""
+        if opts.StoreTempAsWorkspace {
+            basePath = "./"
+        }
+
+        if tempFolder, err = tools.CreateDir(tools.TempFileName(basePath, "enumdns_", "")); err != nil {
+            log.Error("error creatting temp folder", "err", err)
+            os.Exit(2)
+        }
+
+        if opts.Writer.NoControlDb {
+            controlDb = "sqlite:///"+ tools.TempFileName(tempFolder, "enumdns_", ".db")
+        }
 
 	    if cmd.CalledAs() != "version" && !opts.Logging.Silence {
 			fmt.Println(ascii.Logo())
@@ -166,6 +181,7 @@ func Execute() {
 
 	//Time to wait the logger flush
 	time.Sleep(time.Second/4)
+    tools.RemoveFolder(tempFolder)
     ascii.ShowCursor()
     fmt.Printf("\n")
 }
@@ -196,6 +212,9 @@ func init() {
     // "Threads" & other
     rootCmd.PersistentFlags().IntVarP(&opts.Scan.Threads, "threads", "t", 6, "Number of concurrent threads (goroutines) to use")
     rootCmd.PersistentFlags().IntVarP(&opts.Scan.Timeout, "timeout", "T", 60, "Number of seconds before considering a page timed out")
+
+	rootCmd.PersistentFlags().BoolVar(&opts.Writer.NoControlDb, "disable-control-db", false, "Disable utilization of database ~/.enumdns.db.")
+    rootCmd.PersistentFlags().BoolVar(&opts.StoreTempAsWorkspace, "local-temp", false, "Use execution path to store temp files")
 
     // Write options for scan subcommands
     rootCmd.PersistentFlags().BoolVar(&opts.Writer.Db, "write-db", false, "Write results to a SQLite database")
