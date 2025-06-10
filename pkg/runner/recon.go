@@ -339,6 +339,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							if ss {
 								c1.SaaSProduct = saasName
 							}
+							dc, dcName, _ := ContainsDatacenter(soa.Hdr.Name)
+							if dc {
+								c1.Datacenter = dcName
+							}
 							resList = append(resList, c1)
 
 						}
@@ -375,6 +379,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							if ss {
 								c1.SaaSProduct = saasName
 							}
+							dc, dcName, _ := ContainsDatacenter(cname.Target)
+							if dc {
+								c1.Datacenter = dcName
+							}
 							resList = append(resList, c1)
 						}
 						run.appendName(&names, cname.Target)
@@ -395,6 +403,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							ss, saasName, _ := ContainsSaaS(srv.Target)
 							if ss {
 								c1.SaaSProduct = saasName
+							}
+							dc, dcName, _ := ContainsDatacenter(srv.Target)
+							if dc {
+								c1.Datacenter = dcName
 							}
 							resList = append(resList, c1)
 						}
@@ -417,6 +429,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							if ss {
 								c1.SaaSProduct = saasName
 							}
+							dc, dcName, _ := ContainsDatacenter(mx.Mx)
+							if dc {
+								c1.Datacenter = dcName
+							}
 							resList = append(resList, c1)
 						}
 						run.appendName(&names, mx.Mx)
@@ -437,6 +453,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							ss, saasName, _ := ContainsSaaS(ns.Ns)
 							if ss {
 								c1.SaaSProduct = saasName
+							}
+							dc, dcName, _ := ContainsDatacenter(ns.Ns)
+							if dc {
+								c1.Datacenter = dcName
 							}
 							resList = append(resList, c1)
 						}
@@ -511,12 +531,16 @@ func (run *Recon) Probe(host string) []*models.Result {
 
 						cc, prodName, _ := ContainsCloudProduct(ptr.Ptr)
 						ss, saasName, _ := ContainsSaaS(ptr.Ptr)
-						
+						dc, dcName, _ := ContainsDatacenter(ptr.Ptr)
+
 						if cc {
 							a2.CloudProduct = prodName
 						}
 						if ss {
 							a2.SaaSProduct = saasName
+						}
+						if dc {
+							a2.Datacenter = dcName
 						}
 
 						if !models.SliceHasResult(resList, a2) {
@@ -532,6 +556,9 @@ func (run *Recon) Probe(host string) []*models.Result {
 								}
 								if ss {
 									res.SaaSProduct = saasName
+								}
+								if dc {
+									res.Datacenter = dcName
 								}
 							}
 						}

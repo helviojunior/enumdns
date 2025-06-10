@@ -125,8 +125,26 @@ func (t *TextWriter) formatResult(result *models.Result) string {
 			r += result.Ptr
 		}
 	}
-	if result.CloudProduct != "" {
-		r += " (Cloud = " + result.CloudProduct + ")"
+	if result.CloudProduct != "" || result.SaaSProduct != "" || result.Datacenter != "" {
+		prod := ""
+		
+		if result.CloudProduct != "" {
+			r += "Cloud = " + result.CloudProduct
+		}
+		if result.SaaSProduct != "" {
+			if prod != "" {
+				prod += ", "
+			}
+			r += "SaaS = " + result.SaaSProduct
+		}
+		if result.Datacenter != "" {
+			if prod != "" {
+				prod += ", "
+			}
+			r += "Datacenter = " + result.Datacenter
+		}
+
+		r += " (" + prod + ")"
 	}
 	if result.DC || result.GC {
 		ad := []string{}

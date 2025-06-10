@@ -23,6 +23,7 @@ type Result struct {
 	Txt                   string    `json:"txt,omitempty"`
 	CloudProduct          string    `json:"cloud_product,omitempty"`
 	SaaSProduct           string    `json:"saas_product,omitempty" gorm:"column:saas_product"`
+	Datacenter            string    `json:"datacenter,omitempty" gorm:"column:datacenter"`
 	ProbedAt              time.Time `json:"probed_at"`
 
 	DC      	 		  bool   	`json:"dc"`
@@ -48,6 +49,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		Txt                   string    `json:"txt,omitempty"`
 		CloudProduct          string    `json:"cloud_product,omitempty"`
 		SaaSProduct           string    `json:"saas_product,omitempty"`
+		Datacenter            string    `json:"datacenter,omitempty"`
 		DC      	 		  bool   	`json:"dc"`
 		GC  	       		  bool   	`json:"gc"`
 		ProbedAt              string    `json:"probed_at"`
@@ -65,6 +67,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		GC 					: result.GC,
 		CloudProduct 		: result.CloudProduct,
 		SaaSProduct 		: result.SaaSProduct,
+		Datacenter 		    : result.Datacenter,
 	})
 }
 
@@ -82,6 +85,7 @@ func (result Result) Clone() *Result {
 		GC 					: result.GC,
 		CloudProduct 		: result.CloudProduct,
 		SaaSProduct 		: result.SaaSProduct,
+		Datacenter 		    : result.Datacenter,
 		ProbedAt 			: result.ProbedAt,
 		Exists 				: result.Exists,
 		Failed 				: result.Failed,
@@ -155,8 +159,26 @@ func (result Result) String() string {
 			r += result.Ptr
 		}
 	}
-	if result.CloudProduct != "" {
-		r += " (Cloud = " + result.CloudProduct + ")"
+	if result.CloudProduct != "" || result.SaaSProduct != "" || result.Datacenter != "" {
+		prod := ""
+		
+		if result.CloudProduct != "" {
+			r += "Cloud = " + result.CloudProduct
+		}
+		if result.SaaSProduct != "" {
+			if prod != "" {
+				prod += ", "
+			}
+			r += "SaaS = " + result.SaaSProduct
+		}
+		if result.Datacenter != "" {
+			if prod != "" {
+				prod += ", "
+			}
+			r += "Datacenter = " + result.Datacenter
+		}
+
+		r += " (" + prod + ")"
 	}
 	if result.DC || result.GC {
 		ad := []string{}
