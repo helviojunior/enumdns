@@ -335,6 +335,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							if cc {
 								c1.CloudProduct = prodName
 							}
+							ss, saasName, _ := ContainsSaaS(soa.Hdr.Name)
+							if ss {
+								c1.SaaSProduct = saasName
+							}
 							resList = append(resList, c1)
 
 						}
@@ -367,6 +371,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							if cc {
 								c1.CloudProduct = prodName
 							}
+							ss, saasName, _ := ContainsSaaS(cname.Target)
+							if ss {
+								c1.SaaSProduct = saasName
+							}
 							resList = append(resList, c1)
 						}
 						run.appendName(&names, cname.Target)
@@ -383,6 +391,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							cc, prodName, _ := ContainsCloudProduct(srv.Target)
 							if cc {
 								c1.CloudProduct = prodName
+							}
+							ss, saasName, _ := ContainsSaaS(srv.Target)
+							if ss {
+								c1.SaaSProduct = saasName
 							}
 							resList = append(resList, c1)
 						}
@@ -401,6 +413,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							if cc {
 								c1.CloudProduct = prodName
 							}
+							ss, saasName, _ := ContainsSaaS(mx.Mx)
+							if ss {
+								c1.SaaSProduct = saasName
+							}
 							resList = append(resList, c1)
 						}
 						run.appendName(&names, mx.Mx)
@@ -417,6 +433,10 @@ func (run *Recon) Probe(host string) []*models.Result {
 							cc, prodName, _ := ContainsCloudProduct(ns.Ns)
 							if cc {
 								c1.CloudProduct = prodName
+							}
+							ss, saasName, _ := ContainsSaaS(ns.Ns)
+							if ss {
+								c1.SaaSProduct = saasName
 							}
 							resList = append(resList, c1)
 						}
@@ -488,16 +508,30 @@ func (run *Recon) Probe(host string) []*models.Result {
 							a2.IPv4 = ip
 						}
 						a2.Ptr = arpa
+
+						cc, prodName, _ := ContainsCloudProduct(ptr.Ptr)
+						ss, saasName, _ := ContainsSaaS(ptr.Ptr)
+						
+						if cc {
+							a2.CloudProduct = prodName
+						}
+						if ss {
+							a2.SaaSProduct = saasName
+						}
+
 						if !models.SliceHasResult(resList, a2) {
 							resList = append(resList, a2)
 						}
 
-						cc, prodName, _ := ContainsCloudProduct(ptr.Ptr)
+						
 						for _, res := range resList {
 							if res.RType != "PTR" && (res.IPv4 == ip || res.IPv6 == ip) {
 								res.Ptr = ptr.Ptr
 								if cc {
 									res.CloudProduct = prodName
+								}
+								if ss {
+									res.SaaSProduct = saasName
 								}
 							}
 						}

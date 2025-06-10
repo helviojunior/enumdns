@@ -465,12 +465,20 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 							a2.IPv4 = ip
 						}
 						a2.Ptr = arpa
-						if !models.SliceHasResult(resList, a2) {
-							resList = append(resList, a2)
-						}
 
 						cc, prodName, _ := ContainsCloudProduct(ptr.Ptr)
 						ss, saasName, _ := ContainsSaaS(ptr.Ptr)
+
+						if cc {
+							a2.CloudProduct = prodName
+						}
+						if ss {
+							a2.SaaSProduct = saasName
+						}
+
+						if !models.SliceHasResult(resList, a2) {
+							resList = append(resList, a2)
+						}
 
 						for _, res := range resList {
 							if res.RType != "PTR" && (res.IPv4 == ip || res.IPv6 == ip) {
