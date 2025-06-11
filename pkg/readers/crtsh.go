@@ -3,7 +3,7 @@ package readers
 import (
 	"fmt"
 	"net/url"
-	//"strconv"
+	"errors"
 	"strings"
 
 	"io"
@@ -55,7 +55,7 @@ func (crtr *CrtShReader) ReadFromCrtsh(domain string, outList *[]string, fqdnLis
 		}
 	}
 
-	resp, err := client.Get(crtUrl)
+	resp, err := crtr.fetchWithRetry(client, crtUrl) // client.Get(crtUrl)
 	if err != nil {
 		return err
 	}
@@ -100,3 +100,21 @@ func (crtr *CrtShReader) ReadFromCrtsh(domain string, outList *[]string, fqdnLis
 	return nil
 }
 
+func (crtr *CrtShReader) fetchWithRetry(client *http.Client, crtUrl string) (*http.Response, error) {
+	var resp *http.Response
+	var err error
+
+	maxRetries := 3
+
+	for i := 0; i < maxRetries; i++ {
+		resp, err = client.Get(crtUrl)
+		if err == nil {
+			return resp, nil
+		}
+		if i < maxRetries-1 {
+			time.Sleep(time.Second * time.Duration(10 * i))
+		}
+	}
+
+	return nil, errors.New("failed after 3 retries: " + err.Error())
+}
