@@ -482,28 +482,32 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 					}
 
 					//IPv4
-					a, ok := ans.(*dns.A)
-					if ok {
-						logger.Debug("A", "IP", a.A.String())
-						ips = append(ips, a.A.String())
-						a1 := resultBase.Clone()
-						a1.RType = "A"
-						a1.IPv4 = a.A.String()
-						if !models.SliceHasResult(resList, a1) {
-							resList = append(resList, a1)
+					if t == dns.TypeA {
+						a, ok := ans.(*dns.A)
+						if ok {
+							logger.Debug("A", "IP", a.A.String())
+							ips = append(ips, a.A.String())
+							a1 := resultBase.Clone()
+							a1.RType = "A"
+							a1.IPv4 = a.A.String()
+							if !models.SliceHasResult(resList, a1) {
+								resList = append(resList, a1)
+							}
 						}
 					}
 
 					//IPv6
-					aaaa, ok := ans.(*dns.AAAA)
-					if ok {
-						logger.Debug("AAAA", "IP", aaaa.AAAA.String())
-						ips = append(ips, aaaa.AAAA.String())
-						a2 := resultBase.Clone()
-						a2.RType = "AAAA"
-						a2.IPv6 = aaaa.AAAA.String()
-						if !models.SliceHasResult(resList, a2) {
-							resList = append(resList, a2)
+					if t == dns.TypeAAAA {
+						aaaa, ok := ans.(*dns.AAAA)
+						if ok {
+							logger.Debug("AAAA", "IP", aaaa.AAAA.String())
+							ips = append(ips, aaaa.AAAA.String())
+							a2 := resultBase.Clone()
+							a2.RType = "AAAA"
+							a2.IPv6 = aaaa.AAAA.String()
+							if !models.SliceHasResult(resList, a2) {
+								resList = append(resList, a2)
+							}
 						}
 					}
 
