@@ -36,7 +36,7 @@ var saas_products = map[string][]string{
     "Registro.BR": []string { "dns.br" },
     "Trend Micro Email Security": []string { "tmes.trendmicro.com" },
     "Wix": []string{ "wixsite.com", "wixdns.net" },
-    "Github": []string{ "github.io" },
+    "Github": []string{ "github.io", "github.com" },
     "SalesForce": []string{ "exacttarget.com" },
     "Shopify": []string{ "myshopify.com" },
 }
