@@ -17,6 +17,8 @@ build/
 # screenshots dir
 screenshots/
 
+# ASN Table
+
 # Test binary, build with `go test -c`
 *.test
 

@@ -40,8 +40,16 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y \
-            ca-certificates jq curl
+            ca-certificates jq curl python3
 
+      - name: Update ASN data
+        run: |
+          python3 update_asn.py
+            
+      - name: Build test
+        run: |
+          go build .
+            
       - name: Install enumdns at specific commit
         run: |
           go install github.com/helviojunior/enumdns@${GITHUB_SHA}

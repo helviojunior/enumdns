@@ -10,6 +10,8 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/helviojunior/enumdns/pkg/models"
+
+    "github.com/helviojunior/enumdns/pkg/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -73,6 +75,8 @@ func Connection(uri string, shouldExist, debug bool) (*gorm.DB, error) {
 		&Application{},
 		&models.Result{},
 		&models.FQDNData{},
+		&models.ASN{},
+		&models.ASNIpDelegate{},
 	); err != nil {
 		return nil, err
 	}
@@ -89,6 +93,23 @@ func Connection(uri string, shouldExist, debug bool) (*gorm.DB, error) {
             CreatedAt: time.Now(),
         }
         if err := c.Create(&defaultApp).Error; err != nil {
+            return nil, err
+        }
+    }
+
+    // ASN List
+
+    if err := c.Model(&models.ASN{}).Count(&count).Error; err != nil {
+        return nil, err
+    }
+
+    if count == 0 {
+    	log.Warn("Populaing ASN table...")
+    	if err := c.CreateInBatches(models.AsnList, 50).Error; err != nil {
+            return nil, err
+        }
+
+    	if err := c.CreateInBatches(models.AsnDelagated, 50).Error; err != nil {
             return nil, err
         }
     }

@@ -4,6 +4,8 @@ import (
 	"time"
 	"encoding/json"
 	"strings"
+	//"math/big"
+	"net"
 
 	"fmt"
 	"crypto/sha1"
@@ -13,6 +15,55 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+type ASN struct {
+    Number int64 `gorm:"primarykey;column:asn" json:"asn"`
+    RIRName               string    `gorm:"column:rir_name" json:"rir_name"`
+    CountryCode           string    `gorm:"column:country_code" json:"country_code"`
+    Org                   string    `gorm:"column:org" json:"org"`
+}
+
+func (*ASN) TableName() string {
+    return "asn"
+}
+
+func (asn *ASN) BeforeCreate(tx *gorm.DB) (err error) {
+	tx.Statement.AddClause(clause.OnConflict{
+		//Columns:   cols,
+		Columns:   []clause.Column{{Name: "asn"}},
+		UpdateAll: true,
+	})
+	return nil
+}
+
+type ASNIpDelegate struct {
+    ID uint `json:"id" gorm:"primarykey"`
+
+    Hash                  string    `gorm:"column:hash;index:,unique;" json:"hash"`
+    RIRName               string    `gorm:"column:rir_name" json:"rir_name"`
+    CountryCode           string    `gorm:"column:country_code" json:"country_code"`
+    Subnet                string    `gorm:"column:subnet" json:"subnet"` 
+    IntIPv4				  int64     `gorm:"column:int_ipv4" json:"int_ipv4"` 
+    Addresses             int       `gorm:"column:addresses" json:"addresses"`
+    Date                  string    `gorm:"column:date" json:"date"`
+    ASN                   int64     `gorm:"column:asn" json:"asn"`
+    Status                string    `gorm:"column:status" json:"status"`
+}
+
+func (*ASNIpDelegate) TableName() string {
+    return "asn_subnets"
+}
+
+func (subnet *ASNIpDelegate) BeforeCreate(tx *gorm.DB) (err error) {
+	_calcHash(&subnet.Hash, subnet.Subnet, fmt.Sprintf("%d", subnet.Addresses))
+
+	tx.Statement.AddClause(clause.OnConflict{
+		//Columns:   cols,
+		Columns:   []clause.Column{{Name: "hash"}},
+		UpdateAll: true,
+	})
+	return nil
+}
 
 // Result is a github.com/helviojunior/enumdnsenumdns result
 type Result struct {
@@ -24,6 +75,7 @@ type Result struct {
 	RType                 string    `gorm:"column:result_type"`
 	IPv4                  string    `gorm:"column:ipv4"`
 	IPv6                  string    `gorm:"column:ipv6"`
+	ASN                   int64     `gorm:"column:asn"`
 	Target                string    `gorm:"column:target"`
 	Ptr                   string    `gorm:"column:ptr"`
 	Txt                   string    `gorm:"column:txt"`
@@ -49,6 +101,11 @@ func (*Result) TableName() string {
 
 func (result *Result) BeforeCreate(tx *gorm.DB) (err error) {
 	_calcHash(&result.Hash, result.String())
+	asn := result.GetASN(tx)
+
+	if asn != nil {
+		result.ASN = asn.ASN
+	}
 
 	tx.Statement.AddClause(clause.OnConflict{
 		//Columns:   cols,
@@ -56,6 +113,66 @@ func (result *Result) BeforeCreate(tx *gorm.DB) (err error) {
 		UpdateAll: true,
 	})
 	return nil
+}
+
+func (result *Result) GetASN(tx *gorm.DB) *ASNIpDelegate {
+	var asn *ASNIpDelegate
+	if result.IPv4 != "" {
+		ip := net.ParseIP(result.IPv4)
+		if ip == nil {
+			return nil
+		}
+
+		err := tx.Model(&ASNIpDelegate{}).
+		    Where("int_ipv4 != 0 AND int_ipv4 <= ?", tools.IpToUint32(ip)).
+		    Order("int_ipv4 DESC"). // Optional: get the closest (largest) match <= ip
+		    First(&asn).Error
+
+		if err != nil {
+			return nil
+		}
+
+		_, subnet, err := net.ParseCIDR(asn.Subnet)
+        if err != nil {
+            return nil
+        }
+
+         if !subnet.Contains(ip) {
+            return nil
+        }
+		
+	}else if result.IPv6 != "" {
+		/*
+		ip := net.ParseIP(result.IPv6)
+		if ip == nil {
+			return nil
+		}
+
+		iIp := ip.To16()
+		if iIp == nil {
+			return nil
+		}
+		err := tx.Model(&ASNIpDelegate{}).
+		    Where("int_ipv6 <= ?", iIp).
+		    Order("int_ipv6 DESC"). // Optional: get the closest (largest) match <= ip
+		    First(&asn).Error
+
+		if err != nil {
+			return nil
+		}
+
+		_, subnet, err := net.ParseCIDR(asn.Subnet)
+        if err != nil {
+            return nil
+        }
+
+         if !subnet.Contains(ip) {
+            return nil
+        }*/
+		
+	}
+
+	return asn
 }
 
 /* Custom Marshaller for Result */

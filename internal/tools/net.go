@@ -19,6 +19,14 @@ var privateNets = []string{
 	    "127.0.0.0/8",
 	}
 
+func IpToUint32(ip net.IP) uint32 {
+    ip = ip.To4()
+    if ip == nil {
+        return 0
+    }
+    return binary.BigEndian.Uint32(ip)
+}
+
 // IpsInCIDR returns a list of usable IP addresses in a given CIDR block
 // excluding network and broadcast addresses for CIDRs larger than /31.
 func IpsInCIDR(cidr string) ([]string, error) {
