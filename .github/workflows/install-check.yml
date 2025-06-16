@@ -52,7 +52,7 @@ jobs:
             
       - name: Install enumdns at specific commit
         run: |
-          go install github.com/helviojunior/enumdns@${GITHUB_SHA}
+          go install .
 
       - name: Create a fake wordlist
         run: |
