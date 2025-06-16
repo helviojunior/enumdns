@@ -18,6 +18,7 @@ build/
 screenshots/
 
 # ASN Table
+pkg/models/asn.go
 
 # Test binary, build with `go test -c`
 *.test
