@@ -200,7 +200,11 @@ multiple writers using the _--writer-*_ flags (see --help).
         log.Infof("Enumerating %s DNS hosts", tools.FormatInt(total))
 
         // Check runned items
-        conn, _ := database.Connection(opts.Writer.CtrlDbURI, true, false)
+        conn, err := database.Connection(opts.Writer.CtrlDbURI, true, false)
+        if err != nil {
+            log.Error("Error stablishing connection with Database", "err", err)
+            os.Exit(2)
+        }
 
         go func() {
             defer close(bruteRunner.Targets)
