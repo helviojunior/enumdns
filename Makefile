@@ -1,7 +1,7 @@
 TARGET=./build
 ARCHS=amd64 386 arm64 
 GOOS=windows linux darwin
-PACKAGENAME="github.com/helviojunior/intelparser"
+PACKAGENAME="github.com/helviojunior/enumdns"
 
 ifdef VER
 	VER := $(VER)
@@ -29,7 +29,8 @@ get-version:
 			echo "Using cached release tag from .version" ; \
 		else \
 			echo "Fetching latest release tag from GitHub..." ; \
-			curl -s https://api.github.com/repos/helviojunior/intelparser/releases/latest \
+			NAME=`echo ${PACKAGENAME} | sed 's/github.com//g'` ; \
+			curl -s https://api.github.com/repos$${NAME}/releases/latest \
 				| grep '"tag_name":' | head -n 1 | grep -oE 'v[0-9\.]+' > ${TARGET}/.version ; \
 			echo "Saved release tag to .version" ; \
 		fi ; \
@@ -51,14 +52,14 @@ get-version:
 windows: get-version	## Make Windows x86 and x64 Binaries
 	@for ARCH in ${ARCHS}; do \
 		echo "Building for windows $${ARCH}.." ;\
-		GOOS=windows GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/intelparser_windows_$${ARCH}.exe || exit 1 ;\
+		GOOS=windows GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/enumdns_windows_$${ARCH}.exe || exit 1 ;\
 	done; \
 	echo "Done."
 
 linux: get-version	## Make Linux x86 and x64 Binaries
 	@for ARCH in ${ARCHS}; do \
 		echo "Building for linux $${ARCH}..." ; \
-		GOOS=linux GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/intelparser_linux_$${ARCH} || exit 1 ;\
+		GOOS=linux GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/enumdns_linux_$${ARCH} || exit 1 ;\
 	done; \
 	echo "Done."
 
@@ -66,7 +67,7 @@ mac: get-version	## Make Darwin (Mac) x86 and x64 Binaries
 	@for ARCH in ${ARCHS}; do \
 		if [ "$${ARCH}" != "386" ]; then \
 			echo "Building for mac $${ARCH}..." ; \
-			GOOS=darwin GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/intelparser_darwin_$${ARCH} || exit 1 ;\
+			GOOS=darwin GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/enumdns_darwin_$${ARCH} || exit 1 ;\
 		fi;\
 	done; \
 	echo "Done."
@@ -80,7 +81,7 @@ local: get-version	## Compila para a plataforma e arquitetura local detectada
 	@OS=$$(uname | tr '[:upper:]' '[:lower:]') ; \
 	ARCH=$$(if [ "$$(uname -m)" = "x86_64" ]; then echo "amd64"; else echo "arm64"; fi) ; \
 	echo "Building for $$OS ($$ARCH)..." ; \
-	GOOS=$$OS GOARCH=$$ARCH go build -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/intelparser_$$OS\_$$ARCH || exit 1 ; \
+	GOOS=$$OS GOARCH=$$ARCH go build -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/enumdns_$$OS\_$$ARCH || exit 1 ; \
 	echo "Done."
 
 all: ## Make Windows, Linux and Mac x86/x64 Binaries
