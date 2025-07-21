@@ -8,6 +8,10 @@
 *.txt
 enumdns
 enumdns.exe
+*.version
+*.verstr
+*.ldflags
+
 # dep vendor/
 vendor/
 
