@@ -46,6 +46,12 @@ multiple writers using the _--writer-*_ flags (see --help).
             return err
         }
 
+        if opts.PrivateDns {
+            log.Warnf("DNS server: %s (private)", fileOptions.DnsServer)
+        }else{
+            log.Warn("DNS server: " + fileOptions.DnsServer)
+        }
+        
         // An slog-capable logger to use with drivers and runners
         logger := slog.New(log.Logger)
 

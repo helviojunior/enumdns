@@ -114,11 +114,6 @@ var rootCmd = &cobra.Command{
         opts.PrivateDns = tools.IsPrivateIP(opts.DnsServer)
         
         fileOptions.DnsServer = opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort)
-        if opts.PrivateDns {
-        	log.Warnf("DNS server: %s (private)", fileOptions.DnsServer)
-        }else{
-        	log.Warn("DNS server: " + fileOptions.DnsServer)
-        }
 
         //Check Proxy config
         if tProxy != "" {
