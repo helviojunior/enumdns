@@ -18,7 +18,11 @@ func Logo() string {
 `
 
 	v := fmt.Sprintf("Ver: %s-%s", version.Version, version.GitHash)
-	txt += strings.Repeat(" ", 46 - len(v))
+	r := 46 - len(v)
+	if r < 0 {
+		r = 0
+	}
+	txt += strings.Repeat(" ", r)
 	txt += v + "{W}"
 	txt = strings.Replace(txt, "{G}", "\033[32m", -1)
 	txt = strings.Replace(txt, "{B}", "\033[36m", -1)
