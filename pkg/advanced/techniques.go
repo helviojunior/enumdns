@@ -146,6 +146,10 @@ func (t *HomographicTechnique) Generate(domain string, tlds []string) []Variatio
 		'l': {'ł', '1', 'i', '|'},
 		'0': {'o', 'O', 'ο', 'о'},
 		'1': {'l', 'i', 'I', '|'},
+		'g': {'q', '9', 'ğ', 'ģ'},
+		'd': {'ð', 'đ', 'ď'},
+		'v': {'ν', 'υ', 'ѵ'},
+		'x': {'×', 'χ', 'х'},
 	}
 
 	for i, char := range baseName {
@@ -314,8 +318,11 @@ func (t *TLDVariationTechnique) Generate(domain string, tlds []string) []Variati
 	// TLDs comuns para phishing
 	phishingTLDs := []string{
 		"tk", "ml", "ga", "cf", "gq", // Freenom TLDs
+		"tk", "pw", "ws", "to", "ly",
 		"co", "cc", "biz", "info", "org", "net",
 		"io", "me", "ly", "to", "ws", "click", "download",
+		"help", "support", "security",
+		"update", "verification", "account",
 	}
 
 	for _, tld := range phishingTLDs {
@@ -329,6 +336,14 @@ func (t *TLDVariationTechnique) Generate(domain string, tlds []string) []Variati
 	}
 
 	return variations
+}
+
+type ThreatIndicators struct {
+	SuspiciousTLD      bool    // .tk, .ml, etc.
+	PhishingKeywords   bool    // secure-, login-, etc.
+	RecentRegistration bool    // < 30 days
+	UnicodeUsage       bool    // Non-ASCII chars
+	HighSimilarity     float64 // Levenshtein distance
 }
 
 // ===================
