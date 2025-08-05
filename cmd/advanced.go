@@ -313,19 +313,25 @@ func init() {
 
 	// Flags principais
 	advancedCmd.Flags().StringVarP(&opts.DnsSuffix, "domain", "d", "", "Target domain for analysis")
-	advancedCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "domain-list", "L", "", "File with domains to analyze")
+	advancedCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "domain-list", "L", "", "File with domains to analyze (one per line)")
 
 	// Técnicas específicas
-	advancedCmd.Flags().BoolVar(&advancedOpts.Typosquatting, "typosquatting", false, "Enable typosquatting detection (keyboard adjacency)")
-	advancedCmd.Flags().BoolVar(&advancedOpts.Bitsquatting, "bitsquatting", false, "Enable bitsquatting detection (bit flipping)")
-	advancedCmd.Flags().BoolVar(&advancedOpts.Homographic, "homographic", false, "Enable homographic attacks detection (similar characters)")
-	advancedCmd.Flags().BoolVar(&advancedOpts.AllTechniques, "all-techniques", false, "Enable all detection techniques")
+	advancedCmd.Flags().BoolVar(&advancedOpts.Typosquatting, "typosquatting", false, "Enable typosquatting detection (keyboard adjacency errors)")
+	advancedCmd.Flags().BoolVar(&advancedOpts.Bitsquatting, "bitsquatting", false, "Enable bitsquatting detection (single bit-flip errors)")
+	advancedCmd.Flags().BoolVar(&advancedOpts.Homographic, "homographic", false, "Enable homographic attacks detection (similar character substitution)")
+	advancedCmd.Flags().BoolVar(&advancedOpts.AllTechniques, "all-techniques", false, "Enable all available detection techniques")
 
 	// Configurações avançadas
-	advancedCmd.Flags().IntVar(&advancedOpts.MaxVariations, "max-variations", 1000, "Maximum variations to generate per domain")
-	advancedCmd.Flags().StringSliceVar(&advancedOpts.TLDs, "target-tlds", []string{"com", "net", "org", "co", "io", "tk", "ml", "ga", "cf"}, "Target TLDs for variations")
+	advancedCmd.Flags().IntVar(&advancedOpts.MaxVariations, "max-variations", 1000, "Maximum variations to generate per domain (1-10000)")
+	advancedCmd.Flags().StringSliceVar(&advancedOpts.TLDs, "target-tlds", []string{"com", "net", "org", "co", "io", "tk", "ml", "ga", "cf"}, "Target TLDs for variations (comma-separated)")
 
-	// Herdar outras flags do comando pai
-	advancedCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent domains.")
-	advancedCmd.Flags().BoolVarP(&opts.Quick, "quick", "Q", false, "Request just A registers.")
+	// Flags de compatibilidade
+	advancedCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "ignore-nonexistent", "I", false, "Ignore nonexistent domains during analysis")
+	advancedCmd.Flags().BoolVarP(&opts.Quick, "quick", "Q", false, "Request only A records (faster)")
+
+	// Marcar flags mutuamente exclusivas
+	advancedCmd.MarkFlagsMutuallyExclusive("domain", "domain-list")
+
+	// Adicionar validações
+	advancedCmd.Flags().SetInterspersed(false) // Manter ordem das flags
 }
