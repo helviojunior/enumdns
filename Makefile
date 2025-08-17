@@ -1,7 +1,7 @@
 TARGET=./build
 ARCHS=amd64 386 arm64 
 GOOS=windows linux darwin
-PACKAGENAME="github.com/helviojunior/enumdns"
+PACKAGENAME="github.com/bob-reis/enumdns"
 
 ifdef VER
 	VER := $(VER)

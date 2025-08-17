@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 	"runtime"
+	"time"
 
+	"github.com/bob-reis/enumdns/pkg/models"
 	"github.com/glebarez/sqlite"
-	"github.com/helviojunior/enumdns/pkg/models"
 
-    "github.com/helviojunior/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/pkg/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -87,45 +87,45 @@ func Connection(uri string, shouldExist, debug bool) (*gorm.DB, error) {
 
 	//Check if app name was inserted at application info table
 	var count int64
-    if err := c.Model(&Application{}).Count(&count).Error; err != nil {
-        return nil, err
-    }
+	if err := c.Model(&Application{}).Count(&count).Error; err != nil {
+		return nil, err
+	}
 
-    if count == 0 {
-        defaultApp := Application{
-            Application:  "enumdns",
-            CreatedAt: time.Now(),
-        }
-        if err := c.Create(&defaultApp).Error; err != nil {
-            return nil, err
-        }
-    }
+	if count == 0 {
+		defaultApp := Application{
+			Application: "enumdns",
+			CreatedAt:   time.Now(),
+		}
+		if err := c.Create(&defaultApp).Error; err != nil {
+			return nil, err
+		}
+	}
 
-    // ASN List
+	// ASN List
 
-    if err := c.Model(&models.ASN{}).Count(&count).Error; err != nil {
-        return nil, err
-    }
+	if err := c.Model(&models.ASN{}).Count(&count).Error; err != nil {
+		return nil, err
+	}
 
-    if count == 0 {
-    	log.Warn("Populaing ASN table...")
-    	if err := c.CreateInBatches(models.AsnList, 50).Error; err != nil {
-            return nil, err
-        }
+	if count == 0 {
+		log.Warn("Populaing ASN table...")
+		if err := c.CreateInBatches(models.ASNList, 50).Error; err != nil {
+			return nil, err
+		}
 
-    	if err := c.CreateInBatches(models.AsnDelagated, 50).Error; err != nil {
-            return nil, err
-        }
-    }
+		if err := c.CreateInBatches(models.ASNDelegated, 50).Error; err != nil {
+			return nil, err
+		}
+	}
 
 	return c, nil
 }
 
 type Application struct {
-	Application           string    `json:"application"`
-	CreatedAt             time.Time `json:"created_at"`
+	Application string    `json:"application"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 func (Application) TableName() string {
-    return "application_info"
+	return "application_info"
 }

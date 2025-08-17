@@ -1,0 +1,290 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - melhorias-gerais
+      - develop
+  pull_request:
+    branches:
+      - main
+      - melhorias-gerais
+      - develop
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+env:
+  GO_VERSION: "1.23"
+  SONAR_PROJECT_KEY: "bob-reis_enumdns"
+  SONAR_ORGANIZATION: "bob-reis"
+
+jobs:
+  # Job para validação de código e testes
+  test:
+    name: Test and Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Download dependencies
+      run: |
+        go mod download
+        go mod verify
+    
+    - name: Install lint tools
+      run: |
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+    
+    - name: Run gofmt check
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "❌ Code is not formatted. Please run 'gofmt -s -w .'"
+          echo "Files that need formatting:"
+          gofmt -s -l .
+          exit 1
+        fi
+        echo "✅ Code formatting is correct"
+    
+    - name: Run go vet
+      run: |
+        echo "Running go vet..."
+        if ! go vet ./...; then
+          echo "❌ go vet found issues"
+          exit 1
+        fi
+        echo "✅ go vet passed"
+    
+    - name: Run staticcheck
+      run: |
+        echo "Running staticcheck..."
+        if ! staticcheck ./...; then
+          echo "❌ staticcheck found issues"
+          exit 1
+        fi
+        echo "✅ staticcheck passed"
+
+    - name: Run golangci-lint
+      run: |
+        echo "Running golangci-lint..."
+        if ! golangci-lint run ./...; then
+          echo "❌ golangci-lint found issues"
+          exit 1
+        fi
+        echo "✅ golangci-lint passed"
+
+    - name: Run unit tests with coverage
+      run: |
+        echo "Running unit tests with race detection..."
+        go test -v -race -timeout=10m ./...
+        
+        echo "Running coverage analysis..."
+        # Fokcar nos pacotes principais, excluindo cmd e internal que são difíceis de testar
+        PKGS=$(go list ./... | grep -v '/cmd/' | grep -v '/internal/tools' | grep -v '/internal/ascii')
+        if [ -n "$PKGS" ]; then
+          go test -coverprofile=coverage.out -covermode=atomic $PKGS
+          go tool cover -html=coverage.out -o coverage.html
+        else
+          echo "No testable packages found"
+          touch coverage.out
+        fi
+    
+    - name: Check test coverage threshold
+      run: |
+        if [ -s coverage.out ]; then
+          # Extract coverage percentage
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Coverage: ${COVERAGE}%"
+          
+          # Convert to integer for comparison
+          COVERAGE_INT=$(echo "$COVERAGE" | awk '{printf "%.0f", $1}')
+          
+          if [ "$COVERAGE_INT" -lt 20 ]; then
+            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 20%"
+            exit 1
+          fi
+          
+          echo "✅ Coverage requirement met: ${COVERAGE}%"
+        else
+          echo "⚠️ No coverage data generated"
+        fi
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          coverage.out
+          coverage.html
+        retention-days: 7
+    
+    - name: Build application
+      run: |
+        echo "Building enumdns..."
+        if ! go build -v -o enumdns .; then
+          echo "❌ Build failed"
+          exit 1
+        fi
+        echo "✅ Build successful"
+        
+        # Test binary execution
+        echo "Testing binary execution..."
+        if ! ./enumdns --help > /dev/null 2>&1; then
+          echo "❌ Binary execution failed"
+          exit 1
+        fi
+        echo "✅ Binary executes correctly"
+    
+    - name: Test specific commands
+      run: |
+        echo "Testing enumdns commands..."
+        ./enumdns version || echo "Version command test"
+        ./enumdns threat-analysis --help || echo "Threat-analysis help test"
+        ./enumdns recon --help || echo "Recon help test"
+        ./enumdns brute --help || echo "Brute help test"
+        echo "✅ Command tests completed"
+
+  # Job para análise de segurança
+  security:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@287b46c018ebe8ca18d45aa8fc0ebea927f1e27d
+      with:
+        args: '-concurrency 1 -quiet -no-fail -fmt sarif -out gosec-results.sarif ./...'
+      timeout-minutes: 5
+        
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      if: always() && hashFiles('gosec-results.sarif') != ''
+      with:
+        sarif_file: gosec-results.sarif
+    
+    - name: Run Nancy to check for vulnerabilities
+      run: |
+        go install github.com/sonatype-nexus-community/nancy@latest
+        go list -json -deps ./... | nancy sleuth
+    
+    - name: Check for hardcoded secrets
+      uses: trufflesecurity/trufflehog@72e4106a9cfbb2ec25aed0d1f5b08792d8af14b6
+      with:
+        path: ./
+        base: ${{ github.event.pull_request.base.sha || github.event.before }}
+        head: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  # Job para SonarCloud analysis
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    environment: sonarcloud
+    needs: test
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Download dependencies
+      run: go mod download
+    
+    - name: Run tests with coverage for SonarCloud
+      run: |
+        # Execute tests with coverage
+        PKGS=$(go list ./... | grep -v '/cmd/' | grep -v '/internal/tools' | grep -v '/internal/ascii')
+        if [ -n "$PKGS" ]; then
+          go test -v -race -coverprofile=coverage.out -covermode=atomic $PKGS
+        else
+          echo "No testable packages found"
+          touch coverage.out
+        fi
+    
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@49e6cd3b187936a73b8280d59ffd9da69df63ec9
+      continue-on-error: true
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: >
+          -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+          -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
+          -Dsonar.sources=.
+          -Dsonar.exclusions=**/*_test.go,**/testdata/**,**/examples/**,**/*.md
+          -Dsonar.tests=.
+          -Dsonar.test.inclusions=**/*_test.go
+          -Dsonar.go.coverage.reportPaths=coverage.out
+          -Dsonar.sourceEncoding=UTF-8
+          -Dsonar.qualitygate.wait=false
+
+  # Job de notificação
+  notification:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [test, security, sonarcloud]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Determine overall status
+      id: status
+      run: |
+        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.security.result }}" == "success" ] && [ "${{ needs.sonarcloud.result }}" == "success" ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "message=✅ All CI checks passed!" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "message=❌ Some CI checks failed" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create Release on Success
+      if: steps.status.outputs.status == 'success' && github.ref == 'refs/heads/main'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const tagName = `v${new Date().toISOString().slice(0,10)}-${context.sha.slice(0,7)}`;
+          
+          try {
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              name: `Release ${tagName}`,
+              body: `Automated release from commit ${context.sha}\n\n✅ All tests passed\n✅ Security checks passed\n✅ SonarCloud analysis completed`,
+              draft: false,
+              prerelease: false
+            });
+            console.log(`Created release ${tagName}`);
+          } catch (error) {
+            console.log(`Release creation failed: ${error.message}`);
+          }

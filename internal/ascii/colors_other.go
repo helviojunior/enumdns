@@ -1,3 +1,5 @@
+//go:build !windows
+
 /*
  * PACP - PCAP manipulation tool in Golang
  * Copyright (c) 2025 Helvio Junior <helvio_junior [at] hotmail [dot] com>
@@ -11,10 +13,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-//go:build !windows
-
 package ascii
 
 func SetConsoleColors() error {
-    return nil
+	return nil
 }

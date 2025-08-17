@@ -6,20 +6,20 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/helviojunior/enumdns/pkg/models"
-	logger "github.com/helviojunior/enumdns/pkg/log"
+	logger "github.com/bob-reis/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/pkg/models"
 )
 
 // StdoutWriter is a Stdout writer
 type StdoutWriter struct {
-	WriteAll  bool
+	WriteAll   bool
 	IsTerminal bool
 }
 
 // NewStdoutWriter initialises a stdout writer
 func NewStdoutWriter() (*StdoutWriter, error) {
 	return &StdoutWriter{
-		WriteAll: false,
+		WriteAll:   false,
 		IsTerminal: term.IsTerminal(int(os.Stdin.Fd())),
 	}, nil
 }
@@ -47,17 +47,17 @@ func (s *StdoutWriter) Write(result *models.Result) error {
 				logger.Infof("%s", result.String())
 			}
 		default:
-			logger.Infof("%s", result.String())		
+			logger.Infof("%s", result.String())
 		}
-	}else{
+	} else {
 		switch result.RType {
 		case "A", "AAAA":
 			logger.Infof("%s", result.String())
 		default:
-			logger.Debug(result.String())		
-		} 
+			logger.Debug(result.String())
+		}
 	}
-	
+
 	return nil
 }
 
@@ -66,5 +66,5 @@ func (s *StdoutWriter) WriteFqdn(result *models.FQDNData) error {
 }
 
 func (s *StdoutWriter) Finish() error {
-    return nil
+	return nil
 }

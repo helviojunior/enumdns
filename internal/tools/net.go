@@ -1,30 +1,31 @@
 package tools
 
 import (
-	"errors"
 	"encoding/binary"
+	"errors"
 	"net"
-	"strings"
 	"net/url"
+	"strings"
+
 	//"context"
 	"github.com/miekg/dns"
 
-	"github.com/helviojunior/enumdns/internal"
+	"github.com/bob-reis/enumdns/internal"
 )
 
 var privateNets = []string{
-	    "192.168.0.0/16",
-	    "10.0.0.0/8",
-	    "172.16.0.0/12",
-	    "127.0.0.0/8",
-	}
+	"192.168.0.0/16",
+	"10.0.0.0/8",
+	"172.16.0.0/12",
+	"127.0.0.0/8",
+}
 
 func IpToUint32(ip net.IP) uint32 {
-    ip = ip.To4()
-    if ip == nil {
-        return 0
-    }
-    return binary.BigEndian.Uint32(ip)
+	ip = ip.To4()
+	if ip == nil {
+		return 0
+	}
+	return binary.BigEndian.Uint32(ip)
 }
 
 // IpsInCIDR returns a list of usable IP addresses in a given CIDR block
@@ -44,11 +45,13 @@ func IpsInCIDR(cidr string) ([]string, error) {
 
 	// Iterate over the range of IPs
 	for i := start; i <= end; i++ {
-		// Exclude network and broadcast addresses in larger CIDR ranges
-		if !(i&0xFF == 255 || i&0xFF == 0) || ipnet.Mask[3] >= 30 {
-			binary.BigEndian.PutUint32(ip, i)
-			ips = append(ips, ip.String())
+		// For networks smaller than /30 (i.e., /29, /28, etc.), exclude network and broadcast
+		ones, _ := ipnet.Mask.Size()
+		if ones < 30 && (i == start || i == end) {
+			continue // Skip network and broadcast addresses
 		}
+		binary.BigEndian.PutUint32(ip, i)
+		ips = append(ips, ip.String())
 	}
 
 	return ips, nil
@@ -63,29 +66,29 @@ func GetValidDnsSuffix(dnsServer string, suffix string, proxyUri *url.URL) (stri
 	suffix = strings.ToLower(suffix) + "."
 	i := false
 
-    m := new(dns.Msg)
-    m.Id = dns.Id()
+	m := new(dns.Msg)
+	m.Id = dns.Id()
 	m.RecursionDesired = true
 
 	m.Question = make([]dns.Question, 1)
-	m.Question[0] = dns.Question{suffix, dns.TypeSOA, dns.ClassINET}
+	m.Question[0] = dns.Question{Name: suffix, Qtype: dns.TypeSOA, Qclass: dns.ClassINET}
 
 	c := new(internal.SocksClient)
-	in, err := c.Exchange(m, proxyUri, dnsServer); 
+	in, err := c.Exchange(m, proxyUri, dnsServer)
 	if err != nil {
 		return "", err
-	}else{
-		
+	} else {
+
 		for _, ans1 := range in.Answer {
 			if _, ok := ans1.(*dns.SOA); ok {
 				i = true
 			}
 		}
-		
+
 	}
 
-	if i == false {
-		return "", errors.New("SOA not found for domain '"+ suffix + "'")
+	if !i {
+		return "", errors.New("SOA not found for domain '" + suffix + "'")
 	}
 
 	return suffix, nil
@@ -104,16 +107,15 @@ func IsPrivateIP(ipAddr string) bool {
 	return false
 }
 
-
 func GetDefaultDnsServer(fallback string) string {
-    if fallback == "" {
-        fallback = "8.8.8.8"
-    }
+	if fallback == "" {
+		fallback = "8.8.8.8"
+	}
 
-    srv := GetDNSServers()
-    if len(srv) == 0 {
-        return fallback
-    }
+	srv := GetDNSServers()
+	if len(srv) == 0 {
+		return fallback
+	}
 
-    return srv[0].Addr().String()
+	return srv[0].Addr().String()
 }

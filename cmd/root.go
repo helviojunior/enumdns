@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/helviojunior/enumdns/internal"
-	"github.com/helviojunior/enumdns/internal/ascii"
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/log"
-	"github.com/helviojunior/enumdns/pkg/readers"
-	"github.com/helviojunior/enumdns/pkg/runner"
+	"github.com/bob-reis/enumdns/internal"
+	"github.com/bob-reis/enumdns/internal/ascii"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/pkg/readers"
+	"github.com/bob-reis/enumdns/pkg/runner"
 	resolver "github.com/helviojunior/gopathresolver"
 	"github.com/spf13/cobra"
 )
@@ -34,16 +34,16 @@ var rootCmd = &cobra.Command{
 	Short: "enumdns is a modular DNS recon tool",
 	Long:  ascii.Logo(),
 	Example: `
-   - enumdns recon -d helviojunior.com.br -o enumdns.txt
-   - enumdns recon -d helviojunior.com.br --write-jsonl
+   - enumdns recon -d test.com -o enumdns.txt
+   - enumdns recon -d test.com --write-jsonl
    - enumdns recon -L domains.txt --write-db
 
-   - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt -o enumdns.txt
-   - enumdns brute -d helviojunior.com.br -w /tmp/wordlist.txt --write-jsonl
+   - enumdns brute -d test.com -w /tmp/wordlist.txt -o enumdns.txt
+   - enumdns brute -d test.com -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -L domains.txt -w /tmp/wordlist.txt --write-db
 
-   - enumdns advanced -d helviojunior.com.br --all-techniques -o threats.txt
-   - enumdns advanced -d helviojunior.com.br --typosquatting --write-jsonl
+   - enumdns advanced -d test.com --all-techniques -o threats.txt
+   - enumdns advanced -d test.com --typosquatting --write-jsonl
    - enumdns advanced -L domains.txt --bitsquatting --write-db
 
    - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
@@ -147,9 +147,11 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 
-	ascii.SetConsoleColors()
+	if err := ascii.SetConsoleColors(); err != nil {
+		log.Error("failed to set console colors", "err", err)
+	}
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
@@ -160,7 +162,9 @@ func Execute() {
 		log.Warn("interrupted, shutting down...                            ")
 		ascii.ClearLine()
 		fmt.Printf("\n")
-		tools.RemoveFolder(tempFolder)
+		if err := tools.RemoveFolder(tempFolder); err != nil {
+			log.Error("failed to remove temp folder", "err", err)
+		}
 		os.Exit(2)
 	}()
 
@@ -190,7 +194,9 @@ func Execute() {
 
 	//Time to wait the logger flush
 	time.Sleep(time.Second / 4)
-	tools.RemoveFolder(tempFolder)
+	if err := tools.RemoveFolder(tempFolder); err != nil {
+		log.Error("failed to remove temp folder", "err", err)
+	}
 	ascii.ShowCursor()
 	fmt.Printf("\n")
 }

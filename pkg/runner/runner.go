@@ -6,30 +6,32 @@ import (
 	"log/slog"
 	//"net/url"
 	//"net/mail"
-	"os"
+	"crypto/rand"
 	"fmt"
-	"sync"
-	"time"
-	"strings"
-	"math/rand/v2"
+	"math/big"
+	"os"
 	"os/signal"
-    "syscall"
-    "reflect"
-    //"strconv"
+	"reflect"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
 
-    "golang.org/x/term"
+	//"strconv"
 
-	"github.com/helviojunior/enumdns/internal"
-	"github.com/helviojunior/enumdns/internal/ascii"
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/models"
-	"github.com/helviojunior/enumdns/pkg/writers"
+	"golang.org/x/term"
+
+	"github.com/bob-reis/enumdns/internal"
+	"github.com/bob-reis/enumdns/internal/ascii"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/bob-reis/enumdns/pkg/writers"
 	"github.com/miekg/dns"
 )
 
 // Runner is a runner that probes web targets using a driver
 type Runner struct {
-	
+
 	//Test id
 	uid string
 
@@ -60,43 +62,42 @@ type Runner struct {
 }
 
 type Status struct {
-	Total int
-	Complete int
-	Skiped int
-	Error int
-	Spin string
-	Running bool
+	Total      int
+	Complete   int
+	Skiped     int
+	Error      int
+	Spin       string
+	Running    bool
 	IsTerminal bool
-	log *slog.Logger
+	log        *slog.Logger
 }
 
-func (st *Status) Print() { 
+func (st *Status) Print() {
 
 	if st.IsTerminal {
 
 		st.Spin = ascii.GetNextSpinner(st.Spin)
 
-		fmt.Fprintf(os.Stderr, "%s\n    %s (%s/%s) failed: %s               \r\033[A", 
-	    	"                                                                        ",
-	    	ascii.ColoredSpin(st.Spin), tools.FormatInt(st.Complete), tools.FormatInt(st.Total), tools.FormatInt(st.Error))
-	
-    }else{
-    	st.log.Info("STATUS", "Total", tools.FormatInt(st.Total), "Complete", tools.FormatInt(st.Complete),  "Errors", tools.FormatInt(st.Error))
-    }
-} 
+		fmt.Fprintf(os.Stderr, "%s\n    %s (%s/%s) failed: %s               \r\033[A",
+			"                                                                        ",
+			ascii.ColoredSpin(st.Spin), tools.FormatInt(st.Complete), tools.FormatInt(st.Total), tools.FormatInt(st.Error))
 
-func (run *Runner) GetLog() *slog.Logger{ 
-    return run.log
+	} else {
+		st.log.Info("STATUS", "Total", tools.FormatInt(st.Total), "Complete", tools.FormatInt(st.Complete), "Errors", tools.FormatInt(st.Error))
+	}
 }
 
-
-func (run *Runner) AddSkiped() { 
-    run.status.Complete += 1
-    run.status.Skiped += 1
+func (run *Runner) GetLog() *slog.Logger {
+	return run.log
 }
 
-func (st *Status) AddResult(result *models.Result) { 
-    st.Complete += 1
+func (run *Runner) AddSkiped() {
+	run.status.Complete += 1
+	run.status.Skiped += 1
+}
+
+func (st *Status) AddResult(result *models.Result) {
+	st.Complete += 1
 	if result.Failed {
 		st.Error += 1
 		return
@@ -109,62 +110,62 @@ func NewRunner(logger *slog.Logger, opts Options, writers []writers.Writer) (*Ru
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Runner{
-		Targets:      make(chan string),
-		uid: fmt.Sprintf("%d", time.Now().UnixMilli()),
-		ctx:        ctx,
-		cancel:     cancel,
-		log:        logger,
-		writers:    writers,
-		options:    opts,
-		searchOrder: []uint16{ dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
-		dnsServer: opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
-		status:     &Status{
-			Total: 0,
-			Complete: 0,
-			Error: 0,
-			Skiped: 0,
-			Spin: "",
-			Running: true,
+		Targets:     make(chan string),
+		uid:         fmt.Sprintf("%d", time.Now().UnixMilli()),
+		ctx:         ctx,
+		cancel:      cancel,
+		log:         logger,
+		writers:     writers,
+		options:     opts,
+		searchOrder: []uint16{dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
+		dnsServer:   opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
+		status: &Status{
+			Total:      0,
+			Complete:   0,
+			Error:      0,
+			Skiped:     0,
+			Spin:       "",
+			Running:    true,
 			IsTerminal: term.IsTerminal(int(os.Stdin.Fd())),
-			log: logger,
+			log:        logger,
 		},
 	}, nil
 }
 
 func ContainsCloudProduct(s string) (bool, string, string) {
-    s = strings.Trim(strings.ToLower(s), ". ")
-    for prodName, identifiers := range products {
-    	for _, id := range identifiers {
-	        if strings.Contains(s, strings.ToLower(id)) {
-	            return true, prodName, id
-	        }
-	    }
-    }
-    return false, "", ""
+	s = strings.Trim(strings.ToLower(s), ". ")
+	for prodName, identifiers := range products {
+		for _, id := range identifiers {
+			if strings.Contains(s, strings.ToLower(id)) {
+				return true, prodName, id
+			}
+		}
+	}
+	return false, "", ""
 }
 
 func ContainsSaaS(s string) (bool, string, string) {
-    s = strings.Trim(strings.ToLower(s), ". ")
-    for prodName, identifiers := range saas_products {
-    	for _, id := range identifiers {
-	        if strings.Contains(s, strings.ToLower(id)) {
-	            return true, prodName, id
-	        }
-	    }
-    }
-    return false, "", ""
+	s = strings.Trim(strings.ToLower(s), ". ")
+	for prodName, identifiers := range saas_products {
+		for _, id := range identifiers {
+			if strings.Contains(s, strings.ToLower(id)) {
+				return true, prodName, id
+			}
+		}
+	}
+	return false, "", ""
 }
 
 func ContainsDatacenter(s string) (bool, string, string) {
-    s = strings.Trim(strings.ToLower(s), ". ")
-    for prodName, identifiers := range datacenter {
-    	for _, id := range identifiers {
-	        if strings.Contains(s, strings.ToLower(id)) {
-	            return true, prodName, id
-	        }
-	    }
-    }
-    return false, "", ""
+	s = strings.Trim(strings.ToLower(s), ". ")
+	for prodName, identifiers := range datacenter {
+		for _, id := range identifiers {
+			if strings.Contains(s, strings.ToLower(id)) {
+				return true, prodName, id
+			}
+		}
+	}
+	return false, "", ""
 }
 
 // runWriters takes a result and passes it to writers
@@ -192,34 +193,34 @@ func (run *Runner) Run(total int) Status {
 				complementarySearchOrder = append(complementarySearchOrder, t)
 			}
 		}
-		run.searchOrder = []uint16{ dns.TypeA }
+		run.searchOrder = []uint16{dns.TypeA}
 	}
 
-    c := make(chan os.Signal)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    go func() {
-        <-c
-        run.status.Running = false
-    }()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		run.status.Running = false
+	}()
 
 	if !run.options.Logging.Silence {
 		swg.Add(1)
 		go func() {
-	        defer swg.Done()
+			defer swg.Done()
 			for run.status.Running {
 				select {
-					case <-run.ctx.Done():
-						return
-					default:
-			        	run.status.Print()
-			        	if run.status.IsTerminal {
-			        		time.Sleep(time.Duration(time.Second / 4))
-			        	}else{
-			        		time.Sleep(time.Duration(time.Second * 10))
-			        	}
-			    }
-	        }
-	    }()
+				case <-run.ctx.Done():
+					return
+				default:
+					run.status.Print()
+					if run.status.IsTerminal {
+						time.Sleep(time.Duration(time.Second / 4))
+					} else {
+						time.Sleep(time.Duration(time.Second * 10))
+					}
+				}
+			}
+		}()
 	}
 
 	// will spawn Scan.Theads number of "workers" as goroutines
@@ -242,37 +243,37 @@ func (run *Runner) Run(total int) Status {
 
 					results := run.Probe(host, run.searchOrder)
 					if run.status.Running {
-						
+
 						// // May be it is not a root domain
 
 						if len(results) == 0 {
 							//Host not found
 							run.status.Complete += 1
-						}else{
+						} else {
 							run.status.AddResult(results[0])
 						}
-						
+
 						for _, res := range results {
-        					if err := run.runWriters(res); err != nil {
-        						logger.Error("failed to write result", "err", err)
-        					}
-                        }
+							if err := run.runWriters(res); err != nil {
+								logger.Error("failed to write result", "err", err)
+							}
+						}
 
-                        if len(results) >= 1 && results[0].Exists == true && len(complementarySearchOrder) > 0 {
-                        	logger.Debug("Doing complementary search...")
-                        	results := run.Probe(host, complementarySearchOrder)
-                        	for _, res := range results {
-	        					if err := run.runWriters(res); err != nil {
-	        						logger.Error("failed to write result", "err", err)
-	        					}
-	                        }
-                        }
-                    }
+						if len(results) >= 1 && results[0].Exists && len(complementarySearchOrder) > 0 {
+							logger.Debug("Doing complementary search...")
+							results := run.Probe(host, complementarySearchOrder)
+							for _, res := range results {
+								if err := run.runWriters(res); err != nil {
+									logger.Error("failed to write result", "err", err)
+								}
+							}
+						}
+					}
 
-                	//We must put this to slow down the requests to prevent block from DNS Server
-                	if !run.options.PrivateDns {
-	                    tools.RandSleep()
-	                }
+					//We must put this to slow down the requests to prevent block from DNS Server
+					if !run.options.PrivateDns {
+						tools.RandSleep()
+					}
 				}
 			}
 
@@ -291,48 +292,50 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 	resList := []*models.Result{}
 
 	resultBase := &models.Result{
-		TestId: run.uid,
-		FQDN: host,
+		TestId:   run.uid,
+		FQDN:     host,
 		ProbedAt: time.Now(),
-		Exists: true,
+		Exists:   true,
 	}
-    
+
 	ips := []string{}
 
-    for _, t := range searchOrder {
-    	tName := dns.Type(t).String()
-    	logger := run.log.With("FQDN", host, "Type", tName)
-    	resultBase.RType = tName
+	for _, t := range searchOrder {
+		tName := dns.Type(t).String()
+		logger := run.log.With("FQDN", host, "Type", tName)
+		resultBase.RType = tName
 
-    	good_to_go := false
+		good_to_go := false
 		counter := 0
-		for good_to_go != true && run.status.Running {
-            m := new(dns.Msg)
-            m.Id = dns.Id()
+		for !good_to_go && run.status.Running {
+			m := new(dns.Msg)
+			m.Id = dns.Id()
 			m.RecursionDesired = true
 
 			//m.Question = make([]dns.Question, 1)
 			//m.Question[0] = dns.Question{host, t, dns.ClassINET}
 			m.SetQuestion(host, t)
 
-			//r, err := dns.Exchange(m, run.dnsServer); 
+			//r, err := dns.Exchange(m, run.dnsServer);
 			c := new(internal.SocksClient)
-			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
+			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
 			counter += 1
 			good_to_go = (err == nil)
 
 			if err != nil {
 				logger.Debug("Error running DNS request, trying again...", "type", t, "err", err)
-				time.Sleep(time.Duration(rand.IntN(20)) * time.Second)
+				// Use crypto/rand for secure random number generation
+				n, _ := rand.Int(rand.Reader, big.NewInt(20))
+				time.Sleep(time.Duration(n.Int64()) * time.Second)
 			}
 
 			if !good_to_go && counter >= 5 {
 				resultBase.Exists = false
 				resultBase.Failed = true
 				resultBase.FailedReason = err.Error()
-				return []*models.Result{ resultBase }
+				return []*models.Result{resultBase}
 			}
-			
+
 			if good_to_go {
 				for _, ans := range r.Answer {
 					cname, ok := ans.(*dns.CNAME)
@@ -357,14 +360,14 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 							resList = append(resList, c1)
 
 							m1 := new(dns.Msg)
-				            m1.Id = dns.Id()
+							m1.Id = dns.Id()
 							m1.RecursionDesired = true
-							m1.SetQuestion(strings.Trim(cname.Target, ". ") + ".", dns.TypeANY)
-							//r1, err := dns.Exchange(m1, run.dnsServer); 
-							r1, err := c.Exchange(m1, run.options.Proxy, run.dnsServer); 
+							m1.SetQuestion(strings.Trim(cname.Target, ". ")+".", dns.TypeANY)
+							//r1, err := dns.Exchange(m1, run.dnsServer);
+							r1, err := c.Exchange(m1, run.options.Proxy, run.dnsServer)
 							if err != nil {
 								good_to_go = false
-							}else{
+							} else {
 								for _, ans1 := range r1.Answer {
 									a, ok := ans1.(*dns.A)
 									if ok {
@@ -399,7 +402,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 									if ok {
 										logger.Debug("AAAA", "IP", aaaa.AAAA.String())
 										ips = append(ips, aaaa.AAAA.String())
-										
+
 										// With the same FQDN
 										a2 := resultBase.Clone()
 										a2.RType = "AAAA"
@@ -466,17 +469,17 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 		if arpa, err := dns.ReverseAddr(ip); err == nil {
 
 			m := new(dns.Msg)
-            m.Id = dns.Id()
+			m.Id = dns.Id()
 			m.RecursionDesired = true
 
 			m.SetQuestion(arpa, dns.TypePTR)
 
-			//r, err := dns.Exchange(m, run.dnsServer); 
+			//r, err := dns.Exchange(m, run.dnsServer);
 			c := new(internal.SocksClient)
-			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
+			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
 			if err != nil {
 				logger.Error("Error", "err", err)
-			}else{
+			} else {
 				for _, ans := range r.Answer {
 					ptr, ok := ans.(*dns.PTR)
 					if ok {
@@ -486,7 +489,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 						a2.RType = "PTR"
 						if strings.Contains(arpa, "ip6.arpa") {
 							a2.IPv6 = ip
-						}else{
+						} else {
 							a2.IPv4 = ip
 						}
 						a2.Ptr = arpa
@@ -531,7 +534,7 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 
 	if len(resList) == 0 {
 		resultBase.Exists = false
-		return []*models.Result{ resultBase }
+		return []*models.Result{resultBase}
 	}
 
 	return resList
@@ -539,7 +542,8 @@ func (run *Runner) Probe(host string, searchOrder []uint16) []*models.Result {
 
 func (run *Runner) Close() {
 	for _, writer := range run.writers {
-		writer.Finish()
+		if err := writer.Finish(); err != nil {
+			run.log.Error("failed to finish writer", "err", err)
+		}
 	}
 }
-

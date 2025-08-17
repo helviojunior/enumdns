@@ -1,8 +1,9 @@
 package tools
 
 import (
+	"crypto/rand"
+	"math/big"
 	"time"
-  	"math/rand"
 )
 
 // Float64ToTime takes a float64 as number of seconds since unix epoch and returns time.Time
@@ -19,7 +20,8 @@ func Float64ToTime(f float64) time.Time {
 }
 
 func RandSleep() {
-	rand.Seed(time.Now().UnixNano())
-	n := 4 + rand.Intn(6) //4 to 10
-	time.Sleep(time.Second/time.Duration(n))
+	// Use crypto/rand for secure random number generation
+	n, _ := rand.Int(rand.Reader, big.NewInt(6))
+	sleepDuration := 4 + n.Int64() //4 to 10
+	time.Sleep(time.Second / time.Duration(sleepDuration))
 }

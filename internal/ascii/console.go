@@ -4,15 +4,15 @@
 package ascii
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 )
 
 // Show the cursor if it was hidden previously.
 // Don't forget to show the cursor at least at the end of your application.
 // Otherwise the user might have a terminal with a permanently hidden cursor, until they reopen the terminal.
 func ShowCursor() {
-    fmt.Fprint(os.Stderr, "\x1b[?25h")
+	fmt.Fprint(os.Stderr, "\x1b[?25h")
 }
 
 // Hide the cursor.

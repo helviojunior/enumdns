@@ -2,7 +2,7 @@
 
 package ascii
 
-func GetNextSpinner(spin string) string { 
+func GetNextSpinner(spin string) string {
 	chars := []string{
 		"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏", //"⠿",
 	}
@@ -13,10 +13,10 @@ func GetNextSpinner(spin string) string {
 
 	for idx, e := range chars {
 		if spin == e {
-			if idx + 1 >= len(chars) {
+			if idx+1 >= len(chars) {
 				return chars[0]
-			}else {
-				return chars[idx + 1]
+			} else {
+				return chars[idx+1]
 			}
 		}
 	}
@@ -24,6 +24,6 @@ func GetNextSpinner(spin string) string {
 	return "⠿"
 }
 
-func ColoredSpin(spin string) string { 
+func ColoredSpin(spin string) string {
 	return "\033[36m" + spin + "\033[0m"
 }

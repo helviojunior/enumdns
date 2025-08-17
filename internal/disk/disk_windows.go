@@ -4,9 +4,9 @@
 package disk
 
 import (
-	"path/filepath"
 	"fmt"
 	"os"
+	"path/filepath"
 	"syscall"
 	"unsafe"
 
