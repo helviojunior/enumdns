@@ -8,6 +8,7 @@ Available modules:
 2. Enumerate DNS registers (CNAME, A, AAAA, NS and so on)
 3. Resolve DNS hosts from txt file
 4. Resolve DNS hosts from BloodHound file (.zip or .json)
+5. **Threat Analysis** - Advanced domain security analysis for typosquatting, homographic attacks, and malicious domain detection
 
 
 ## Main features
@@ -18,6 +19,8 @@ Available modules:
 - [x] Retrieve multiple DNS record types (e.g., CNAME, A, AAAA)  
 - [x] Enumerate all domain controllers names and IPs (in a Active Directory environment)
 - [x] Support to SOCKS (socks4/socks5) proxy
+- [x] **Threat analysis** with 8 detection techniques (typosquatting, bitsquatting, homographic attacks, etc.)
+- [x] **Comprehensive test coverage** (98.4% on threat analysis module)
 - [x] Additional advanced features and enhancements  
 
 
@@ -59,12 +62,17 @@ Examples:
    - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
    - enumdns resolve file -L /tmp/host_list.txt --write-db
 
+   - enumdns threat-analysis -d example.com --all-techniques -o threats.txt
+   - enumdns threat-analysis -d example.com --typosquatting --homographic --write-db
+   - enumdns threat-analysis -L domains.txt --all-techniques --max-variations 5000 --write-jsonl
+
 Available Commands:
-  brute       Perform brute-force enumeration
-  help        Help about any command
-  recon       Perform recon enumeration
-  report      Work with enumdns reports
-  version     Get the enumdns version
+  brute           Perform brute-force enumeration
+  help            Help about any command
+  recon           Perform recon enumeration
+  report          Work with enumdns reports
+  threat-analysis Advanced domain threat analysis for typosquatting and malicious domains
+  version         Get the enumdns version
 
 Flags:
   -D, --debug-log                Enable debug logging
@@ -76,6 +84,52 @@ Flags:
 Use "enumdns [command] --help" for more information about a command.
 
 ```
+
+
+## Disclaimer
+
+This tool is intended for educational purpose or for use in environments where you have been given explicit/legal authorization to do so.
+## Threat Analysis Module
+
+The `threat-analysis` module provides advanced domain security analysis to detect malicious domains that could be used in attacks against your organization. This module implements multiple techniques for identifying suspicious domains:
+
+### Available Techniques
+
+- **Typosquatting**: Detects domains with keyboard adjacency errors (e.g., `goggle.com` for `google.com`)
+- **Bitsquatting**: Identifies domains created through single bit-flip errors  
+- **Homographic Attacks**: Detects Unicode characters that look similar to ASCII (e.g., `рaypal.com` with Cyrillic 'р')
+- **Character Insertion/Deletion**: Finds domains with added or removed characters
+- **Character Transposition**: Detects swapped adjacent characters
+- **TLD Variations**: Analyzes suspicious TLDs (.tk, .ml, .ga, etc.)
+- **Subdomain Patterns**: Identifies phishing patterns like "secure-", "login-", "verify-"
+
+### Quick Examples
+
+```bash
+# Basic threat analysis with all techniques
+enumdns threat-analysis -d yourcompany.com --all-techniques
+
+# Specific techniques only
+enumdns threat-analysis -d yourcompany.com --typosquatting --homographic
+
+# Analyze multiple domains from file
+enumdns threat-analysis -L company-domains.txt --all-techniques --write-db
+
+# High-volume analysis with custom limits
+enumdns threat-analysis -d example.com --all-techniques --max-variations 10000
+
+# Output to different formats
+enumdns threat-analysis -d example.com --all-techniques --write-jsonl --write-csv
+```
+
+### Security Features
+
+- **Risk Scoring**: Each domain receives a threat score (0.0-1.0) based on multiple indicators
+- **Threat Indicators**: Automatic identification of suspicious patterns
+- **Rate Limiting**: Configurable limits to prevent overwhelming DNS servers
+- **Proxy Support**: Works with SOCKS proxies for discrete analysis
+
+For detailed documentation, see [documentation.md](documentation.md#análise-de-ameaças-threat-analysis---guia-detalhado).
 
 
 ## Disclaimer

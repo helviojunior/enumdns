@@ -1,0 +1,40 @@
+# Dependabot configuration for EnumDNS
+version: 2
+updates:
+  # Update Go modules
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(go):"
+      include: "scope"
+    reviewers:
+      - "bob-reis"
+    assignees:
+      - "bob-reis"
+    labels:
+      - "dependencies"
+      - "go"
+    
+  # Update GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci:"
+      include: "scope"
+    reviewers:
+      - "bob-reis"
+    assignees:
+      - "bob-reis"
+    labels:
+      - "dependencies"
+      - "github-actions"

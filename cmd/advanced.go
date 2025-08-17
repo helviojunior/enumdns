@@ -17,37 +17,41 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Opções específicas do módulo advanced
-var advancedOpts = struct {
+// Opções específicas do módulo threat-analysis
+var threatAnalysisOpts = struct {
 	Typosquatting bool
 	Bitsquatting  bool
 	Homographic   bool
 	AllTechniques bool
 	MaxVariations int
 	TLDs          []string
+	ShowProgress  bool
+	WarnLimits    bool
 }{
 	MaxVariations: 1000,
 	TLDs:          []string{"com", "net", "org", "co", "io"},
+	ShowProgress:  true,
+	WarnLimits:    true,
 }
 
 var advancedWriters = []writers.Writer{}
 
-var advancedCmd = &cobra.Command{
-	Use:   "advanced",
-	Short: "Advanced domain analysis for threats and typosquatting",
+var threatAnalysisCmd = &cobra.Command{
+	Use:   "threat-analysis",
+	Short: "Advanced domain threat analysis for typosquatting and malicious domains",
 	Long: ascii.LogoHelp(ascii.Markdown(`
-# advanced
+# threat-analysis
 
-Perform advanced domain analysis including typosquatting detection,
-homographic attacks, and suspicious domain discovery.
+Perform comprehensive domain threat analysis including typosquatting detection,
+homographic attacks, bitsquatting, and suspicious domain discovery.
 
-This module generates domain variations using multiple techniques and 
-verifies their existence to identify potential threats.
+This module generates domain variations using multiple advanced techniques and 
+verifies their existence to identify potential security threats and malicious domains.
 `)),
 	Example: `
-   - enumdns advanced -d example.com --typosquatting -o threats.txt
-   - enumdns advanced -d example.com --all-techniques --write-db
-   - enumdns advanced -L domains.txt --bitsquatting --write-jsonl`,
+   - enumdns threat-analysis -d example.com --typosquatting -o threats.txt
+   - enumdns threat-analysis -d example.com --all-techniques --write-db
+   - enumdns threat-analysis -L domains.txt --bitsquatting --write-jsonl`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 
@@ -149,18 +153,27 @@ verifies their existence to identify potential threats.
 		}
 
 		// Verificar se pelo menos uma técnica foi selecionada
-		if !advancedOpts.Typosquatting && !advancedOpts.Bitsquatting &&
-			!advancedOpts.Homographic && !advancedOpts.AllTechniques {
+		if !threatAnalysisOpts.Typosquatting && !threatAnalysisOpts.Bitsquatting &&
+			!threatAnalysisOpts.Homographic && !threatAnalysisOpts.AllTechniques {
 			log.Warn("No specific techniques selected, enabling all techniques")
-			advancedOpts.AllTechniques = true
+			threatAnalysisOpts.AllTechniques = true
+		}
+
+		// Validar limite de variações
+		if threatAnalysisOpts.MaxVariations > 10000 {
+			log.Warnf("MaxVariations (%d) is very high and may impact performance. Consider using a lower value.", threatAnalysisOpts.MaxVariations)
+		}
+
+		if threatAnalysisOpts.MaxVariations < 10 {
+			log.Warnf("MaxVariations (%d) is very low and may miss important variations. Consider using a higher value.", threatAnalysisOpts.MaxVariations)
 		}
 
 		return nil
 	},
-	Run: runAdvancedAnalysis,
+	Run: runThreatAnalysis,
 }
 
-func runAdvancedAnalysis(cmd *cobra.Command, args []string) {
+func runThreatAnalysis(cmd *cobra.Command, args []string) {
 	// Verificar conectividade DNS
 	_, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
 	if err != nil {
@@ -168,7 +181,7 @@ func runAdvancedAnalysis(cmd *cobra.Command, args []string) {
 		os.Exit(2)
 	}
 
-	log.Debug("starting advanced domain analysis")
+	log.Debug("starting domain threat analysis")
 
 	domains := []string{}
 
@@ -209,8 +222,8 @@ func runAdvancedAnalysis(cmd *cobra.Command, args []string) {
 
 		generator := advanced.NewVariationGenerator(domain, advanced.GeneratorOptions{
 			Techniques:    techniques,
-			MaxVariations: advancedOpts.MaxVariations,
-			TargetTLDs:    advancedOpts.TLDs,
+			MaxVariations: threatAnalysisOpts.MaxVariations,
+			TargetTLDs:    threatAnalysisOpts.TLDs,
 		})
 
 		variations := generator.GenerateAll()
@@ -225,6 +238,12 @@ func runAdvancedAnalysis(cmd *cobra.Command, args []string) {
 	if total == 0 {
 		log.Warn("No variations generated")
 		return
+	}
+
+	// Avisar sobre limites atingidos
+	if threatAnalysisOpts.WarnLimits && total >= threatAnalysisOpts.MaxVariations*len(domains) {
+		log.Warnf("Maximum variation limit reached (%d per domain). Some variations may have been excluded.", threatAnalysisOpts.MaxVariations)
+		log.Warnf("To analyze more variations, increase --max-variations parameter (current: %d)", threatAnalysisOpts.MaxVariations)
 	}
 
 	// Configurar runner
@@ -280,23 +299,23 @@ func runAdvancedAnalysis(cmd *cobra.Command, args []string) {
 		ascii.ClearLine()
 	}
 
-	log.Info("Advanced analysis completed")
+	log.Info("Threat analysis completed")
 }
 
 func getEnabledTechniques() []string {
 	var techniques []string
 
-	if advancedOpts.AllTechniques {
+	if threatAnalysisOpts.AllTechniques {
 		return []string{"typosquatting", "bitsquatting", "homographic", "insertion", "deletion", "transposition", "tld_variation", "subdomain_pattern"}
 	}
 
-	if advancedOpts.Typosquatting {
+	if threatAnalysisOpts.Typosquatting {
 		techniques = append(techniques, "typosquatting")
 	}
-	if advancedOpts.Bitsquatting {
+	if threatAnalysisOpts.Bitsquatting {
 		techniques = append(techniques, "bitsquatting")
 	}
-	if advancedOpts.Homographic {
+	if threatAnalysisOpts.Homographic {
 		techniques = append(techniques, "homographic")
 	}
 
@@ -309,29 +328,30 @@ func getEnabledTechniques() []string {
 }
 
 func init() {
-	rootCmd.AddCommand(advancedCmd)
+	rootCmd.AddCommand(threatAnalysisCmd)
 
 	// Flags principais
-	advancedCmd.Flags().StringVarP(&opts.DnsSuffix, "domain", "d", "", "Target domain for analysis")
-	advancedCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "domain-list", "L", "", "File with domains to analyze (one per line)")
+	threatAnalysisCmd.Flags().StringVarP(&opts.DnsSuffix, "domain", "d", "", "Target domain for analysis")
+	threatAnalysisCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "domain-list", "L", "", "File with domains to analyze (one per line)")
 
 	// Técnicas específicas
-	advancedCmd.Flags().BoolVar(&advancedOpts.Typosquatting, "typosquatting", false, "Enable typosquatting detection (keyboard adjacency errors)")
-	advancedCmd.Flags().BoolVar(&advancedOpts.Bitsquatting, "bitsquatting", false, "Enable bitsquatting detection (single bit-flip errors)")
-	advancedCmd.Flags().BoolVar(&advancedOpts.Homographic, "homographic", false, "Enable homographic attacks detection (similar character substitution)")
-	advancedCmd.Flags().BoolVar(&advancedOpts.AllTechniques, "all-techniques", false, "Enable all available detection techniques")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.Typosquatting, "typosquatting", false, "Enable typosquatting detection (keyboard adjacency errors)")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.Bitsquatting, "bitsquatting", false, "Enable bitsquatting detection (single bit-flip errors)")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.Homographic, "homographic", false, "Enable homographic attacks detection (similar character substitution)")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.AllTechniques, "all-techniques", false, "Enable all available detection techniques")
 
 	// Configurações avançadas
-	advancedCmd.Flags().IntVar(&advancedOpts.MaxVariations, "max-variations", 1000, "Maximum variations to generate per domain (1-10000)")
-	advancedCmd.Flags().StringSliceVar(&advancedOpts.TLDs, "target-tlds", []string{"com", "net", "org", "co", "io", "tk", "ml", "ga", "cf"}, "Target TLDs for variations (comma-separated)")
+	threatAnalysisCmd.Flags().IntVar(&threatAnalysisOpts.MaxVariations, "max-variations", 1000, "Maximum variations to generate per domain (10-50000)")
+	threatAnalysisCmd.Flags().StringSliceVar(&threatAnalysisOpts.TLDs, "target-tlds", []string{"com", "net", "org", "co", "io", "tk", "ml", "ga", "cf"}, "Target TLDs for variations (comma-separated)")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.WarnLimits, "warn-limits", true, "Show warnings when variation limits are reached")
 
 	// Flags de compatibilidade
-	advancedCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "ignore-nonexistent", "I", false, "Ignore nonexistent domains during analysis")
-	advancedCmd.Flags().BoolVarP(&opts.Quick, "quick", "Q", false, "Request only A records (faster)")
+	threatAnalysisCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "ignore-nonexistent", "I", false, "Ignore nonexistent domains during analysis")
+	threatAnalysisCmd.Flags().BoolVarP(&opts.Quick, "quick", "Q", false, "Request only A records (faster)")
 
 	// Marcar flags mutuamente exclusivas
-	advancedCmd.MarkFlagsMutuallyExclusive("domain", "domain-list")
+	threatAnalysisCmd.MarkFlagsMutuallyExclusive("domain", "domain-list")
 
 	// Adicionar validações
-	advancedCmd.Flags().SetInterspersed(false) // Manter ordem das flags
+	threatAnalysisCmd.Flags().SetInterspersed(false) // Manter ordem das flags
 }

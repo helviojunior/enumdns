@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve EnumDNS
+about: Create a report to help us improve
 title: "[BUG] "
 labels: bug
 assignees: ''
@@ -14,9 +14,9 @@ A clear and concise description of what the bug is.
 ## 🔍 Steps to Reproduce
 
 Steps to reproduce the behavior:
-1. Run enumdns command: `enumdns [command] [options]`
-2. Use specific parameters: `[list parameters]`
-3. Observe the behavior
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
 4. See error
 
 ## 🎯 Expected Behavior
@@ -30,15 +30,15 @@ A clear and concise description of what actually happened.
 ## 📱 Environment
 
 **System Information:**
-- OS: [e.g. Ubuntu 22.04, macOS 13.0, Windows 11]
-- Go Version: [e.g. 1.23.0]
-- EnumDNS Version: [e.g. v1.0.0]
-- Installation Method: [e.g. built from source, binary download, go install]
+- OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 11]
+- Go Version: [e.g. 1.22.1]
+- Takedown Tool Version: [e.g. v1.0.0]
+- Installation Method: [e.g. built from source, docker, binary download]
 
 **Configuration:**
-- DNS Server used: [e.g. 8.8.8.8, 1.1.1.1, custom]
-- Proxy used: [e.g. none, socks5://127.0.0.1:9050]
-- Command executed: [exact enumdns command that caused the issue]
+- Config file used: [e.g. production.yaml, default.yaml]
+- Environment variables: [list relevant env vars]
+- Command executed: [exact command that caused the issue]
 
 ## 📋 Logs and Output
 
@@ -49,12 +49,12 @@ A clear and concise description of what actually happened.
 
 **Log Output:**
 ```
-[Paste relevant log output here - use -D flag for debug logs]
+[Paste relevant log output here]
 ```
 
 **Command Output:**
 ```bash
-$ ./enumdns [your command here]
+$ ./takedown [your command here]
 [Paste the full output]
 ```
 
@@ -76,17 +76,9 @@ Add any other context about the problem here.
 
 **Have you tested with:**
 - [ ] Latest version from main branch
-- [ ] Different DNS servers
-- [ ] Different network environment
-- [ ] Debug mode enabled (-D flag)
+- [ ] Different configuration files
+- [ ] Different environment
 - [ ] Minimal reproduction case
-
-**Which EnumDNS module:**
-- [ ] threat-analysis
-- [ ] recon
-- [ ] brute
-- [ ] resolve
-- [ ] report
 
 ## 📊 Impact Assessment
 
@@ -113,4 +105,3 @@ If you have ideas on how to fix this issue, please describe them here.
 - [ ] I have tested with the latest version
 - [ ] I have provided reproduction steps
 - [ ] I have included error messages and logs
-- [ ] I confirm this is for defensive security purposes only

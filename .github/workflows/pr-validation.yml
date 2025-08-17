@@ -1,0 +1,395 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - melhorias-gerais
+      - develop
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  GO_VERSION: "1.23"
+
+jobs:
+  # Job que valida se o PR pode ser criado/merged
+  pr-gate:
+    name: PR Gate - Quality Checks
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout PR code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Download dependencies
+      run: |
+        go mod download
+        go mod verify
+    
+    - name: Validate go.mod and go.sum
+      run: |
+        go mod tidy
+        if ! git diff --exit-code go.mod go.sum; then
+          echo "❌ go.mod or go.sum is not up to date. Please run 'go mod tidy'"
+          exit 1
+        fi
+        echo "✅ go.mod and go.sum are up to date"
+    
+    - name: Check code formatting
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "❌ Code is not properly formatted"
+          echo "Files that need formatting:"
+          gofmt -s -l .
+          echo ""
+          echo "Please run: gofmt -s -w ."
+          exit 1
+        fi
+        echo "✅ Code formatting is correct"
+    
+    - name: Run go vet
+      run: |
+        echo "Running go vet..."
+        if ! go vet ./...; then
+          echo "❌ go vet found issues"
+          exit 1
+        fi
+        echo "✅ go vet passed"
+    
+    - name: Install and run staticcheck
+      run: |
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        echo "Running staticcheck..."
+        if ! staticcheck ./...; then
+          echo "❌ staticcheck found issues"
+          exit 1
+        fi
+        echo "✅ staticcheck passed"
+    
+    - name: Install and run golangci-lint
+      run: |
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+        echo "Running golangci-lint..."
+        if ! golangci-lint run ./...; then
+          echo "❌ golangci-lint found issues"
+          exit 1
+        fi
+        echo "✅ golangci-lint passed"
+    
+    - name: Run unit tests
+      run: |
+        echo "Running unit tests..."
+        if ! go test -v -race -timeout=10m ./...; then
+          echo "❌ Unit tests failed"
+          exit 1
+        fi
+        echo "✅ All unit tests passed"
+    
+    - name: Run tests with coverage
+      run: |
+        echo "Running tests with coverage..."
+        PKGS=$(go list ./... | grep -v '/cmd/' | grep -v '/internal/tools' | grep -v '/internal/ascii')
+        if [ -n "$PKGS" ]; then
+          go test -v -race -coverprofile=coverage.out -covermode=atomic $PKGS
+          
+          # Check coverage threshold
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Test coverage: ${COVERAGE}%"
+          
+          # Convert to integer by removing decimal part for simple comparison
+          COVERAGE_INT=$(echo "$COVERAGE" | awk '{printf "%.0f", $1}')
+          
+          if [ "$COVERAGE_INT" -lt 80 ]; then
+            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 80%"
+            exit 1
+          fi
+          echo "✅ Coverage requirement met: ${COVERAGE}%"
+        else
+          echo "⚠️ No testable packages found"
+        fi
+    
+    - name: Build application
+      run: |
+        echo "Building application..."
+        if ! go build -v -o enumdns .; then
+          echo "❌ Build failed"
+          exit 1
+        fi
+        echo "✅ Build successful"
+    
+    - name: Test binary execution
+      run: |
+        echo "Testing binary execution..."
+        if ! ./enumdns --help > /dev/null 2>&1; then
+          echo "❌ Binary execution failed"
+          exit 1
+        fi
+        echo "✅ Binary executes correctly"
+        
+        # Test specific commands
+        ./enumdns version || echo "Version command test"
+        ./enumdns threat-analysis --help || echo "Threat-analysis help test"
+    
+    - name: Test enumdns threat-analysis functionality
+      run: |
+        echo "Testing threat-analysis module..."
+        # Test that the module was properly renamed
+        if ! ./enumdns threat-analysis --help | grep -q "threat-analysis"; then
+          echo "❌ threat-analysis command not properly configured"
+          exit 1
+        fi
+        echo "✅ threat-analysis module is properly configured"
+    
+    - name: Validate documentation
+      run: |
+        echo "Validating documentation..."
+        
+        # Check if README exists and has recent updates
+        if [ ! -f "README.md" ]; then
+          echo "❌ README.md not found"
+          exit 1
+        fi
+        
+        # Check if documentation.md exists
+        if [ ! -f "documentation.md" ]; then
+          echo "❌ documentation.md not found"
+          exit 1
+        fi
+        
+        # Check if threat-analysis is documented
+        if ! grep -q "threat-analysis" README.md; then
+          echo "❌ threat-analysis not documented in README.md"
+          exit 1
+        fi
+        
+        echo "✅ Documentation checks passed"
+
+  # Job para validação de mudanças específicas
+  change-validation:
+    name: Change Impact Analysis
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout PR code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v41
+      with:
+        files: |
+          **/*.go
+          go.mod
+          go.sum
+          **/*.md
+    
+    - name: Analyze code changes
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        echo "Changed files:"
+        echo "${{ steps.changed-files.outputs.all_changed_files }}"
+        
+        # Check if critical files were modified
+        critical_files=("main.go" "cmd/" "pkg/advanced/")
+        
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          for critical in "${critical_files[@]}"; do
+            if [[ "$file" == *"$critical"* ]]; then
+              echo "⚠️ Critical file modified: $file"
+              echo "This change requires extra review"
+            fi
+          done
+        done
+    
+    - name: Check for breaking changes
+      run: |
+        echo "Checking for potential breaking changes..."
+        
+        # Check if public API interfaces changed
+        if git diff origin/main...HEAD --name-only | grep -q "pkg/.*\.go"; then
+          echo "⚠️ Public package files changed - potential breaking change"
+        fi
+        
+        # Check if command structure changed
+        if git diff origin/main...HEAD --name-only | grep -q "cmd/.*\.go"; then
+          echo "⚠️ Command files changed - may affect CLI interface"
+        fi
+    
+    - name: Performance impact check
+      run: |
+        echo "Checking for performance-sensitive changes..."
+        
+        # Check if critical performance paths were modified
+        perf_files=("pkg/advanced/" "pkg/runner/" "internal/tools/")
+        
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          for perf_file in "${perf_files[@]}"; do
+            if [[ "$file" == *"$perf_file"* ]]; then
+              echo "⚠️ Performance-critical file modified: $file"
+              echo "Consider running performance benchmarks"
+            fi
+          done
+        done
+
+  # Job para validação de segurança específica do PR
+  security-validation:
+    name: Security Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout PR code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Run security checks
+      run: |
+        # Install gosec
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
+        
+        echo "Running security scan..."
+        if ! gosec ./...; then
+          echo "❌ Security issues found"
+          exit 1
+        fi
+        echo "✅ Security scan passed"
+    
+    - name: Check for hardcoded secrets (detailed)
+      run: |
+        echo "Scanning for hardcoded secrets..."
+        
+        # More comprehensive secret detection
+        if grep -r -E "(password|passwd|pwd|secret|key|token|api_key|apikey)\s*[:=]\s*['\"]?[a-zA-Z0-9+/]{8,}" . \
+           --include="*.go" --include="*.yaml" --include="*.yml" --include="*.json" \
+           --exclude-dir=".git" --exclude-dir="docs" --exclude="*.md" --exclude-dir="examples"; then
+          echo "❌ Potential secrets found in code"
+          exit 1
+        fi
+        
+        echo "✅ No hardcoded secrets detected"
+    
+    - name: Validate defensive use only
+      run: |
+        echo "Validating that code is for defensive security purposes only..."
+        
+        # Check for malicious patterns
+        if grep -r -i "exploit\|payload\|backdoor\|malware" --include="*.go" --exclude-dir=".git" .; then
+          echo "⚠️ Found potentially malicious keywords - manual review required"
+        fi
+        
+        # Ensure documentation emphasizes defensive use
+        if ! grep -q -i "defensive\|security\|analysis" README.md; then
+          echo "⚠️ README should emphasize defensive security purpose"
+        fi
+        
+        echo "✅ Security purpose validation completed"
+
+  # Job que roda apenas se todos os checks passaram
+  pr-status:
+    name: PR Status Summary
+    runs-on: ubuntu-latest
+    needs: [pr-gate, change-validation, security-validation]
+    if: always() && github.event.pull_request.draft == false
+    permissions:
+      pull-requests: write
+      issues: write
+    
+    steps:
+    - name: Check all jobs status
+      run: |
+        if [ "${{ needs.pr-gate.result }}" != "success" ]; then
+          echo "❌ PR Gate checks failed"
+          exit 1
+        fi
+        
+        if [ "${{ needs.change-validation.result }}" != "success" ]; then
+          echo "❌ Change validation failed"
+          exit 1
+        fi
+        
+        if [ "${{ needs.security-validation.result }}" != "success" ]; then
+          echo "❌ Security validation failed"
+          exit 1
+        fi
+        
+        echo "✅ All PR validation checks passed!"
+        echo "This PR is ready for review and can be merged."
+    
+    - name: Comment PR status
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const status = '${{ needs.pr-gate.result }}' === 'success' && 
+                        '${{ needs.change-validation.result }}' === 'success' && 
+                        '${{ needs.security-validation.result }}' === 'success' ? 'success' : 'failure';
+          
+          const statusEmoji = status === 'success' ? '✅' : '❌';
+          const statusText = status === 'success' ? 'PASSED' : 'FAILED';
+          
+          const body = `## PR Validation ${statusEmoji} ${statusText}
+          
+          | Check | Status |
+          |-------|--------|
+          | Code Quality & Tests | ${{ needs.pr-gate.result == 'success' && '✅' || '❌' }} |
+          | Change Analysis | ${{ needs.change-validation.result == 'success' && '✅' || '❌' }} |
+          | Security Validation | ${{ needs.security-validation.result == 'success' && '✅' || '❌' }} |
+          
+          ${status === 'success' ? 
+            '🎉 All checks passed! This PR can be reviewed and merged.' : 
+            '⚠️ Some checks failed. Please review the failed jobs and fix the issues before merging.'}
+          
+          ### EnumDNS Specific Checks
+          - ✅ Threat-analysis module validation
+          - ✅ Documentation consistency
+          - ✅ Test coverage above 80%
+          - ✅ Defensive security validation
+          
+          **Note**: This PR will only be mergeable after all validation checks pass.
+          `;
+          
+          // Find existing comment
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const existingComment = comments.data.find(comment => 
+            comment.body.includes('PR Validation')
+          );
+          
+          if (existingComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingComment.id,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }

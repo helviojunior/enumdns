@@ -1,0 +1,183 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  GO_VERSION: "1.22"
+  SONAR_PROJECT_KEY: "cti-team_takedown"
+  SONAR_ORGANIZATION: "cti-team"
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+jobs:
+  # Job para validação de código e testes
+  test:
+    name: Test and Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Download dependencies
+      run: |
+        go mod download
+        go mod verify
+    
+    - name: Install lint tools
+      run: |
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+    
+    - name: Run gofmt check
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Code is not formatted. Please run 'gofmt -s -w .'"
+          gofmt -s -l .
+          exit 1
+        fi
+    
+    - name: Run go vet
+      run: go vet ./...
+    
+    - name: Run staticcheck
+      run: staticcheck ./...
+
+    - name: Run golangci-lint
+      run: golangci-lint run ./...
+
+    - name: Run unit tests with coverage
+      run: |
+        go test -v -race ./...
+        go test -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v /cmd/ | grep -v /internal/)
+        go tool cover -html=coverage.out -o coverage.html
+    
+    - name: Check test coverage threshold
+      run: |
+        # Extract coverage percentage and convert to integer for comparison
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "Coverage: ${COVERAGE}%"
+        
+        # Convert to integer by removing decimal part for simple comparison
+        COVERAGE_INT=$(echo "$COVERAGE" | awk '{printf "%.0f", $1}')
+        
+        if [ "$COVERAGE_INT" -lt 80 ]; then
+          echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 80%"
+          exit 1
+        fi
+        
+        echo "✅ Coverage requirement met: ${COVERAGE}%"
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          coverage.out
+          coverage.html
+    
+    - name: Run integration tests
+      run: |
+        if [ -f "test.sh" ]; then
+          chmod +x test.sh
+          ./test.sh
+        fi
+    
+    - name: Build application
+      run: |
+        go build -v -o takedown cmd/takedown/main.go
+        ./takedown --help || echo "Help command executed"
+    
+    - name: Validate configuration
+      run: |
+        if [ -f "./takedown" ]; then
+          ./takedown -action=validate-config -config=configs/sla/default.yaml || echo "Config validation test"
+        fi
+
+  # Job para análise de segurança
+  security:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@master
+      with:
+        args: '-fmt sarif -out gosec-results.sarif ./...'
+        
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: gosec-results.sarif
+    
+    - name: Run Nancy to check for vulnerabilities
+      run: |
+        go install github.com/sonatype-nexus-community/nancy@latest
+        go list -json -deps ./... | nancy sleuth
+    
+    - name: Check for hardcoded secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.pull_request.base.sha || github.event.before }}
+        head: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  # Job para SonarCloud analysis
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    environment: sonarcloud
+    needs: test
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Download dependencies
+      run: go mod download
+    
+    - name: Run tests with coverage for SonarCloud
+      run: |
+        go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+    
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarqube-scan-action@v5
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
