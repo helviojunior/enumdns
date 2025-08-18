@@ -1,9 +1,9 @@
 package readers
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
-	"errors"
 	"strings"
 
 	"io"
@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/log"
 )
 
 type CrtShReader struct {
@@ -20,8 +20,8 @@ type CrtShReader struct {
 }
 
 type CrtShReaderOptions struct {
-	Timeout         time.Duration
-	ProxyUri 		*url.URL
+	Timeout  time.Duration
+	ProxyUri *url.URL
 }
 
 func NewCrtShReader(opts *CrtShReaderOptions) *CrtShReader {
@@ -39,7 +39,7 @@ func (crtr *CrtShReader) ReadFromCrtsh(domain string, outList *[]string, fqdnLis
 	crtUrl := fmt.Sprintf("https://crt.sh/?CN=%s", domain)
 
 	client := &http.Client{
-		Timeout:   crtr.Options.Timeout,
+		Timeout: crtr.Options.Timeout,
 	}
 
 	if crtr.Options.ProxyUri != nil {
@@ -77,23 +77,23 @@ func (crtr *CrtShReader) ReadFromCrtsh(domain string, outList *[]string, fqdnLis
 		if candidate != "" && !strings.Contains(candidate, "white-space:normal") {
 			// Check if it is a valid FQDN
 			_, err := url.Parse(fmt.Sprintf("https://%s/", candidate))
-        	if err != nil {
-	        	log.Debug("Invalid host", "host", candidate, "err", err)
-	        }else{
-	        	candidate = strings.Trim(candidate, ".")
-	        	candidate = strings.Replace(candidate, fmt.Sprintf(".%s", domain), "", -1)
-	        	candidate = strings.Replace(candidate, domain, "", -1)
-	        	if candidate != "" {
-		        	if !tools.SliceHasStr(*outList, candidate) {
-		        		log.Debug("Match", "domain", domain, "host", candidate)
-			        	*outList = append(*outList, candidate)
-			        }
-			        fqdn := fmt.Sprintf("%s.%s", candidate, domain)
-			        if !tools.SliceHasStr(*fqdnList, fqdn) {
-			        	*fqdnList = append(*fqdnList, fqdn)
-			        }
-			    }
-	        }
+			if err != nil {
+				log.Debug("Invalid host", "host", candidate, "err", err)
+			} else {
+				candidate = strings.Trim(candidate, ".")
+				candidate = strings.Replace(candidate, fmt.Sprintf(".%s", domain), "", -1)
+				candidate = strings.Replace(candidate, domain, "", -1)
+				if candidate != "" {
+					if !tools.SliceHasStr(*outList, candidate) {
+						log.Debug("Match", "domain", domain, "host", candidate)
+						*outList = append(*outList, candidate)
+					}
+					fqdn := fmt.Sprintf("%s.%s", candidate, domain)
+					if !tools.SliceHasStr(*fqdnList, fqdn) {
+						*fqdnList = append(*fqdnList, fqdn)
+					}
+				}
+			}
 		}
 	}
 
@@ -112,7 +112,7 @@ func (crtr *CrtShReader) fetchWithRetry(client *http.Client, crtUrl string) (*ht
 			return resp, nil
 		}
 		if i < maxRetries-1 {
-			time.Sleep(time.Second * time.Duration(10 * i))
+			time.Sleep(time.Second * time.Duration(10*i))
 		}
 	}
 

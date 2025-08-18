@@ -1,6 +1,6 @@
 package main
 
-import "github.com/helviojunior/enumdns/cmd"
+import "github.com/bob-reis/enumdns/cmd"
 
 func main() {
 	cmd.Execute()

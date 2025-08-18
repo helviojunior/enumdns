@@ -1,0 +1,722 @@
+{
+	"runs": [
+		{
+			"results": [
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/disk/disk_unix.go"
+								},
+								"region": {
+									"endColumn": 27,
+									"endLine": 69,
+									"snippet": {
+										"text": "FSType: getFSType(uint32(ftype)),"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 27,
+									"startLine": 69
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "integer overflow conversion uint64 -\u003e uint32"
+					},
+					"ruleId": "G115"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "pkg/writers/text.go"
+								},
+								"region": {
+									"endColumn": 15,
+									"endLine": 20,
+									"snippet": {
+										"text": "file, err := os.OpenFile(destination, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 15,
+									"startLine": 20
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "pkg/writers/csv.go"
+								},
+								"region": {
+									"endColumn": 15,
+									"endLine": 30,
+									"snippet": {
+										"text": "file, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 15,
+									"startLine": 30
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "pkg/readers/file.go"
+								},
+								"region": {
+									"endColumn": 14,
+									"endLine": 90,
+									"snippet": {
+										"text": "file, err = os.Open(fileName)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 14,
+									"startLine": 90
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/nameserver_others.go"
+								},
+								"region": {
+									"endColumn": 15,
+									"endLine": 23,
+									"snippet": {
+										"text": "data, err := os.ReadFile(filename)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 15,
+									"startLine": 23
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 12,
+									"endLine": 301,
+									"snippet": {
+										"text": "f, err := os.Open(fileName)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 12,
+									"startLine": 301
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 14,
+									"endLine": 285,
+									"snippet": {
+										"text": "f, err := os.OpenFile(\nfpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())\n"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 14,
+									"startLine": 284
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 14,
+									"endLine": 200,
+									"snippet": {
+										"text": "file, err = os.Open(filename)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 14,
+									"startLine": 200
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 19,
+									"endLine": 176,
+									"snippet": {
+										"text": "destFile, err := os.Create(destPath)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 19,
+									"startLine": 176
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 21,
+									"endLine": 170,
+									"snippet": {
+										"text": "sourceFile, err := os.Open(sourcePath)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 21,
+									"startLine": 170
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 21,
+									"endLine": 93,
+									"snippet": {
+										"text": "fileHandle, err := os.Create(absPath)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 21,
+									"startLine": 93
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 15,
+									"endLine": 24,
+									"snippet": {
+										"text": "file, err := os.Open(s)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 15,
+									"startLine": 24
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "cmd/resolve_bloodhound.go"
+								},
+								"region": {
+									"endColumn": 12,
+									"endLine": 252,
+									"snippet": {
+										"text": "f, err := os.Open(fileName)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 12,
+									"startLine": 252
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "cmd/report.go"
+								},
+								"region": {
+									"endColumn": 15,
+									"endLine": 67,
+									"snippet": {
+										"text": "file, err := os.Open(from)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 15,
+									"startLine": 67
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential file inclusion via variable"
+					},
+					"ruleId": "G304"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 13,
+									"endLine": 291,
+									"snippet": {
+										"text": "_, err = io.Copy(f, rc)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 13,
+									"startLine": 291
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Potential DoS vulnerability via decompression bomb"
+					},
+					"ruleId": "G110"
+				},
+				{
+					"level": "error",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "internal/tools/fs.go"
+								},
+								"region": {
+									"endColumn": 12,
+									"endLine": 262,
+									"snippet": {
+										"text": "fpath := filepath.Join(dest, f.Name)"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 12,
+									"startLine": 262
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "File traversal when extracting zip/tar archive"
+					},
+					"ruleId": "G305"
+				},
+				{
+					"level": "warning",
+					"locations": [
+						{
+							"physicalLocation": {
+								"artifactLocation": {
+									"uri": "cmd/report_convert.go"
+								},
+								"region": {
+									"endColumn": 4,
+									"endLine": 133,
+									"snippet": {
+										"text": "w.Finish()"
+									},
+									"sourceLanguage": "go",
+									"startColumn": 4,
+									"startLine": 133
+								}
+							}
+						}
+					],
+					"message": {
+						"text": "Errors unhandled"
+					},
+					"ruleId": "G104"
+				}
+			],
+			"taxonomies": [
+				{
+					"downloadUri": "https://cwe.mitre.org/data/xml/cwec_v4.4.xml.zip",
+					"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+					"informationUri": "https://cwe.mitre.org/data/published/cwe_v4.4.pdf/",
+					"isComprehensive": true,
+					"language": "en",
+					"minimumRequiredLocalizedDataSemanticVersion": "4.4",
+					"name": "CWE",
+					"organization": "MITRE",
+					"releaseDateUtc": "2021-03-15",
+					"shortDescription": {
+						"text": "The MITRE Common Weakness Enumeration"
+					},
+					"taxa": [
+						{
+							"fullDescription": {
+								"text": "The software performs a calculation that can produce an integer overflow or wraparound, when the logic assumes that the resulting value will always be larger than the original value. This can introduce other weaknesses when the calculation is used for resource management or execution control."
+							},
+							"guid": "c71e4fa0-720e-3e82-8b67-b2d44d0c604b",
+							"helpUri": "https://cwe.mitre.org/data/definitions/190.html",
+							"id": "190",
+							"shortDescription": {
+								"text": "Integer Overflow or Wraparound"
+							}
+						},
+						{
+							"fullDescription": {
+								"text": "The software uses external input to construct a pathname that is intended to identify a file or directory that is located underneath a restricted parent directory, but the software does not properly neutralize special elements within the pathname that can cause the pathname to resolve to a location that is outside of the restricted directory."
+							},
+							"guid": "3e718404-88bc-3f17-883e-e85e74078a76",
+							"helpUri": "https://cwe.mitre.org/data/definitions/22.html",
+							"id": "22",
+							"shortDescription": {
+								"text": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+							}
+						},
+						{
+							"fullDescription": {
+								"text": "The software does not handle or incorrectly handles a compressed input with a very high compression ratio that produces a large output."
+							},
+							"guid": "8f97f42f-c62a-3d38-b26d-97951029c895",
+							"helpUri": "https://cwe.mitre.org/data/definitions/409.html",
+							"id": "409",
+							"shortDescription": {
+								"text": "Improper Handling of Highly Compressed Data (Data Amplification)"
+							}
+						},
+						{
+							"fullDescription": {
+								"text": "The software does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the software."
+							},
+							"guid": "7df38d1d-038e-3ced-8601-8d9265b90a25",
+							"helpUri": "https://cwe.mitre.org/data/definitions/703.html",
+							"id": "703",
+							"shortDescription": {
+								"text": "Improper Check or Handling of Exceptional Conditions"
+							}
+						}
+					],
+					"version": "4.4"
+				}
+			],
+			"tool": {
+				"driver": {
+					"guid": "8b518d5f-906d-39f9-894b-d327b1a421c5",
+					"informationUri": "https://github.com/securego/gosec/",
+					"name": "gosec",
+					"rules": [
+						{
+							"defaultConfiguration": {
+								"level": "warning"
+							},
+							"fullDescription": {
+								"text": "Errors unhandled"
+							},
+							"help": {
+								"text": "Errors unhandled\nSeverity: LOW\nConfidence: HIGH\n"
+							},
+							"id": "G104",
+							"name": "Improper Check or Handling of Exceptional Conditions",
+							"properties": {
+								"precision": "high",
+								"tags": [
+									"security",
+									"LOW"
+								]
+							},
+							"relationships": [
+								{
+									"kinds": [
+										"superset"
+									],
+									"target": {
+										"guid": "7df38d1d-038e-3ced-8601-8d9265b90a25",
+										"id": "703",
+										"toolComponent": {
+											"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+											"name": "CWE"
+										}
+									}
+								}
+							],
+							"shortDescription": {
+								"text": "Errors unhandled"
+							}
+						},
+						{
+							"defaultConfiguration": {
+								"level": "error"
+							},
+							"fullDescription": {
+								"text": "File traversal when extracting zip/tar archive"
+							},
+							"help": {
+								"text": "File traversal when extracting zip/tar archive\nSeverity: MEDIUM\nConfidence: HIGH\n"
+							},
+							"id": "G305",
+							"name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+							"properties": {
+								"precision": "high",
+								"tags": [
+									"security",
+									"MEDIUM"
+								]
+							},
+							"relationships": [
+								{
+									"kinds": [
+										"superset"
+									],
+									"target": {
+										"guid": "3e718404-88bc-3f17-883e-e85e74078a76",
+										"id": "22",
+										"toolComponent": {
+											"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+											"name": "CWE"
+										}
+									}
+								}
+							],
+							"shortDescription": {
+								"text": "File traversal when extracting zip/tar archive"
+							}
+						},
+						{
+							"defaultConfiguration": {
+								"level": "error"
+							},
+							"fullDescription": {
+								"text": "Potential DoS vulnerability via decompression bomb"
+							},
+							"help": {
+								"text": "Potential DoS vulnerability via decompression bomb\nSeverity: MEDIUM\nConfidence: MEDIUM\n"
+							},
+							"id": "G110",
+							"name": "Improper Handling of Highly Compressed Data (Data Amplification)",
+							"properties": {
+								"precision": "medium",
+								"tags": [
+									"security",
+									"MEDIUM"
+								]
+							},
+							"relationships": [
+								{
+									"kinds": [
+										"superset"
+									],
+									"target": {
+										"guid": "8f97f42f-c62a-3d38-b26d-97951029c895",
+										"id": "409",
+										"toolComponent": {
+											"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+											"name": "CWE"
+										}
+									}
+								}
+							],
+							"shortDescription": {
+								"text": "Potential DoS vulnerability via decompression bomb"
+							}
+						},
+						{
+							"defaultConfiguration": {
+								"level": "error"
+							},
+							"fullDescription": {
+								"text": "Potential file inclusion via variable"
+							},
+							"help": {
+								"text": "Potential file inclusion via variable\nSeverity: MEDIUM\nConfidence: HIGH\n"
+							},
+							"id": "G304",
+							"name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+							"properties": {
+								"precision": "high",
+								"tags": [
+									"security",
+									"MEDIUM"
+								]
+							},
+							"relationships": [
+								{
+									"kinds": [
+										"superset"
+									],
+									"target": {
+										"guid": "3e718404-88bc-3f17-883e-e85e74078a76",
+										"id": "22",
+										"toolComponent": {
+											"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+											"name": "CWE"
+										}
+									}
+								}
+							],
+							"shortDescription": {
+								"text": "Potential file inclusion via variable"
+							}
+						},
+						{
+							"defaultConfiguration": {
+								"level": "error"
+							},
+							"fullDescription": {
+								"text": "integer overflow conversion uint64 -\u003e uint32"
+							},
+							"help": {
+								"text": "integer overflow conversion uint64 -\u003e uint32\nSeverity: HIGH\nConfidence: MEDIUM\n"
+							},
+							"id": "G115",
+							"name": "Integer Overflow or Wraparound",
+							"properties": {
+								"precision": "medium",
+								"tags": [
+									"security",
+									"HIGH"
+								]
+							},
+							"relationships": [
+								{
+									"kinds": [
+										"superset"
+									],
+									"target": {
+										"guid": "c71e4fa0-720e-3e82-8b67-b2d44d0c604b",
+										"id": "190",
+										"toolComponent": {
+											"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+											"name": "CWE"
+										}
+									}
+								}
+							],
+							"shortDescription": {
+								"text": "integer overflow conversion uint64 -\u003e uint32"
+							}
+						}
+					],
+					"semanticVersion": "dev",
+					"supportedTaxonomies": [
+						{
+							"guid": "f2856fc0-85b7-373f-83e7-6f8582243547",
+							"name": "CWE"
+						}
+					],
+					"version": "dev"
+				}
+			}
+		}
+	],
+	"$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+	"version": "2.1.0"
+}

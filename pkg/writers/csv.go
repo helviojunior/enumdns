@@ -6,8 +6,8 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/models"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/models"
 )
 
 // fields in the main model to ignore
@@ -27,7 +27,7 @@ func NewCsvWriter(destination string) (*CsvWriter, error) {
 	}
 
 	// open the file and write the CSV headers to it
-	file, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +51,12 @@ func (cw *CsvWriter) Finish() error {
 
 // Write a CSV line
 func (cw *CsvWriter) Write(result *models.Result) error {
-	
+
 	if !result.Exists {
 		return nil
 	}
 
-	file, err := os.OpenFile(cw.finalPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	file, err := os.OpenFile(cw.finalPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}

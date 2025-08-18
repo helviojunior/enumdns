@@ -1,53 +1,52 @@
 package tools
 
 import (
+	"archive/zip"
+	"bufio"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
-	"encoding/base64"
-	"io/ioutil"
-	"crypto/sha1"
-	"encoding/hex"
-    "errors"
-	"net/http"
-	"math/rand"
-	"archive/zip"
-	"bufio"
-    
-    "github.com/helviojunior/enumdns/pkg/log"
-    "github.com/helviojunior/enumdns/internal/disk"
+
+	"github.com/bob-reis/enumdns/internal/disk"
+	"github.com/bob-reis/enumdns/pkg/log"
 )
 
 func GetMimeType(s string) (string, error) {
 	file, err := os.Open(s)
 
-     if err != nil {
-         return "", err
-     }
+	if err != nil {
+		return "", err
+	}
 
-     defer file.Close()
+	defer file.Close()
 
-     buff := make([]byte, 512)
+	buff := make([]byte, 512)
 
-     // why 512 bytes ? see http://golang.org/pkg/net/http/#DetectContentType
-     _, err = file.Read(buff)
+	// why 512 bytes ? see http://golang.org/pkg/net/http/#DetectContentType
+	_, err = file.Read(buff)
 
-     if err != nil {
-        return "", err
-     }
+	if err != nil {
+		return "", err
+	}
 
-     filetype := http.DetectContentType(buff)
-     if strings.Contains(filetype, ";") {
-     	s1 := strings.SplitN(filetype, ";", 2)
-     	if s1[0] != "" && strings.Contains(s1[0], "/") {
-     		filetype = s1[0]
-     	}
-     } 
+	filetype := http.DetectContentType(buff)
+	if strings.Contains(filetype, ";") {
+		s1 := strings.SplitN(filetype, ";", 2)
+		if s1[0] != "" && strings.Contains(s1[0], "/") {
+			filetype = s1[0]
+		}
+	}
 
-     return filetype, nil
+	return filetype, nil
 }
 
 // CreateDir creates a directory if it does not exist, returning the final
@@ -68,7 +67,7 @@ func CreateDir(dir string) (string, error) {
 		return "", err
 	}
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return "", err
 	}
 
@@ -126,31 +125,33 @@ func SafeFileName(s string) string {
 }
 
 func TempFileName(base_path, prefix, suffix string) string {
-    randBytes := make([]byte, 16)
-    rand.Read(randBytes)
+	randBytes := make([]byte, 16)
+	if _, err := rand.Read(randBytes); err != nil {
+		log.Error("failed to generate random bytes", "err", err)
+	}
 
-    if base_path == "" {
-    	base_path = os.TempDir()
+	if base_path == "" {
+		base_path = os.TempDir()
 
-    	di, err := disk.GetInfo(base_path, false)
-    	if err != nil {
-    		log.Debug("Error getting disk stats", "path", base_path, "err", err)
-    	}
-        if err == nil {
-        	log.Debug("Free disk space", "path", base_path, "free", di.Free)
-            if di.Free <= (5 * 1024 * 1024 * 1024) { // Less than 5GB
-            	currentPath, err := os.Getwd()
-            	if err != nil {
-		    		log.Debug("Error getting working directory", "err", err)
-		    	}
-			    if err == nil {
-			       base_path = currentPath
-			    }
-			    log.Debug("Free disk <= 5Gb, changing temp path location", "temp_path", base_path)
-            }
-        }
-    }
-    return filepath.Join(base_path, prefix+hex.EncodeToString(randBytes)+suffix)
+		di, err := disk.GetInfo(base_path, false)
+		if err != nil {
+			log.Debug("Error getting disk stats", "path", base_path, "err", err)
+		}
+		if err == nil {
+			log.Debug("Free disk space", "path", base_path, "free", di.Free)
+			if di.Free <= (5 * 1024 * 1024 * 1024) { // Less than 5GB
+				currentPath, err := os.Getwd()
+				if err != nil {
+					log.Debug("Error getting working directory", "err", err)
+				}
+				if err == nil {
+					base_path = currentPath
+				}
+				log.Debug("Free disk <= 5Gb, changing temp path location", "temp_path", base_path)
+			}
+		}
+	}
+	return filepath.Join(base_path, prefix+hex.EncodeToString(randBytes)+suffix)
 }
 
 // FileExists returns true if a path exists
@@ -203,7 +204,7 @@ func EncodeFileToBase64(filename string) (string, error) {
 	defer file.Close()
 
 	// Lê o conteúdo do arquivo
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return "", err
 	}
@@ -215,11 +216,10 @@ func EncodeFileToBase64(filename string) (string, error) {
 }
 
 func GetHash(data []byte) string {
-	h := sha1.New()
+	h := sha256.New()
 	h.Write(data)
 	return hex.EncodeToString(h.Sum(nil))
 }
-
 
 func RemoveFolder(path string) error {
 	if path == "" {
@@ -228,82 +228,91 @@ func RemoveFolder(path string) error {
 
 	fi, err := os.Stat(path)
 
-    if err != nil {
-    	return err
-    }
+	if err != nil {
+		return err
+	}
 
-    if fi.Mode().IsDir() {
-    	err = os.RemoveAll(path)
+	if fi.Mode().IsDir() {
+		err = os.RemoveAll(path)
 		if err != nil {
 			return err
 		}
 
-    }else{
-    	return errors.New("Path is not a Directory!") 
-    }
+	} else {
+		return errors.New("path is not a directory")
+	}
 
-    return nil
+	return nil
 }
 
 func Unzip(src, dest string) error {
-    r, err := zip.OpenReader(src)
-    if err != nil {
-        return err
-    }
-    defer r.Close()
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
 
-    for _, f := range r.File {
-        rc, err := f.Open()
-        if err != nil {
-            return err
-        }
-        defer rc.Close()
+	for _, f := range r.File {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
 
-        fpath := filepath.Join(dest, f.Name)
-        if f.FileInfo().IsDir() {
-            os.MkdirAll(fpath, f.Mode())
-        } else {
-            var fdir string
-            if lastIndex := strings.LastIndex(fpath,string(os.PathSeparator)); lastIndex > -1 {
-                fdir = fpath[:lastIndex]
-            }
+		fpath := filepath.Join(dest, f.Name)
 
-            err = os.MkdirAll(fdir, f.Mode())
-            if err != nil {
-                return err
-            }
-            f, err := os.OpenFile(
-                fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-            if err != nil {
-                return err
-            }
-            defer f.Close()
+		// Validate the file path to prevent directory traversal attacks
+		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return fmt.Errorf("invalid file path: %s", f.Name)
+		}
 
-            _, err = io.Copy(f, rc)
-            if err != nil {
-                return err
-            }
-        }
-    }
-    return nil
+		if f.FileInfo().IsDir() {
+			err = os.MkdirAll(fpath, f.Mode())
+			if err != nil {
+				return err
+			}
+		} else {
+			var fdir string
+			if lastIndex := strings.LastIndex(fpath, string(os.PathSeparator)); lastIndex > -1 {
+				fdir = fpath[:lastIndex]
+			}
+
+			err = os.MkdirAll(fdir, f.Mode())
+			if err != nil {
+				return err
+			}
+			f, err := os.OpenFile(
+				fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func HasBOM(fileName string) bool {
 	f, err := os.Open(fileName)
-    if err != nil {
-        return false
-    }
-    defer f.Close()
+	if err != nil {
+		return false
+	}
+	defer f.Close()
 
-    br := bufio.NewReader(f)
-    r, _, err := br.ReadRune()
-    if err != nil {
-        return false
-    }
-    if r != '\uFEFF' {
-        //br.UnreadRune() // Not a BOM -- put the rune back
-        return false
-    }
+	br := bufio.NewReader(f)
+	r, _, err := br.ReadRune()
+	if err != nil {
+		return false
+	}
+	if r != '\uFEFF' {
+		//br.UnreadRune() // Not a BOM -- put the rune back
+		return false
+	}
 
-    return true
+	return true
 }

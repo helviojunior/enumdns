@@ -5,11 +5,12 @@ import (
 	//"fmt"
 	"net/url"
 	"os"
+
 	//"strconv"
 	"strings"
 
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/log"
 )
 
 // FileReader is a reader that expects a file with targets that
@@ -20,11 +21,11 @@ type FileReader struct {
 
 // FileReaderOptions are options for the file reader
 type FileReaderOptions struct {
-	DnsSuffixFile    string
-	HostFile		string
-	DnsServer 		string
+	DnsSuffixFile     string
+	HostFile          string
+	DnsServer         string
 	IgnoreNonexistent bool
-	ProxyUri 		*url.URL
+	ProxyUri          *url.URL
 }
 
 // NewFileReader prepares a new file reader
@@ -36,7 +37,7 @@ func NewFileReader(opts *FileReaderOptions) *FileReader {
 
 // Read from a file.
 func (fr *FileReader) ReadDnsList(outList *[]string) error {
-	
+
 	var file *os.File
 	var err error
 
@@ -67,7 +68,7 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 			continue
 		}
 
-		if !tools.SliceHasStr(*outList, s){
+		if !tools.SliceHasStr(*outList, s) {
 			*outList = append(*outList, s)
 		}
 

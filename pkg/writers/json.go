@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/models"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/models"
 )
 
 // JsonWriter is a JSON lines writer
@@ -28,7 +28,7 @@ func NewJsonWriter(destination string) (*JsonWriter, error) {
 
 // Write JSON lines to a file
 func (jw *JsonWriter) Write(result *models.Result) error {
-	
+
 	if !result.Exists {
 		return nil
 	}
@@ -39,7 +39,7 @@ func (jw *JsonWriter) Write(result *models.Result) error {
 	}
 
 	// Open the file in append mode, create it if it doesn't exist
-	file, err := os.OpenFile(jw.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(jw.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -51,14 +51,13 @@ func (jw *JsonWriter) Write(result *models.Result) error {
 	}
 
 	/*
-	fqdn := result.ToFqdn()
-	if fqdn != nil {
-		jw.WriteFqdn(fqdn)
-	}*/
-	
+		fqdn := result.ToFqdn()
+		if fqdn != nil {
+			jw.WriteFqdn(fqdn)
+		}*/
+
 	return nil
 }
-
 
 func (jw *JsonWriter) WriteFqdn(result *models.FQDNData) error {
 
@@ -68,7 +67,7 @@ func (jw *JsonWriter) WriteFqdn(result *models.FQDNData) error {
 	}
 
 	// Open the file in append mode, create it if it doesn't exist
-	file, err := os.OpenFile(jw.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(jw.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -82,6 +81,6 @@ func (jw *JsonWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
-func (jw *JsonWriter)Finish() error {
-    return nil
+func (jw *JsonWriter) Finish() error {
+	return nil
 }

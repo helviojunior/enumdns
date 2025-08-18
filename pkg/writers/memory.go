@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/helviojunior/enumdns/pkg/models"
+	"github.com/bob-reis/enumdns/pkg/models"
 )
 
 // MemoryWriter is a memory-based results queue with a maximum slot count
@@ -81,7 +81,6 @@ func (s *MemoryWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
-
 func (s *MemoryWriter) Finish() error {
-    return nil
+	return nil
 }
