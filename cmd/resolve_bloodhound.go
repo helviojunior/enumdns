@@ -197,15 +197,15 @@ func init() {
 	resolveBloodhoundCmd.Flags().StringVarP(&fileOptions.HostFile, "bloodhound-file", "L", "", "Bloodhound outoput file (.zip or _computers.json")
 }
 
-func getComputersFile(file_path string) (string, error) {
+func getComputersFile(filePath string) (string, error) {
 	var mime string
 	var dst string
 	var err error
-	file_name := filepath.Base(file_path)
-	logger := log.With("file", file_name)
+	fileName := filepath.Base(filePath)
+	logger := log.With("file", fileName)
 
 	logger.Debug("Checking file")
-	if mime, err = tools.GetMimeType(file_path); err != nil {
+	if mime, err = tools.GetMimeType(filePath); err != nil {
 		logger.Debug("Error getting mime type", "err", err)
 		return "", err
 	}
@@ -220,12 +220,12 @@ func getComputersFile(file_path string) (string, error) {
 		return "", err
 	}
 
-	if dst, err = tools.CreateDirFromFilename(zipTempFolder, file_path); err != nil {
+	if dst, err = tools.CreateDirFromFilename(zipTempFolder, filePath); err != nil {
 		logger.Debug("Error creating temp folder to extract zip file", "err", err)
 		return "", err
 	}
 
-	if err = tools.Unzip(file_path, dst); err != nil {
+	if err = tools.Unzip(filePath, dst); err != nil {
 		logger.Debug("Error extracting zip file", "temp_folder", dst, "err", err)
 		return "", err
 	}

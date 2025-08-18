@@ -17,9 +17,12 @@ import (
 	"github.com/bob-reis/enumdns/pkg/log"
 	"github.com/bob-reis/enumdns/pkg/readers"
 	"github.com/bob-reis/enumdns/pkg/runner"
+	"github.com/bob-reis/enumdns/pkg/writers"
 	resolver "github.com/helviojunior/gopathresolver"
 	"github.com/spf13/cobra"
 )
+
+const sqlitePrefix = "sqlite:///"
 
 var (
 	opts        = &runner.Options{}
@@ -75,7 +78,7 @@ var rootCmd = &cobra.Command{
 
 		opts.Writer.UserPath = usr.HomeDir
 
-		opts.Writer.CtrlDbURI = "sqlite:///" + opts.Writer.UserPath + "/.enumdns.db"
+		opts.Writer.CtrlDbURI = sqlitePrefix + opts.Writer.UserPath + "/.enumdns.db"
 
 		basePath := ""
 		if opts.StoreTempAsWorkspace {
@@ -93,12 +96,12 @@ var rootCmd = &cobra.Command{
 				return err
 			}
 
-			opts.Writer.CtrlDbURI = "sqlite:///" + tmp
+			opts.Writer.CtrlDbURI = sqlitePrefix + tmp
 			log.Info("Control DB", "Path", tmp)
 		}
 
 		if opts.Writer.NoControlDb {
-			opts.Writer.CtrlDbURI = "sqlite:///" + tools.TempFileName(tempFolder, "enumdns_", ".db")
+			opts.Writer.CtrlDbURI = sqlitePrefix + tools.TempFileName(tempFolder, "enumdns_", ".db")
 		}
 
 		if opts.Writer.TextFile != "" {
@@ -244,4 +247,78 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&opts.Writer.ELastic, "write-elastic", false, "Write results to a SQLite database")
 	rootCmd.PersistentFlags().StringVar(&opts.Writer.ELasticURI, "write-elasticsearch-uri", "http://localhost:9200/enumdns", "The elastic search URI to use. (e.g., http://user:pass@host:9200/index)")
 
+}
+
+// ConfigureWriters configura os writers baseado nas opções do usuário
+func ConfigureWriters(writersList *[]writers.Writer) error {
+	// Writer de controle (obrigatório)
+	w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, opts.Writer.DbDebug)
+	if err != nil {
+		return err
+	}
+	*writersList = append(*writersList, w)
+
+	// Writer de stdout
+	if !opts.Logging.Silence {
+		w, err := writers.NewStdoutWriter()
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	// Writers opcionais
+	if opts.Writer.Text {
+		w, err := writers.NewTextWriter(opts.Writer.TextFile)
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	if opts.Writer.Jsonl {
+		w, err := writers.NewJsonWriter(opts.Writer.JsonlFile)
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	if opts.Writer.Db {
+		w, err := writers.NewDbWriter(opts.Writer.DbURI, opts.Writer.DbDebug)
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	if opts.Writer.Csv {
+		w, err := writers.NewCsvWriter(opts.Writer.CsvFile)
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	if opts.Writer.ELastic {
+		w, err := writers.NewElasticWriter(opts.Writer.ELasticURI)
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	if opts.Writer.None {
+		w, err := writers.NewNoneWriter()
+		if err != nil {
+			return err
+		}
+		*writersList = append(*writersList, w)
+	}
+
+	if len(*writersList) == 0 {
+		log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
+	}
+
+	return nil
 }

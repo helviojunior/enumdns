@@ -59,73 +59,16 @@ multiple writers using the _--writer-*_ flags (see --help).
 		// Configure writers that subcommand scanners will pass to
 		// a runner instance.
 
-		//The first one is the general writer (global user)
-		w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, opts.Writer.DbDebug)
-		if err != nil {
+		// Configure writers using the common function
+		if err := ConfigureWriters(&reconWriters); err != nil {
 			return err
 		}
-		reconWriters = append(reconWriters, w)
 
-		//The second one is the STDOut
-		if !opts.Logging.Silence {
-			w, err := writers.NewStdoutWriter()
-			if err != nil {
-				return err
+		// Set WriteAll for stdout writer in recon mode
+		if !opts.Logging.Silence && len(reconWriters) > 1 {
+			if stdoutWriter, ok := reconWriters[1].(*writers.StdoutWriter); ok {
+				stdoutWriter.WriteAll = true
 			}
-			w.WriteAll = true
-			reconWriters = append(reconWriters, w)
-		}
-
-		if opts.Writer.Text {
-			w, err := writers.NewTextWriter(opts.Writer.TextFile)
-			if err != nil {
-				return err
-			}
-			reconWriters = append(reconWriters, w)
-		}
-
-		if opts.Writer.Jsonl {
-			w, err := writers.NewJsonWriter(opts.Writer.JsonlFile)
-			if err != nil {
-				return err
-			}
-			reconWriters = append(reconWriters, w)
-		}
-
-		if opts.Writer.Db {
-			w, err := writers.NewDbWriter(opts.Writer.DbURI, opts.Writer.DbDebug)
-			if err != nil {
-				return err
-			}
-			reconWriters = append(reconWriters, w)
-		}
-
-		if opts.Writer.Csv {
-			w, err := writers.NewCsvWriter(opts.Writer.CsvFile)
-			if err != nil {
-				return err
-			}
-			reconWriters = append(reconWriters, w)
-		}
-
-		if opts.Writer.ELastic {
-			w, err := writers.NewElasticWriter(opts.Writer.ELasticURI)
-			if err != nil {
-				return err
-			}
-			reconWriters = append(reconWriters, w)
-		}
-
-		if opts.Writer.None {
-			w, err := writers.NewNoneWriter()
-			if err != nil {
-				return err
-			}
-			reconWriters = append(reconWriters, w)
-		}
-
-		if len(reconWriters) == 0 {
-			log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
 		}
 
 		// Get the runner up. Basically, all of the subcommands will use this.

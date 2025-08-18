@@ -26,6 +26,11 @@ import (
 // fields in the main model to ignore
 var elkExludedFields = []string{"network"}
 
+const (
+	elasticDocumentError   = "cannot create/update document"
+	parseResponseBodyError = "failure to parse response body: %s"
+)
+
 // JsonWriter is a JSON lines writer
 type ElasticWriter struct {
 	Client         *elk.Client
@@ -171,7 +176,7 @@ func (ew *ElasticWriter) Write(result *models.Result) error {
 	}
 	if res.StatusCode != 200 && res.StatusCode != 201 {
 		fmt.Printf("Err: %s", res)
-		return errors.New("cannot create/update document")
+		return errors.New(elasticDocumentError)
 	}
 
 	return nil
@@ -205,7 +210,7 @@ func (ew *ElasticWriter) CreateIndex(index string, mapping string) error {
 			if res.IsError() {
 
 				if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-					return fmt.Errorf("failure to parse response body: %s", err)
+					return fmt.Errorf(parseResponseBodyError, err)
 				} else {
 					return fmt.Errorf("cannot create/update elastic index [%d] %s: %s",
 						res.StatusCode,
@@ -219,7 +224,7 @@ func (ew *ElasticWriter) CreateIndex(index string, mapping string) error {
 		} else {
 
 			if err := json.NewDecoder(response.Body).Decode(&raw); err != nil {
-				return fmt.Errorf("failure to parse response body: %s", err)
+				return fmt.Errorf(parseResponseBodyError, err)
 			} else {
 				return fmt.Errorf("cannot get elastic index [%d] %s: %s",
 					response.StatusCode,
@@ -266,7 +271,7 @@ func (ew *ElasticWriter) CreateDocBulk(index string, docs map[string][]byte) err
 
 			if i >= 5 {
 				if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-					return fmt.Errorf("failure to parse response body: %s", err)
+					return fmt.Errorf(parseResponseBodyError, err)
 				} else {
 					return fmt.Errorf("error: [%d] %s: %s",
 						res.StatusCode,
@@ -282,7 +287,7 @@ func (ew *ElasticWriter) CreateDocBulk(index string, docs map[string][]byte) err
 		} else {
 			var blk *bulkResponse
 			if err := json.NewDecoder(res.Body).Decode(&blk); err != nil {
-				return fmt.Errorf("failure to parse response body: %s", err)
+				return fmt.Errorf(parseResponseBodyError, err)
 			} else {
 				for _, d := range blk.Items {
 					// ... so for any HTTP status above 201 ...
@@ -312,7 +317,7 @@ func (ew *ElasticWriter) CreateDocBulk(index string, docs map[string][]byte) err
 		time.Sleep(1 * time.Second)
 	}
 
-	return errors.New("cannot create/update document")
+	return errors.New(elasticDocumentError)
 }
 
 func (ew *ElasticWriter) CreateDoc(index string, data []byte, doc_id string) error {
@@ -328,7 +333,7 @@ func (ew *ElasticWriter) CreateDoc(index string, data []byte, doc_id string) err
 
 			if i >= 5 {
 				if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-					return fmt.Errorf("failure to parse response body: %s", err)
+					return fmt.Errorf(parseResponseBodyError, err)
 				} else {
 					return fmt.Errorf("error: [%d] %s: %s",
 						res.StatusCode,
@@ -357,7 +362,7 @@ func (ew *ElasticWriter) CreateDoc(index string, data []byte, doc_id string) err
 			var idxRes *indexResponse
 
 			if err := json.NewDecoder(res.Body).Decode(&idxRes); err != nil {
-				return fmt.Errorf("failure to parse response body: %s", err)
+				return fmt.Errorf(parseResponseBodyError, err)
 			} else {
 				//Debug result
 			}
@@ -366,7 +371,7 @@ func (ew *ElasticWriter) CreateDoc(index string, data []byte, doc_id string) err
 		time.Sleep(1 * time.Second)
 	}
 
-	return errors.New("cannot create/update document")
+	return errors.New(elasticDocumentError)
 }
 
 func (ew *ElasticWriter) MarshalAppend(marshalled []byte, new_data map[string]interface{}) ([]byte, error) {

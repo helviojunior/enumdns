@@ -15,6 +15,7 @@ import (
 	"github.com/bob-reis/enumdns/pkg/runner"
 	"github.com/bob-reis/enumdns/pkg/writers"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 // Opções específicas do módulo threat-analysis
@@ -66,74 +67,9 @@ verifies their existence to identify potential security threats and malicious do
 			log.Warn("DNS server: " + fileOptions.DnsServer)
 		}
 
-		// Configurar writers (mesmo padrão dos outros comandos)
-		// Writer de controle (obrigatório)
-		w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, opts.Writer.DbDebug)
-		if err != nil {
+		// Configure writers using the common function
+		if err := ConfigureWriters(&advancedWriters); err != nil {
 			return err
-		}
-		advancedWriters = append(advancedWriters, w)
-
-		// Writer de stdout
-		if !opts.Logging.Silence {
-			w, err := writers.NewStdoutWriter()
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		// Writers opcionais
-		if opts.Writer.Text {
-			w, err := writers.NewTextWriter(opts.Writer.TextFile)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.Jsonl {
-			w, err := writers.NewJsonWriter(opts.Writer.JsonlFile)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.Db {
-			w, err := writers.NewDbWriter(opts.Writer.DbURI, opts.Writer.DbDebug)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.Csv {
-			w, err := writers.NewCsvWriter(opts.Writer.CsvFile)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.ELastic {
-			w, err := writers.NewElasticWriter(opts.Writer.ELasticURI)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.None {
-			w, err := writers.NewNoneWriter()
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if len(advancedWriters) == 0 {
-			log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
 		}
 
 		fileOptions.DnsServer = opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort)
@@ -173,19 +109,17 @@ verifies their existence to identify potential security threats and malicious do
 	Run: runThreatAnalysis,
 }
 
-func runThreatAnalysis(cmd *cobra.Command, args []string) {
-	// Verificar conectividade DNS
+func validateDNSConnectivity() {
 	_, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
 	if err != nil {
 		log.Error("Error checking DNS connectivity", "err", err)
 		os.Exit(2)
 	}
+}
 
-	log.Debug("starting domain threat analysis")
-
+func loadAndValidateDomains() []string {
 	domains := []string{}
 
-	// Determinar domínios alvo
 	if fileOptions.DnsSuffixFile != "" {
 		log.Debugf("Reading domain list file: %s", fileOptions.DnsSuffixFile)
 		reader := readers.NewFileReader(fileOptions)
@@ -194,7 +128,6 @@ func runThreatAnalysis(cmd *cobra.Command, args []string) {
 			os.Exit(2)
 		}
 	} else {
-		// Validar domínio único
 		s, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
 		if err != nil {
 			log.Error("invalid domain", "domain", opts.DnsSuffix, "err", err)
@@ -208,15 +141,15 @@ func runThreatAnalysis(cmd *cobra.Command, args []string) {
 		os.Exit(2)
 	}
 
-	log.Infof("Analyzing %d domain(s) for threats", len(domains))
+	return domains
+}
 
-	// Configurar técnicas habilitadas
+func generateVariations(domains []string) []advanced.Variation {
 	techniques := getEnabledTechniques()
 	log.Infof("Enabled techniques: %v", techniques)
 
 	allVariations := []advanced.Variation{}
 
-	// Gerar variações para cada domínio
 	for _, domain := range domains {
 		log.Infof("Generating variations for %s", domain)
 
@@ -228,25 +161,21 @@ func runThreatAnalysis(cmd *cobra.Command, args []string) {
 
 		variations := generator.GenerateAll()
 		log.Infof("Generated %d variations for %s", len(variations), domain)
-
 		allVariations = append(allVariations, variations...)
 	}
 
 	total := len(allVariations)
 	log.Infof("Total variations to check: %s", tools.FormatInt(total))
 
-	if total == 0 {
-		log.Warn("No variations generated")
-		return
-	}
-
-	// Avisar sobre limites atingidos
 	if threatAnalysisOpts.WarnLimits && total >= threatAnalysisOpts.MaxVariations*len(domains) {
 		log.Warnf("Maximum variation limit reached (%d per domain). Some variations may have been excluded.", threatAnalysisOpts.MaxVariations)
 		log.Warnf("To analyze more variations, increase --max-variations parameter (current: %d)", threatAnalysisOpts.MaxVariations)
 	}
 
-	// Configurar runner
+	return allVariations
+}
+
+func executeAnalysis(allVariations []advanced.Variation) {
 	runnerLogger := slog.New(log.Logger)
 	runnerInstance, err := runner.NewRunner(runnerLogger, *opts, advancedWriters)
 	if err != nil {
@@ -254,43 +183,15 @@ func runThreatAnalysis(cmd *cobra.Command, args []string) {
 		os.Exit(2)
 	}
 
-	// Verificar itens já analisados (controle de duplicatas)
 	conn, err := database.Connection(opts.Writer.CtrlDbURI, true, false)
 	if err != nil {
 		log.Error("Error establishing connection with Database", "err", err)
 		os.Exit(2)
 	}
 
-	// Alimentar o canal com as variações
-	go func() {
-		defer close(runnerInstance.Targets)
+	total := len(allVariations)
+	feedTargetsToRunner(runnerInstance, conn, allVariations)
 
-		ascii.HideCursor()
-		for _, variation := range allVariations {
-			i := true
-			host := variation.Domain
-
-			if !forceCheck {
-				response := conn.Raw("SELECT count(id) as count from results WHERE failed = 0 AND fqdn = ?", host)
-				if response != nil {
-					var cnt int
-					_ = response.Row().Scan(&cnt)
-					i = (cnt == 0)
-					if cnt > 0 {
-						log.Debug("[Host already checked]", "fqdn", host)
-					}
-				}
-			}
-
-			if i || forceCheck {
-				runnerInstance.Targets <- host
-			} else {
-				runnerInstance.AddSkiped()
-			}
-		}
-	}()
-
-	// Executar análise
 	status := runnerInstance.Run(total)
 	runnerInstance.Close()
 
@@ -300,6 +201,52 @@ func runThreatAnalysis(cmd *cobra.Command, args []string) {
 	}
 
 	log.Info("Threat analysis completed")
+}
+
+func feedTargetsToRunner(runnerInstance *runner.Runner, conn *gorm.DB, allVariations []advanced.Variation) {
+	go func() {
+		defer close(runnerInstance.Targets)
+		ascii.HideCursor()
+
+		for _, variation := range allVariations {
+			host := variation.Domain
+			shouldProcess := forceCheck
+
+			if !forceCheck {
+				if response := conn.Raw("SELECT count(id) as count from results WHERE failed = 0 AND fqdn = ?", host); response != nil {
+					var cnt int
+					_ = response.Row().Scan(&cnt)
+					shouldProcess = (cnt == 0)
+					if cnt > 0 {
+						log.Debug("[Host already checked]", "fqdn", host)
+					}
+				}
+			}
+
+			if shouldProcess {
+				runnerInstance.Targets <- host
+			} else {
+				runnerInstance.AddSkiped()
+			}
+		}
+	}()
+}
+
+func runThreatAnalysis(cmd *cobra.Command, args []string) {
+	validateDNSConnectivity()
+
+	log.Debug("starting domain threat analysis")
+
+	domains := loadAndValidateDomains()
+	log.Infof("Analyzing %d domain(s) for threats", len(domains))
+
+	allVariations := generateVariations(domains)
+	if len(allVariations) == 0 {
+		log.Warn("No variations generated")
+		return
+	}
+
+	executeAnalysis(allVariations)
 }
 
 func getEnabledTechniques() []string {

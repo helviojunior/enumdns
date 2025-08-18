@@ -14,7 +14,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var conversionCmdExtensions = []string{".sqlite3", ".db", ".jsonl"}
+const (
+	jsonlExtension   = ".jsonl"
+	sqlite3Extension = ".sqlite3"
+)
+
+var conversionCmdExtensions = []string{sqlite3Extension, ".db", jsonlExtension}
 var convertCmdFlags = struct {
 	fromFile string
 	toFile   string
@@ -84,13 +89,13 @@ target.`)),
 	Run: func(cmd *cobra.Command, args []string) {
 		var writer writers.Writer
 		var err error
-		if convertCmdFlags.toExt == ".sqlite3" || convertCmdFlags.toExt == ".db" {
+		if convertCmdFlags.toExt == sqlite3Extension || convertCmdFlags.toExt == ".db" {
 			writer, err = writers.NewDbWriter(fmt.Sprintf("sqlite:///%s", convertCmdFlags.toFile), false)
 			if err != nil {
 				log.Error("could not get a database writer up", "err", err)
 				return
 			}
-		} else if convertCmdFlags.toExt == ".jsonl" {
+		} else if convertCmdFlags.toExt == jsonlExtension {
 			toFile, err := tools.CreateFileWithDir(convertCmdFlags.toFile)
 			if err != nil {
 				log.Error("could not create target file", "err", err)
@@ -117,12 +122,12 @@ target.`)),
 
 		rptWriters = append(rptWriters, writer)
 
-		if convertCmdFlags.fromExt == ".sqlite3" || convertCmdFlags.fromExt == ".db" {
+		if convertCmdFlags.fromExt == sqlite3Extension || convertCmdFlags.fromExt == ".db" {
 			if err := convertFromDbTo(convertCmdFlags.fromFile, rptWriters); err != nil {
 				log.Error("failed to convert from SQLite", "err", err)
 				return
 			}
-		} else if convertCmdFlags.fromExt == ".jsonl" {
+		} else if convertCmdFlags.fromExt == jsonlExtension {
 			if err := convertFromJsonlTo(convertCmdFlags.fromFile, rptWriters); err != nil {
 				log.Error("failed to convert from JSON Lines", "err", err)
 				return

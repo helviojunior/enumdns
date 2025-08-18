@@ -65,27 +65,27 @@ func getAdapterAddresses() (
 ) {
 	var buffer []byte
 	const initialBufferLength uint32 = 15000
-	sizeVar := initialBufferLength
+	size := initialBufferLength
 
 	for {
-		buffer = make([]byte, sizeVar)
+		buffer = make([]byte, size)
 		err := runProcGetAdaptersAddresses(
 			(*ipAdapterAddresses)(unsafe.Pointer(&buffer[0])),
-			&sizeVar)
+			&size)
 		if err != nil {
 			if err.(syscall.Errno) == syscall.ERROR_BUFFER_OVERFLOW {
-				if sizeVar <= uint32(len(buffer)) {
+				if size <= uint32(len(buffer)) {
 					return nil, fmt.Errorf("%w: buffer size variable %d is "+
 						"equal or lower to the buffer current length %d",
-						errBufferOverflowUnexpected, sizeVar, len(buffer))
+						errBufferOverflowUnexpected, size, len(buffer))
 				}
 				continue
 			}
 			return nil, fmt.Errorf("getting adapters addresses: %w", err)
 		}
 
-		noDataFound := sizeVar == 0
-		if noDataFound {
+		dataFound := size != 0
+		if !dataFound {
 			return nil, nil
 		}
 		break
@@ -105,7 +105,7 @@ var procGetAdaptersAddresses = syscall.NewLazyDLL("iphlpapi.dll").
 
 func runProcGetAdaptersAddresses(adapterAddresses *ipAdapterAddresses,
 	sizePointer *uint32,
-) (errcode error) {
+) (err error) {
 	const family = syscall.AF_UNSPEC
 	const GAA_FLAG_SKIP_UNICAST = 0x0001
 	const GAA_FLAG_SKIP_ANYCAST = 0x0002
@@ -131,28 +131,28 @@ func runProcGetAdaptersAddresses(adapterAddresses *ipAdapterAddresses,
 	}
 }
 
-func sockAddressToIP(rawSockAddress *syscall.RawSockaddrAny) (ip netip.Addr, ok bool) {
-	if rawSockAddress == nil {
+func sockAddressToIP(sockAddr *syscall.RawSockaddrAny) (ip netip.Addr, ok bool) {
+	if sockAddr == nil {
 		return netip.Addr{}, false
 	}
 
-	sockAddress, err := rawSockAddress.Sockaddr()
+	addr, err := sockAddr.Sockaddr()
 	if err != nil {
 		return netip.Addr{}, false
 	}
 
-	switch sockAddress := sockAddress.(type) {
+	switch addr := addr.(type) {
 	case *syscall.SockaddrInet4:
 		return netip.AddrFrom4([4]byte{
-				sockAddress.Addr[0], sockAddress.Addr[1], sockAddress.Addr[2], sockAddress.Addr[3],
+				addr.Addr[0], addr.Addr[1], addr.Addr[2], addr.Addr[3],
 			}),
 			true
 	case *syscall.SockaddrInet6:
 		return netip.AddrFrom16([16]byte{
-				sockAddress.Addr[0], sockAddress.Addr[1], sockAddress.Addr[2], sockAddress.Addr[3],
-				sockAddress.Addr[4], sockAddress.Addr[5], sockAddress.Addr[6], sockAddress.Addr[7],
-				sockAddress.Addr[8], sockAddress.Addr[9], sockAddress.Addr[10], sockAddress.Addr[11],
-				sockAddress.Addr[12], sockAddress.Addr[13], sockAddress.Addr[14], sockAddress.Addr[15],
+				addr.Addr[0], addr.Addr[1], addr.Addr[2], addr.Addr[3],
+				addr.Addr[4], addr.Addr[5], addr.Addr[6], addr.Addr[7],
+				addr.Addr[8], addr.Addr[9], addr.Addr[10], addr.Addr[11],
+				addr.Addr[12], addr.Addr[13], addr.Addr[14], addr.Addr[15],
 			}),
 			true
 	default:
