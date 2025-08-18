@@ -45,9 +45,9 @@ var rootCmd = &cobra.Command{
    - enumdns brute -d test.com -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -L domains.txt -w /tmp/wordlist.txt --write-db
 
-   - enumdns advanced -d test.com --all-techniques -o threats.txt
-   - enumdns advanced -d test.com --typosquatting --write-jsonl
-   - enumdns advanced -L domains.txt --bitsquatting --write-db
+   - enumdns threat-analysis -d test.com --all-techniques -o threats.txt
+   - enumdns threat-analysis -d test.com --typosquatting --write-jsonl
+   - enumdns threat-analysis -L domains.txt --bitsquatting --write-db
 
    - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
    - enumdns resolve bloodhound -L /tmp/bloodhound_files.zip --write-jsonl
