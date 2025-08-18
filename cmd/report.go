@@ -56,23 +56,32 @@ func convertFromDbTo(from string, writers []writers.Writer) error {
 	return nil
 }
 
-func convertFromJsonlTo(from string, writers []writers.Writer) error {
-
-	if len(writers) == 0 {
-		log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
-	}
-
-	log.Info("starting conversion...")
-
-	file, err := os.Open(from)
+func openJsonlFile(filename string) (*os.File, error) {
+	file, err := os.Open(filename)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer file.Close()
+	return file, nil
+}
 
-	var c = 0
+func processJsonLine(line []byte, writers []writers.Writer) error {
+	var result models.Result
+	if err := json.Unmarshal(line, &result); err != nil {
+		log.Error("could not unmarshal JSON line", "err", err)
+		return nil // Continue processing other lines
+	}
 
-	reader := bufio.NewReader(file)
+	for _, w := range writers {
+		if err := w.Write(&result); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processJsonlFile(reader *bufio.Reader, writers []writers.Writer) (int, error) {
+	count := 0
+
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -82,29 +91,43 @@ func convertFromJsonlTo(from string, writers []writers.Writer) error {
 				}
 				// Handle the last line without '\n'
 			} else {
-				return err
+				return count, err
 			}
 		}
 
-		var result models.Result
-		if err := json.Unmarshal(line, &result); err != nil {
-			log.Error("could not unmarshal JSON line", "err", err)
-			continue
+		if err := processJsonLine(line, writers); err != nil {
+			return count, err
 		}
 
-		for _, w := range writers {
-			if err := w.Write(&result); err != nil {
-				return err
-			}
-		}
-
-		c++
+		count++
 
 		if err == io.EOF {
 			break
 		}
 	}
 
-	log.Info("converted from a JSON Lines file", "rows", c)
+	return count, nil
+}
+
+func convertFromJsonlTo(from string, writers []writers.Writer) error {
+	if len(writers) == 0 {
+		log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
+	}
+
+	log.Info("starting conversion...")
+
+	file, err := openJsonlFile(from)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	count, err := processJsonlFile(reader, writers)
+	if err != nil {
+		return err
+	}
+
+	log.Info("converted from a JSON Lines file", "rows", count)
 	return nil
 }

@@ -36,17 +36,15 @@ var fsType2StringMap = map[string]string{
 	"53464846": "wslfs",
 }
 
-// GetInfo returns total and free bytes available in a directory, e.g. `/`.
-func GetInfo(path string, firstTime bool) (info Info, err error) {
+func getFilesystemStats(path string) (syscall.Statfs_t, error) {
 	s := syscall.Statfs_t{}
-	err = syscall.Statfs(path, &s)
-	if err != nil {
-		return Info{}, err
-	}
+	err := syscall.Statfs(path, &s)
+	return s, err
+}
+
+func safeConvertStatfs(s syscall.Statfs_t) (frsize, blocks, bavail, ftype uint64) {
 	reservedBlocks := s.Bfree - s.Bavail
 
-	// Safely convert to prevent integer overflow
-	var frsize, blocks, bavail, ftype uint64
 	if s.Frsize >= 0 {
 		frsize = uint64(s.Frsize)
 	}
@@ -59,71 +57,95 @@ func GetInfo(path string, firstTime bool) (info Info, err error) {
 	if s.Type >= 0 {
 		ftype = uint64(s.Type)
 	}
+	return
+}
 
-	info = Info{
-		Total: frsize * blocks,
-		Free:  frsize * bavail,
-		Files: s.Files,
-		Ffree: s.Ffree,
-		//nolint:unconvert
-		FSType: getFSType(uint32(ftype)),
-	}
-
+func getDeviceInfo(path string) (major, minor uint32, err error) {
 	st := syscall.Stat_t{}
 	err = syscall.Stat(path, &st)
 	if err != nil {
+		return 0, 0, err
+	}
+	devID := uint64(st.Dev)
+	return unix.Major(devID), unix.Minor(devID), nil
+}
+
+func findDeviceName(major, minor uint32, bfs blockdevice.FS) string {
+	diskstats, _ := bfs.ProcDiskstats()
+	for _, dstat := range diskstats {
+		if strings.HasPrefix(dstat.DeviceName, "loop") {
+			continue
+		}
+		if dstat.MajorNumber == major && dstat.MinorNumber == minor {
+			return dstat.DeviceName
+		}
+	}
+	return ""
+}
+
+func processBlockDevice(info *Info, firstTime bool) error {
+	if !firstTime {
+		return nil
+	}
+
+	bfs, err := blockdevice.NewDefaultFS()
+	if err != nil {
+		return nil // Not a critical error
+	}
+
+	devName := findDeviceName(info.Major, info.Minor, bfs)
+	if devName == "" {
+		return nil
+	}
+
+	info.Name = devName
+	qst, err := bfs.SysBlockDeviceQueueStats(devName)
+	if err != nil {
+		// Try parent device
+		parentDevPath, e := os.Readlink("/sys/class/block/" + devName)
+		if e == nil {
+			parentDev := filepath.Base(filepath.Dir(parentDevPath))
+			qst, err = bfs.SysBlockDeviceQueueStats(parentDev)
+		}
+	}
+
+	if err == nil {
+		info.NRRequests = qst.NRRequests
+		rot := qst.Rotational == 1
+		info.Rotational = &rot
+	}
+
+	return nil
+}
+
+// GetInfo returns total and free bytes available in a directory, e.g. `/`.
+func GetInfo(path string, firstTime bool) (info Info, err error) {
+	s, err := getFilesystemStats(path)
+	if err != nil {
 		return Info{}, err
 	}
-	//nolint:unconvert
-	devID := uint64(st.Dev) // Needed to support multiple GOARCHs
-	info.Major = unix.Major(devID)
-	info.Minor = unix.Minor(devID)
 
-	// Check for overflows.
-	// https://github.com/minio/minio/issues/8035
-	// XFS can show wrong values at times error out
-	// in such scenarios.
+	frsize, blocks, bavail, ftype := safeConvertStatfs(s)
+
+	info = Info{
+		Total:  frsize * blocks,
+		Free:   frsize * bavail,
+		Files:  s.Files,
+		Ffree:  s.Ffree,
+		FSType: getFSType(uint32(ftype)),
+	}
+
+	info.Major, info.Minor, err = getDeviceInfo(path)
+	if err != nil {
+		return Info{}, err
+	}
+
 	if info.Free > info.Total {
 		return info, fmt.Errorf("detected free space (%d) > total drive space (%d), fs corruption at (%s). please run 'fsck'", info.Free, info.Total, path)
 	}
 	info.Used = info.Total - info.Free
 
-	if firstTime {
-		bfs, err := blockdevice.NewDefaultFS()
-		if err == nil {
-			devName := ""
-			diskstats, _ := bfs.ProcDiskstats()
-			for _, dstat := range diskstats {
-				// ignore all loop devices
-				if strings.HasPrefix(dstat.DeviceName, "loop") {
-					continue
-				}
-				if dstat.MajorNumber == info.Major && dstat.MinorNumber == info.Minor {
-					devName = dstat.DeviceName
-					break
-				}
-			}
-			if devName != "" {
-				info.Name = devName
-				qst, err := bfs.SysBlockDeviceQueueStats(devName)
-				if err != nil { // Mostly not found error
-					// Check if there is a parent device:
-					//   e.g. if the mount is based on /dev/nvme0n1p1, let's calculate the
-					//        real device name (nvme0n1) to get its sysfs information
-					parentDevPath, e := os.Readlink("/sys/class/block/" + devName)
-					if e == nil {
-						parentDev := filepath.Base(filepath.Dir(parentDevPath))
-						qst, err = bfs.SysBlockDeviceQueueStats(parentDev)
-					}
-				}
-				if err == nil {
-					info.NRRequests = qst.NRRequests
-					rot := qst.Rotational == 1 // Rotational is '1' if the device is HDD
-					info.Rotational = &rot
-				}
-			}
-		}
-	}
+	processBlockDevice(&info, firstTime)
 
 	return info, nil
 }

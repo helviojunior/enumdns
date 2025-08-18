@@ -124,34 +124,40 @@ func SafeFileName(s string) string {
 	return builder.String()
 }
 
-func TempFileName(base_path, prefix, suffix string) string {
+func selectTempDirectory(basePath string) string {
+	if basePath != "" {
+		return basePath
+	}
+
+	tempDir := os.TempDir()
+	di, err := disk.GetInfo(tempDir, false)
+	if err != nil {
+		log.Debug("Error getting disk stats", "path", tempDir, "err", err)
+		return tempDir
+	}
+
+	log.Debug("Free disk space", "path", tempDir, "free", di.Free)
+	if di.Free <= (5 * 1024 * 1024 * 1024) { // Less than 5GB
+		currentPath, err := os.Getwd()
+		if err != nil {
+			log.Debug("Error getting working directory", "err", err)
+			return tempDir
+		}
+		log.Debug("Free disk <= 5Gb, changing temp path location", "temp_path", currentPath)
+		return currentPath
+	}
+
+	return tempDir
+}
+
+func TempFileName(basePath, prefix, suffix string) string {
 	randBytes := make([]byte, 16)
 	if _, err := rand.Read(randBytes); err != nil {
 		log.Error("failed to generate random bytes", "err", err)
 	}
 
-	if base_path == "" {
-		base_path = os.TempDir()
-
-		di, err := disk.GetInfo(base_path, false)
-		if err != nil {
-			log.Debug("Error getting disk stats", "path", base_path, "err", err)
-		}
-		if err == nil {
-			log.Debug("Free disk space", "path", base_path, "free", di.Free)
-			if di.Free <= (5 * 1024 * 1024 * 1024) { // Less than 5GB
-				currentPath, err := os.Getwd()
-				if err != nil {
-					log.Debug("Error getting working directory", "err", err)
-				}
-				if err == nil {
-					base_path = currentPath
-				}
-				log.Debug("Free disk <= 5Gb, changing temp path location", "temp_path", base_path)
-			}
-		}
-	}
-	return filepath.Join(base_path, prefix+hex.EncodeToString(randBytes)+suffix)
+	finalPath := selectTempDirectory(basePath)
+	return filepath.Join(finalPath, prefix+hex.EncodeToString(randBytes)+suffix)
 }
 
 // FileExists returns true if a path exists
@@ -245,6 +251,52 @@ func RemoveFolder(path string) error {
 	return nil
 }
 
+func validateZipPath(fpath, dest string) error {
+	if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+		return fmt.Errorf("invalid file path: %s", filepath.Base(fpath))
+	}
+	return nil
+}
+
+func extractZipDirectory(fpath string, mode os.FileMode) error {
+	return os.MkdirAll(fpath, mode)
+}
+
+func extractZipFile(fpath string, mode os.FileMode, rc io.ReadCloser) error {
+	fdir := filepath.Dir(fpath)
+	if err := os.MkdirAll(fdir, mode); err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, rc)
+	return err
+}
+
+func extractZipEntry(f *zip.File, dest string) error {
+	rc, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	fpath := filepath.Join(dest, f.Name)
+	if err := validateZipPath(fpath, dest); err != nil {
+		return err
+	}
+
+	if f.FileInfo().IsDir() {
+		return extractZipDirectory(fpath, f.Mode())
+	}
+
+	return extractZipFile(fpath, f.Mode(), rc)
+}
+
 func Unzip(src, dest string) error {
 	r, err := zip.OpenReader(src)
 	if err != nil {
@@ -253,45 +305,8 @@ func Unzip(src, dest string) error {
 	defer r.Close()
 
 	for _, f := range r.File {
-		rc, err := f.Open()
-		if err != nil {
+		if err := extractZipEntry(f, dest); err != nil {
 			return err
-		}
-		defer rc.Close()
-
-		fpath := filepath.Join(dest, f.Name)
-
-		// Validate the file path to prevent directory traversal attacks
-		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return fmt.Errorf("invalid file path: %s", f.Name)
-		}
-
-		if f.FileInfo().IsDir() {
-			err = os.MkdirAll(fpath, f.Mode())
-			if err != nil {
-				return err
-			}
-		} else {
-			var fdir string
-			if lastIndex := strings.LastIndex(fpath, string(os.PathSeparator)); lastIndex > -1 {
-				fdir = fpath[:lastIndex]
-			}
-
-			err = os.MkdirAll(fdir, f.Mode())
-			if err != nil {
-				return err
-			}
-			f, err := os.OpenFile(
-				fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			_, err = io.Copy(f, rc)
-			if err != nil {
-				return err
-			}
 		}
 	}
 	return nil

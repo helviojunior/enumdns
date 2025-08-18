@@ -56,7 +56,7 @@ func (*ASNIpDelegate) TableName() string {
 }
 
 func (subnet *ASNIpDelegate) BeforeCreate(tx *gorm.DB) (err error) {
-	_calcHash(&subnet.Hash, subnet.Subnet, fmt.Sprintf("%d", subnet.Addresses))
+	calcHash(&subnet.Hash, subnet.Subnet, fmt.Sprintf("%d", subnet.Addresses))
 
 	tx.Statement.AddClause(clause.OnConflict{
 		//Columns:   cols,
@@ -100,7 +100,7 @@ func (*Result) TableName() string {
 }
 
 func (result *Result) BeforeCreate(tx *gorm.DB) (err error) {
-	_calcHash(&result.Hash, result.String())
+	calcHash(&result.Hash, result.String())
 	asn := result.GetASN(tx)
 
 	if asn != nil {
@@ -244,7 +244,7 @@ func (*FQDNData) TableName() string {
 }
 
 func (fqdn *FQDNData) BeforeCreate(tx *gorm.DB) (err error) {
-	_calcHash(&fqdn.Hash, fqdn.FQDN)
+	calcHash(&fqdn.Hash, fqdn.FQDN)
 
 	tx.Statement.AddClause(clause.OnConflict{
 		//Columns:   cols,
@@ -389,8 +389,8 @@ func (result Result) FormatSuffix() string {
 }
 
 func (result Result) GetHash() string {
-	b_data := []byte(result.String())
-	return tools.GetHash(b_data)
+	data := []byte(result.String())
+	return tools.GetHash(data)
 }
 
 func (result Result) GetCompHash() string {
@@ -449,7 +449,7 @@ func SliceHasResult(s []*Result, r *Result) bool {
 	return false
 }
 
-func _calcHash(outValue *string, keyvals ...interface{}) {
+func calcHash(outValue *string, keyvals ...interface{}) {
 
 	data := ""
 	for _, v := range keyvals {

@@ -67,74 +67,9 @@ verifies their existence to identify potential security threats and malicious do
 			log.Warn("DNS server: " + fileOptions.DnsServer)
 		}
 
-		// Configurar writers (mesmo padrão dos outros comandos)
-		// Writer de controle (obrigatório)
-		w, err := writers.NewDbWriter(opts.Writer.CtrlDbURI, opts.Writer.DbDebug)
-		if err != nil {
+		// Configure writers using the common function
+		if err := ConfigureWriters(&advancedWriters); err != nil {
 			return err
-		}
-		advancedWriters = append(advancedWriters, w)
-
-		// Writer de stdout
-		if !opts.Logging.Silence {
-			w, err := writers.NewStdoutWriter()
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		// Writers opcionais
-		if opts.Writer.Text {
-			w, err := writers.NewTextWriter(opts.Writer.TextFile)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.Jsonl {
-			w, err := writers.NewJsonWriter(opts.Writer.JsonlFile)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.Db {
-			w, err := writers.NewDbWriter(opts.Writer.DbURI, opts.Writer.DbDebug)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.Csv {
-			w, err := writers.NewCsvWriter(opts.Writer.CsvFile)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.ELastic {
-			w, err := writers.NewElasticWriter(opts.Writer.ELasticURI)
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if opts.Writer.None {
-			w, err := writers.NewNoneWriter()
-			if err != nil {
-				return err
-			}
-			advancedWriters = append(advancedWriters, w)
-		}
-
-		if len(advancedWriters) == 0 {
-			log.Warn("no writers have been configured. to persist probe results, add writers using --write-* flags")
 		}
 
 		fileOptions.DnsServer = opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort)
