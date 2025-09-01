@@ -1,9 +1,9 @@
 package advanced
 
 type GeneratorOptions struct {
-    Techniques    []string
-    MaxVariations int
-    TargetTLDs    []string
+	Techniques    []string
+	MaxVariations int
+	TargetTLDs    []string
 }
 
 type Variation struct {
@@ -16,10 +16,10 @@ type Variation struct {
 }
 
 type TechniqueConfig struct {
-    Name       string
-    Enabled    bool
-    Weight     float64
-    MaxResults int
+	Name       string
+	Enabled    bool
+	Weight     float64
+	MaxResults int
 }
 
 // Global option to control segmentation strategy from cmd package

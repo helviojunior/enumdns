@@ -2,6 +2,7 @@ package writers
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,6 +117,59 @@ func TestTextWriterWrite(t *testing.T) {
 	// Check if file was created
 	if _, err := os.Stat(tempFileName); os.IsNotExist(err) {
 		t.Error("Output file should have been created")
+	}
+}
+
+func TestTextWriterDeduplication(t *testing.T) {
+	tempFileName, cleanup := createTempFile(t, "test_output_dedup_*.txt")
+	defer cleanup()
+
+	writer, err := NewTextWriter(tempFileName)
+	if err != nil {
+		t.Fatalf("Failed to create text writer: %v", err)
+	}
+
+	result := createSampleResult()
+	result.Exists = true
+
+	// Write same result twice
+	if err := writer.Write(result); err != nil {
+		t.Fatalf("first write failed: %v", err)
+	}
+	if err := writer.Write(result); err != nil {
+		t.Fatalf("second write failed: %v", err)
+	}
+
+	// Write same candidate twice
+	cand := createSampleFQDN()
+	if err := writer.WriteFqdn(cand); err != nil {
+		t.Fatalf("first WriteFqdn failed: %v", err)
+	}
+	if err := writer.WriteFqdn(cand); err != nil {
+		t.Fatalf("second WriteFqdn failed: %v", err)
+	}
+
+	if err := writer.Finish(); err != nil {
+		t.Fatalf("Finish failed: %v", err)
+	}
+
+	// Inspect file: "example.com" should appear only twice total
+	// (once as result line, once as candidate line)
+	data, err := os.ReadFile(tempFileName)
+	if err != nil {
+		t.Fatalf("Failed to read output: %v", err)
+	}
+	content := string(data)
+
+	// Count occurrences of lines containing example.com
+	count := 0
+	for _, line := range strings.Split(content, "\n") {
+		if strings.Contains(line, "example.com") {
+			count++
+		}
+	}
+	if count < 2 {
+		t.Errorf("Expected at least 2 lines for example.com (result + candidate), got %d\nContent:\n%s", count, content)
 	}
 }
 

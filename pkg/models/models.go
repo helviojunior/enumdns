@@ -123,18 +123,18 @@ func (result *Result) GetASN(tx *gorm.DB) *ASNIpDelegate {
 			return nil
 		}
 
-        res := tx.Model(&ASNIpDelegate{}).
-            Where("int_ipv4 != 0 AND int_ipv4 <= ?", tools.IpToUint32(ip)).
-            Order("int_ipv4 DESC"). // Optional: get the closest (largest) match <= ip
-            Limit(1).
-            Find(&asn)
+		res := tx.Model(&ASNIpDelegate{}).
+			Where("int_ipv4 != 0 AND int_ipv4 <= ?", tools.IpToUint32(ip)).
+			Order("int_ipv4 DESC"). // Optional: get the closest (largest) match <= ip
+			Limit(1).
+			Find(&asn)
 
-        if res.Error != nil {
-            return nil
-        }
-        if res.RowsAffected == 0 || asn == nil {
-            return nil
-        }
+		if res.Error != nil {
+			return nil
+		}
+		if res.RowsAffected == 0 || asn == nil {
+			return nil
+		}
 
 		_, subnet, err := net.ParseCIDR(asn.Subnet)
 		if err != nil {

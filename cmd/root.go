@@ -37,25 +37,28 @@ var rootCmd = &cobra.Command{
 	Short: "enumdns is a modular DNS recon tool",
 	Long:  ascii.Logo(),
 	Example: `
-   - enumdns recon -d test.com -o enumdns.txt
-   - enumdns recon -d test.com --write-jsonl
-   - enumdns recon -L domains.txt --write-db
+       - enumdns recon -d test.com -o enumdns.txt
+       - enumdns recon -d test.com --write-jsonl
+       - enumdns recon -L domains.txt --write-db
 
    - enumdns brute -d test.com -w /tmp/wordlist.txt -o enumdns.txt
    - enumdns brute -d test.com -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -L domains.txt -w /tmp/wordlist.txt --write-db
 
-   - enumdns threat-analysis -d test.com --all-techniques -o threats.txt
-   - enumdns threat-analysis -d test.com --typosquatting --write-jsonl
-   - enumdns threat-analysis -L domains.txt --bitsquatting --write-db
+       - enumdns threat-analysis -d test.com --all-techniques -o threats.txt
+       - enumdns threat-analysis -d test.com --typosquatting --write-jsonl
+       - enumdns threat-analysis -L domains.txt --bitsquatting --write-db
+       - enumdns threat-analysis -d recife.pe.gov.br --all-techniques --focus-suffix=gov.br --emit-candidates -o gov-br.txt
+       - enumdns threat-analysis -d yeslinux.com.br --all-techniques --target-tlds com,net,org,co,info,io,com.br,net.br,org.br
+       - enumdns threat-analysis -d updates.microsoft.com --all-techniques --span-last3
 
    - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json -o enumdns.txt
    - enumdns resolve bloodhound -L /tmp/bloodhound_files.zip --write-jsonl
    - enumdns resolve bloodhound -L /tmp/bloodhound_computers.json --write-db
 
-   - enumdns resolve file -L /tmp/host_list.txt -o enumdns.txt
-   - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
-   - enumdns resolve file -L /tmp/host_list.txt --write-db`,
+       - enumdns resolve file -L /tmp/host_list.txt -o enumdns.txt
+       - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
+       - enumdns resolve file -L /tmp/host_list.txt --write-db`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
 		if cmd.CalledAs() != "version" && !opts.Logging.Silence {
