@@ -1,8 +1,10 @@
 package advanced
 
 import (
-	"strings"
-	"unicode"
+    "strings"
+    "unicode"
+
+    "golang.org/x/net/publicsuffix"
 )
 
 // Interface para técnicas de geração
@@ -312,30 +314,42 @@ func (t *TLDVariationTechnique) GetConfidence() float64 {
 }
 
 func (t *TLDVariationTechnique) Generate(domain string, tlds []string) []Variation {
-	var variations []Variation
-	baseName := getBaseName(domain)
+    var variations []Variation
+    base := strings.TrimSuffix(strings.ToLower(domain), ".")
+    if base == "" {
+        return variations
+    }
+    // Only allow TLD swaps when the public suffix has a single label (e.g., ".com")
+    suffix, _ := publicsuffix.PublicSuffix(base)
+    if strings.Count(suffix, ".") > 0 {
+        return variations
+    }
 
-	// TLDs comuns para phishing
-	phishingTLDs := []string{
-		"tk", "ml", "ga", "cf", "gq", // Freenom TLDs
-		"tk", "pw", "ws", "to", "ly",
-		"co", "cc", "biz", "info", "org", "net",
-		"io", "me", "ly", "to", "ws", "click", "download",
-		"help", "support", "security",
-		"update", "verification", "account",
-	}
+    baseName := getBaseName(base)
+    if baseName == "" {
+        return variations
+    }
 
-	for _, tld := range phishingTLDs {
-		variations = append(variations, Variation{
-			Domain:     baseName + "." + tld,
-			Technique:  t.Name(),
-			Confidence: t.GetConfidence(),
-			Risk:       t.GetRiskLevel(),
-			BaseDomain: domain,
-		})
-	}
+    // Prefer provided target TLDs; fall back to a conservative default list
+    targetTLDs := tlds
+    if len(targetTLDs) == 0 {
+        targetTLDs = []string{
+            "com", "net", "org", "co", "info", "biz", "io", "me",
+            "tk", "ml", "ga", "cf", "gq", "pw", "to", "ws", "ly",
+        }
+    }
 
-	return variations
+    for _, tld := range targetTLDs {
+        variations = append(variations, Variation{
+            Domain:     baseName + "." + tld,
+            Technique:  t.Name(),
+            Confidence: t.GetConfidence(),
+            Risk:       t.GetRiskLevel(),
+            BaseDomain: domain,
+        })
+    }
+
+    return variations
 }
 
 type ThreatIndicators struct {
@@ -402,8 +416,20 @@ func (t *SubdomainPatternTechnique) Generate(domain string, tlds []string) []Var
 // UTILITY FUNCTIONS
 // ===================
 func getBaseName(domain string) string {
-	parts := strings.Split(domain, ".")
-	return parts[0]
+    // Return the registrable label (left of the public suffix) using PSL
+    d := strings.TrimSuffix(strings.ToLower(domain), ".")
+    if d == "" {
+        return ""
+    }
+    etld1, err := publicsuffix.EffectiveTLDPlusOne(d)
+    if err != nil || etld1 == "" {
+        return ""
+    }
+    parts := strings.Split(etld1, ".")
+    if len(parts) < 2 {
+        return ""
+    }
+    return parts[0]
 }
 
 // Registry de técnicas disponíveis
