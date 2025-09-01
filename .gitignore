@@ -34,3 +34,11 @@ pkg/models/asn.go
 .glide/
 .DS_Store
 .idea/
+
+# Agentes
+AGENTS.md 
+agents/
+CLAUDE.md
+
+# Go
+.gocahe/
