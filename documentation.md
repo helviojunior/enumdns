@@ -53,6 +53,34 @@ O **EnumDNS** é uma ferramenta modular de reconhecimento DNS desenvolvida em Go
 - **Score de Ameaça**: Classificação automática de risco
 - **Indicadores de Ameaça**: Identificação de padrões suspeitos (TLDs, Unicode tricks)
 
+##### Escopo e Novos Flags (2025-09)
+- Escopo por PSL: variações no domínio registrável (PSL). Subdomínios à esquerda não são alterados.
+  - `microsoft.com` → variar `microsoft.*`
+  - `recife.pe.gov.br` → variar `pe.gov.br` e o sufixo `gov.br` (sem tocar `recife`).
+- Sufixos multi-nível: `com.br`, `net.br`, `org.br` tratados como base; o label à esquerda é mutado e o TLD pode ser trocado.
+- Impersonação de sufixo (gov.br): variações como `g0v.br` e homoglyphs; use `--focus-suffix=gov.br` para enfatizar.
+- Troca de TLD: união do sufixo real com `--target-tlds` (padrão inclui `com.br, net.br, org.br`).
+- Saída deduplicada: TextWriter remove duplicatas; `--emit-candidates` imprime candidatos (inclui NX) com tipo `CANDIDATE`.
+
+Flags relevantes:
+- `--span-last3`: muta o 3º rótulo a partir da direita e preserva os 2 últimos.
+- `--focus-suffix=<sufixo>`: enfatiza técnicas específicas de sufixo (ex.: `gov.br`).
+- `--emit-candidates`: grava todos os candidatos gerados antes de resolver.
+- `--brand-combo`: adiciona padrões de marca opcionais.
+
+Exemplos rápidos:
+```
+# Foco gov.br com candidatos (inclui NX)
+enumdns threat-analysis -d recife.pe.gov.br --all-techniques --focus-suffix=gov.br --emit-candidates -o gov-br.txt
+
+# com.br com TLDs ampliados
+enumdns threat-analysis -d yeslinux.com.br --all-techniques \
+  --target-tlds com,net,org,co,info,io,com.br,net.br,org.br
+
+# Estratégia last3 para casos difíceis
+enumdns threat-analysis -d updates.microsoft.com --all-techniques --span-last3
+```
+
 #### 5. **Relatórios**
 - Conversão entre formatos (SQLite ↔ JSON Lines ↔ Texto)
 - Sincronização com Elasticsearch

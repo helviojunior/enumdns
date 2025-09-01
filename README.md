@@ -103,6 +103,21 @@ The `threat-analysis` module provides advanced domain security analysis to detec
 - **TLD Variations**: Analyzes suspicious TLDs (.tk, .ml, .ga, etc.)
 - **Subdomain Patterns**: Identifies phishing patterns like "secure-", "login-", "verify-"
 
+### Scope & Flags
+
+- Scope: Variations occur on the registrable domain (PSL). Subdomains to the left are preserved.
+  - `microsoft.com` → vary `microsoft.*`
+  - `recife.pe.gov.br` → vary `pe.gov.br` and suffix `gov.br` (no changes to `recife`).
+- Suffix focus: `gov.br` includes suffix impersonation (e.g., `g0v.br`, homoglyphs) without touching subdomains.
+- TLD swaps: Uses union of real suffix + `--target-tlds` (default includes `com.br, net.br, org.br`).
+- Deduplicated output: Text writer avoids duplicated lines; use `--emit-candidates` to print generated candidates (including NX).
+
+New/advanced flags:
+- `--span-last3`: operate over last 3 labels (mutate 3rd-from-right, keep last 2 as suffix) for tricky cases.
+- `--focus-suffix=<suffix>`: emphasize suffix-specific techniques (e.g., `gov.br`).
+- `--emit-candidates`: write all generated candidates to outputs before probing.
+- `--brand-combo`: add brand prefix/suffix patterns.
+
 ### Quick Examples
 
 ```bash
@@ -120,6 +135,12 @@ enumdns threat-analysis -d example.com --all-techniques --max-variations 10000
 
 # Output to different formats
 enumdns threat-analysis -d example.com --all-techniques --write-jsonl --write-csv
+
+# Focus on gov.br with candidates (includes NX)
+enumdns threat-analysis -d recife.pe.gov.br --all-techniques --focus-suffix=gov.br --emit-candidates -o gov-br.txt
+
+# com.br with broader TLD swaps
+enumdns threat-analysis -d yeslinux.com.br --all-techniques --target-tlds com,net,org,co,info,io,com.br,net.br,org.br
 ```
 
 ### Security Features

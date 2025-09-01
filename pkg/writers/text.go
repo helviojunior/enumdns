@@ -12,6 +12,8 @@ import (
 type TextWriter struct {
 	FilePath  string
 	finalPath string
+	seen      map[string]struct{}
+	seenCand  map[string]struct{}
 }
 
 // NewStdoutWriter initialises a stdout writer
@@ -30,6 +32,8 @@ func NewTextWriter(destination string) (*TextWriter, error) {
 	return &TextWriter{
 		FilePath:  destination,
 		finalPath: destination,
+		seen:      make(map[string]struct{}),
+		seenCand:  make(map[string]struct{}),
 	}, nil
 }
 
@@ -68,6 +72,13 @@ func (t *TextWriter) Write(result *models.Result) error {
 		return nil
 	}
 
+	// Deduplicate by composite hash (type+value)
+	key := result.GetCompHash()
+	if _, ok := t.seen[key]; ok {
+		return nil
+	}
+	t.seen[key] = struct{}{}
+
 	file, err := os.OpenFile(t.finalPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
@@ -82,6 +93,43 @@ func (t *TextWriter) Write(result *models.Result) error {
 }
 
 func (t *TextWriter) WriteFqdn(result *models.FQDNData) error {
+	if result == nil || strings.TrimSpace(result.FQDN) == "" {
+		return nil
+	}
+
+	fqdn := strings.Trim(strings.ToLower(result.FQDN), ". ")
+	if _, ok := t.seenCand[fqdn]; ok {
+		return nil
+	}
+	t.seenCand[fqdn] = struct{}{}
+
+	file, err := os.OpenFile(t.finalPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	line := fqdn
+	// pad to FQDN column width ~71
+	s := 71 - len(fqdn)
+	if s <= 0 {
+		s = 1
+	}
+	line += strings.Repeat(" ", s)
+	// mark as candidate
+	rtype := "CANDIDATE"
+	line += rtype
+	s = 11 - len(rtype)
+	if s <= 0 {
+		s = 1
+	}
+	line += strings.Repeat(" ", s)
+	line += "generated"
+
+	if _, err := file.WriteString(line + "\r\n"); err != nil {
+		return err
+	}
+
 	return nil
 }
 

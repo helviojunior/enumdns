@@ -5,32 +5,40 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/bob-reis/enumdns/internal/ascii"
 	"github.com/bob-reis/enumdns/internal/tools"
 	"github.com/bob-reis/enumdns/pkg/advanced"
 	"github.com/bob-reis/enumdns/pkg/database"
 	"github.com/bob-reis/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/pkg/models"
 	"github.com/bob-reis/enumdns/pkg/readers"
 	"github.com/bob-reis/enumdns/pkg/runner"
 	"github.com/bob-reis/enumdns/pkg/writers"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/publicsuffix"
 	"gorm.io/gorm"
 )
 
 // Opções específicas do módulo threat-analysis
 var threatAnalysisOpts = struct {
-	Typosquatting bool
-	Bitsquatting  bool
-	Homographic   bool
-	AllTechniques bool
-	MaxVariations int
-	TLDs          []string
-	ShowProgress  bool
-	WarnLimits    bool
+	Typosquatting  bool
+	Bitsquatting   bool
+	Homographic    bool
+	AllTechniques  bool
+	MaxVariations  int
+	TLDs           []string
+	ShowProgress   bool
+	WarnLimits     bool
+	BrandCombo     bool
+	SpanLast3      bool
+	EmitCandidates bool
+	FocusSuffix    string
 }{
 	MaxVariations: 1000,
-	TLDs:          []string{"com", "net", "org", "co", "io"},
+	TLDs:          []string{"com", "net", "org", "co", "io", "com.br", "net.br", "org.br"},
 	ShowProgress:  true,
 	WarnLimits:    true,
 }
@@ -52,7 +60,10 @@ verifies their existence to identify potential security threats and malicious do
 	Example: `
    - enumdns threat-analysis -d example.com --typosquatting -o threats.txt
    - enumdns threat-analysis -d example.com --all-techniques --write-db
-   - enumdns threat-analysis -L domains.txt --bitsquatting --write-jsonl`,
+   - enumdns threat-analysis -L domains.txt --bitsquatting --write-jsonl
+   - enumdns threat-analysis -d recife.pe.gov.br --all-techniques --focus-suffix=gov.br --emit-candidates -o gov-br.txt
+   - enumdns threat-analysis -d yeslinux.com.br --all-techniques --target-tlds com,net,org,co,info,io,com.br,net.br,org.br
+   - enumdns threat-analysis -d updates.microsoft.com --all-techniques --span-last3`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 
@@ -104,6 +115,11 @@ verifies their existence to identify potential security threats and malicious do
 			log.Warnf("MaxVariations (%d) is very low and may miss important variations. Consider using a higher value.", threatAnalysisOpts.MaxVariations)
 		}
 
+		// Pass segmentation preference to advanced package
+		advanced.SetSpanLast3(threatAnalysisOpts.SpanLast3)
+		if threatAnalysisOpts.FocusSuffix != "" {
+			advanced.SetFocusSuffix(strings.Trim(strings.ToLower(threatAnalysisOpts.FocusSuffix), ". "))
+		}
 		return nil
 	},
 	Run: runThreatAnalysis,
@@ -153,10 +169,13 @@ func generateVariations(domains []string) []advanced.Variation {
 	for _, domain := range domains {
 		log.Infof("Generating variations for %s", domain)
 
+		// Determine allowed TLDs for this domain: swap only if suffix has a single label
+		allowedTLDs := computeAllowedTLDs(domain, threatAnalysisOpts.TLDs)
+
 		generator := advanced.NewVariationGenerator(domain, advanced.GeneratorOptions{
 			Techniques:    techniques,
 			MaxVariations: threatAnalysisOpts.MaxVariations,
-			TargetTLDs:    threatAnalysisOpts.TLDs,
+			TargetTLDs:    allowedTLDs,
 		})
 
 		variations := generator.GenerateAll()
@@ -210,6 +229,9 @@ func feedTargetsToRunner(runnerInstance *runner.Runner, conn *gorm.DB, allVariat
 
 		for _, variation := range allVariations {
 			host := variation.Domain
+			if !strings.HasSuffix(host, ".") {
+				host = host + "."
+			}
 			shouldProcess := forceCheck
 
 			if !forceCheck {
@@ -246,6 +268,17 @@ func runThreatAnalysis(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// Optionally emit all generated candidates to writers before probing
+	if threatAnalysisOpts.EmitCandidates {
+		now := time.Now()
+		for _, w := range advancedWriters {
+			for _, v := range allVariations {
+				fq := &models.FQDNData{FQDN: v.Domain, Source: "Generated", ProbedAt: now}
+				_ = w.WriteFqdn(fq)
+			}
+		}
+	}
+
 	executeAnalysis(allVariations)
 }
 
@@ -253,7 +286,11 @@ func getEnabledTechniques() []string {
 	var techniques []string
 
 	if threatAnalysisOpts.AllTechniques {
-		return []string{"typosquatting", "bitsquatting", "homographic", "insertion", "deletion", "transposition", "tld_variation", "subdomain_pattern"}
+		techniques = []string{"typosquatting", "bitsquatting", "homographic", "insertion", "deletion", "transposition", "tld_variation", "suffix_impersonation"}
+		if threatAnalysisOpts.BrandCombo {
+			techniques = append(techniques, "subdomain_pattern")
+		}
+		return techniques
 	}
 
 	if threatAnalysisOpts.Typosquatting {
@@ -266,9 +303,13 @@ func getEnabledTechniques() []string {
 		techniques = append(techniques, "homographic")
 	}
 
-	// Se nenhuma foi selecionada especificamente, habilitar todas
+	// Se nenhuma foi selecionada especificamente, habilitar conjunto padrão (sem brand-combo)
 	if len(techniques) == 0 {
-		return []string{"typosquatting", "bitsquatting", "homographic", "insertion", "deletion", "transposition", "tld_variation", "subdomain_pattern"}
+		techniques = []string{"typosquatting", "bitsquatting", "homographic", "insertion", "deletion", "transposition", "tld_variation", "suffix_impersonation"}
+		if threatAnalysisOpts.BrandCombo {
+			techniques = append(techniques, "subdomain_pattern")
+		}
+		return techniques
 	}
 
 	return techniques
@@ -289,8 +330,12 @@ func init() {
 
 	// Configurações avançadas
 	threatAnalysisCmd.Flags().IntVar(&threatAnalysisOpts.MaxVariations, "max-variations", 1000, "Maximum variations to generate per domain (10-50000)")
-	threatAnalysisCmd.Flags().StringSliceVar(&threatAnalysisOpts.TLDs, "target-tlds", []string{"com", "net", "org", "co", "io", "tk", "ml", "ga", "cf"}, "Target TLDs for variations (comma-separated)")
+	threatAnalysisCmd.Flags().StringSliceVar(&threatAnalysisOpts.TLDs, "target-tlds", []string{"com", "net", "org", "co", "io", "tk", "ml", "ga", "cf", "com.br", "net.br", "org.br"}, "Target TLDs for variations (comma-separated)")
 	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.WarnLimits, "warn-limits", true, "Show warnings when variation limits are reached")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.BrandCombo, "brand-combo", false, "Enable brand-combo patterns (prefix/suffix combos) in addition to eTLD+1 variations")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.SpanLast3, "span-last3", false, "Operate over the last 3 labels: mutate the 3rd-from-right label and keep the last 2 as suffix")
+	threatAnalysisCmd.Flags().BoolVar(&threatAnalysisOpts.EmitCandidates, "emit-candidates", false, "Write all generated candidates to outputs before probing (includes NX domains)")
+	threatAnalysisCmd.Flags().StringVar(&threatAnalysisOpts.FocusSuffix, "focus-suffix", "", "Emphasize suffix-specific techniques (e.g., gov.br)")
 
 	// Flags de compatibilidade
 	threatAnalysisCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "ignore-nonexistent", "I", false, "Ignore nonexistent domains during analysis")
@@ -301,4 +346,31 @@ func init() {
 
 	// Adicionar validações
 	threatAnalysisCmd.Flags().SetInterspersed(false) // Manter ordem das flags
+}
+
+// computeAllowedTLDs decides which TLDs should be used for variation generation
+// respecting the Public Suffix List. If the suffix has multiple labels (e.g., gov.br),
+// we restrict to that exact suffix. Otherwise we allow the provided target list.
+func computeAllowedTLDs(domain string, targets []string) []string {
+	base := strings.TrimSuffix(strings.ToLower(domain), ".")
+	if base == "" {
+		return targets
+	}
+	suffix, _ := publicsuffix.PublicSuffix(base)
+	// Build union: keep original suffix and user-provided targets
+	set := map[string]struct{}{}
+	if suffix != "" {
+		set[suffix] = struct{}{}
+	}
+	for _, t := range targets {
+		tt := strings.Trim(strings.ToLower(t), ". ")
+		if tt != "" {
+			set[tt] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(set))
+	for k := range set {
+		out = append(out, k)
+	}
+	return out
 }
