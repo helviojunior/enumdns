@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/elastic/go-elasticsearch/v8 v8.17.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/helviojunior/gopathresolver v0.1.0
+	github.com/helviojunior/gopathresolver v0.1.6
 	github.com/miekg/dns v1.1.63
 	github.com/prometheus/procfs v0.16.0
 	github.com/spf13/cobra v1.8.1
