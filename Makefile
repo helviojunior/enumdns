@@ -51,8 +51,10 @@ get-version:
 
 windows: get-version	## Make Windows x86 and x64 Binaries
 	@for ARCH in ${ARCHS}; do \
-		echo "Building for windows $${ARCH}.." ;\
-		GOOS=windows GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/enumdns_windows_$${ARCH}.exe || exit 1 ;\
+	    if [ "$${ARCH}" != "386" ]; then \
+			echo "Building for windows $${ARCH}.." ;\
+			GOOS=windows GOARCH=$${ARCH} go build -a -ldflags "$$(cat ${TARGET}/.ldflags)" -o ${TARGET}/enumdns_windows_$${ARCH}.exe || exit 1 ;\
+		fi; \
 	done; \
 	echo "Done."
 

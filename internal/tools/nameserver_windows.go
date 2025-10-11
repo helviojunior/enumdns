@@ -122,7 +122,7 @@ func runProcGetAdaptersAddresses(adapterAddresses *ipAdapterAddresses,
 		uintptr(unsafe.Pointer(adapterAddresses)),
 		uintptr(unsafe.Pointer(sizePointer)))
 	switch {
-	case err != 0:
+	case err != nil:
 		return err
 	case r1 != 0:
 		return syscall.Errno(r1)
