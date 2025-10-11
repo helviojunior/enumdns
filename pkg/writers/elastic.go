@@ -3,18 +3,17 @@ package writers
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
-
-	//"path/filepath"
-	//"reflect"
-	//"io"
 
 	elk "github.com/elastic/go-elasticsearch/v8"
 	esapi "github.com/elastic/go-elasticsearch/v8/esapi"
