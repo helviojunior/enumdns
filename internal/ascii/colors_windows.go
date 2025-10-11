@@ -1,3 +1,5 @@
+//go:build windows
+
 /*
  * PACP - PCAP manipulation tool in Golang
  * Copyright (c) 2025 Helvio Junior <helvio_junior [at] hotmail [dot] com>
@@ -11,16 +13,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-//go:build windows
-
 package ascii
 
 import "golang.org/x/sys/windows"
 
 func SetConsoleColors() error {
-    console := windows.Stdout
-    var consoleMode uint32
-    windows.GetConsoleMode(console, &consoleMode)
-    consoleMode |= windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING
-    return windows.SetConsoleMode(console, consoleMode)
+	console := windows.Stdout
+	var consoleMode uint32
+	windows.GetConsoleMode(console, &consoleMode)
+	consoleMode |= windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING
+	return windows.SetConsoleMode(console, consoleMode)
 }

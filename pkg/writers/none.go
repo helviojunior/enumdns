@@ -1,7 +1,7 @@
 package writers
 
 import (
-	"github.com/helviojunior/enumdns/pkg/models"
+	"github.com/bob-reis/enumdns/pkg/models"
 )
 
 // NoneWriter is a None writer
@@ -18,10 +18,10 @@ func (s *NoneWriter) Write(result *models.Result) error {
 	return nil
 }
 
-func (s *NoneWriter)WriteFqdn(result *models.FQDNData) error {
+func (s *NoneWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
 func (s *NoneWriter) Finish() error {
-    return nil
+	return nil
 }

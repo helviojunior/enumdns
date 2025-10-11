@@ -6,30 +6,32 @@ import (
 	"log/slog"
 	//"net/url"
 	//"net/mail"
-	"os"
+	"crypto/rand"
 	"fmt"
-	"sync"
-	"time"
-	"strings"
-	"math/rand/v2"
+	"math/big"
+	"os"
 	"os/signal"
-    "syscall"
-    //"strconv"
-    "errors"
-    "sort"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
 
-	"github.com/helviojunior/enumdns/internal"
-	//"github.com/helviojunior/enumdns/internal/ascii"
-	"github.com/helviojunior/enumdns/pkg/log"
-	"github.com/helviojunior/enumdns/internal/tools"
-	"github.com/helviojunior/enumdns/pkg/models"
-	"github.com/helviojunior/enumdns/pkg/writers"
+	//"strconv"
+	"errors"
+	"sort"
+
+	"github.com/bob-reis/enumdns/internal"
+	//"github.com/bob-reis/enumdns/internal/ascii"
+	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/bob-reis/enumdns/pkg/log"
+	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/bob-reis/enumdns/pkg/writers"
 	"github.com/miekg/dns"
 )
 
 // Runner is a runner that probes web targets using a driver
 type Recon struct {
-	
+
 	//Test id
 	uid string
 
@@ -67,17 +69,17 @@ func NewRecon(logger *slog.Logger, opts Options, writers []writers.Writer) (*Rec
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Recon{
-		Targets:      make(chan string),
-		uid: fmt.Sprintf("%d", time.Now().UnixMilli()),
-		ctx:        ctx,
-		cancel:     cancel,
-		log:        logger,
-		writers:    writers,
-		options:    opts,
-		searchOrder: []uint16{ dns.TypeSOA, dns.TypeCNAME, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV, dns.TypeA, dns.TypeAAAA, dns.TypeANY },
-		dnsServer: opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
-		Running: true,
-		Domains: []string{},
+		Targets:     make(chan string),
+		uid:         fmt.Sprintf("%d", time.Now().UnixMilli()),
+		ctx:         ctx,
+		cancel:      cancel,
+		log:         logger,
+		writers:     writers,
+		options:     opts,
+		searchOrder: []uint16{dns.TypeSOA, dns.TypeCNAME, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
+		dnsServer:   opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
+		Running:     true,
+		Domains:     []string{},
 	}, nil
 }
 
@@ -100,12 +102,12 @@ func (run *Recon) Run(total int) {
 	wg := sync.WaitGroup{}
 	run.Running = true
 
-    c := make(chan os.Signal)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    go func() {
-        <-c
-        run.Running = false
-    }()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		run.Running = false
+	}()
 
 	// will spawn Scan.Theads number of "workers" as goroutines
 	for w := 0; w < run.options.Scan.Threads; w++ {
@@ -136,58 +138,58 @@ func (run *Recon) Run(total int) {
 						logger = run.log.With("FQDN", soa)
 					}
 
-					run.Domains = append(run.Domains, strings.Trim(soa, ". ") + ".")
+					run.Domains = append(run.Domains, strings.Trim(soa, ". ")+".")
 
 					//Check if has LDAP registers
 					//nslookup -q=SRV _ldap._tcp.sec4us.com.br
 					logger.Debug("Getting _ldap._tcp...")
-					results := run.Probe("_ldap._tcp." + soa, &[]uint16{ dns.TypeSRV, dns.TypeA })
+					results := run.Probe("_ldap._tcp."+soa, &[]uint16{dns.TypeSRV, dns.TypeA})
 					isAD := false
 					if run.Running {
 						for _, res := range results {
 							if res.Exists {
 								logger.Debug("Result (_ldap._tcp...)", "target", res)
-	        					if res.RType == "SRV" && res.Target != "" {
-	        						isAD = true
-	        						res.DC = true
-	        					}
-	        					if res.RType == "A" && res.IPv4 != "" {
-	        						isAD = true
-	        					}
-	        				}
-                        }
-                    }
+								if res.RType == "SRV" && res.Target != "" {
+									isAD = true
+									res.DC = true
+								}
+								if res.RType == "A" && res.IPv4 != "" {
+									isAD = true
+								}
+							}
+						}
+					}
 
-                    logger.Debug("Is AD?", "ad", isAD)
-                    if isAD {
-                    	resultsAd := run.Probe("_gc._tcp." + soa, nil)
-                    	cnt := len(strings.Split(strings.Trim(soa, ". "), "."))
+					logger.Debug("Is AD?", "ad", isAD)
+					if isAD {
+						resultsAd := run.Probe("_gc._tcp."+soa, nil)
+						cnt := len(strings.Split(strings.Trim(soa, ". "), "."))
 						if run.Running {
 
-							if len(resultsAd) == 0 || (len(resultsAd) == 1 && resultsAd[0].Exists == false) { // May be it is not a root domain
+							if len(resultsAd) == 0 || (len(resultsAd) == 1 && !resultsAd[0].Exists) { // May be it is not a root domain
 								p := strings.Split(strings.Trim(soa, ". "), ".")
 								d1 := strings.Join(p[1:], ".") + "."
-								resultsAd = run.Probe("_gc._tcp." + d1, nil)
-							} 
+								resultsAd = run.Probe("_gc._tcp."+d1, nil)
+							}
 
 							for _, res := range resultsAd {
 								if res.RType == "SRV" {
-	        						res.GC = true
-	        						res.DC = true
-	        					}
-	        					rNew := !models.SliceHasResult(results, res)
-	        					if rNew {
-	        						results = append(results, res)
-	        					}
+									res.GC = true
+									res.DC = true
+								}
+								rNew := !models.SliceHasResult(results, res)
+								if rNew {
+									results = append(results, res)
+								}
 								if res.RType == "SRV" || res.RType == "CNAME" {
 									if !rNew {
 										for _, res1 := range results {
-		        							if (!res1.GC || !res1.DC) && (res1.RType == "SRV" || res1.RType == "CNAME") && (res1.Target == res.Target) {
-		        								res1.GC = res.GC
-		        								res1.DC = res.DC
-		        							}
-		        						}
-		        					}
+											if (!res1.GC || !res1.DC) && (res1.RType == "SRV" || res1.RType == "CNAME") && (res1.Target == res.Target) {
+												res1.GC = res.GC
+												res1.DC = res.DC
+											}
+										}
+									}
 									d := strings.Trim(strings.Replace(strings.ToLower(res.Target), "_gc._tcp.", "", -1), ". ")
 									p := strings.Split(strings.Trim(d, ". "), ".")
 									if len(p) != (cnt + 1) {
@@ -199,36 +201,36 @@ func (run *Recon) Run(total int) {
 									}
 								}
 
-	                        }
-	                    
-	                    }
+							}
 
-                    }
+						}
 
-                    logger.Debug("Getting data by SOA", "soa", soa)
+					}
+
+					logger.Debug("Getting data by SOA", "soa", soa)
 					resultsGeneral := run.Probe(soa, nil)
 					if isAD {
 						for _, res := range resultsGeneral {
-	    					if !models.SliceHasResult(results, res) {
-	    						results = append(results, res)
-	    					}
-	    				}
-					}else{
+							if !models.SliceHasResult(results, res) {
+								results = append(results, res)
+							}
+						}
+					} else {
 						results = resultsGeneral
 					}
 
 					logger.Debug("Sorting results")
 					sort.Slice(results[:], func(i, j int) bool {
-					  return results[i].GetCompHash() < results[j].GetCompHash()
+						return results[i].GetCompHash() < results[j].GetCompHash()
 					})
-					
+
 					logger.Debug("Writting results to DB")
 					for _, res := range results {
-    					if err := run.runWriters(res); err != nil {
-    						logger.Error("failed to write result", "err", err)
-    					}
-                    }
-                
+						if err := run.runWriters(res); err != nil {
+							logger.Error("failed to write result", "err", err)
+						}
+					}
+
 				}
 			}
 
@@ -237,8 +239,6 @@ func (run *Recon) Run(total int) {
 
 	wg.Wait()
 	run.Running = false
-
-	return
 }
 
 func (run *Recon) GetSOAName(host string) (string, error) {
@@ -250,29 +250,29 @@ func (run *Recon) GetSOAName(host string) (string, error) {
 
 	host = strings.ToLower(host) + "."
 
-    m := new(dns.Msg)
-    m.Id = dns.Id()
+	m := new(dns.Msg)
+	m.Id = dns.Id()
 	m.RecursionDesired = true
 
 	m.Question = make([]dns.Question, 1)
-	m.Question[0] = dns.Question{host, dns.TypeSOA, dns.ClassINET}
+	m.Question[0] = dns.Question{Name: host, Qtype: dns.TypeSOA, Qclass: dns.ClassINET}
 
 	c := new(internal.SocksClient)
-	in, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
+	in, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
 	if err != nil {
 		return "", err
-	}else{
-		
+	} else {
+
 		for _, ans1 := range in.Answer {
 			if soa, ok := ans1.(*dns.SOA); ok {
 				s = strings.Trim(soa.Hdr.Name, ". ")
 			}
 		}
-		
+
 	}
 
 	if s == "" {
-		return "", errors.New("SOA not found for domain '"+ host + "'")
+		return "", errors.New("SOA not found for domain '" + host + "'")
 	}
 
 	return s, nil
@@ -287,12 +287,12 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 	resList := []*models.Result{}
 
 	resultBase := &models.Result{
-		TestId: run.uid,
-		FQDN: host,
+		TestId:   run.uid,
+		FQDN:     host,
 		ProbedAt: time.Now(),
-		Exists: true,
+		Exists:   true,
 	}
-    
+
 	ips := []string{}
 	names := []string{}
 
@@ -302,16 +302,16 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 		searchTypes = *customTypes
 	}
 
-    for _, t := range searchTypes {
-    	tName := dns.Type(t).String()
-    	logger := run.log.With("FQDN", host, "Type", tName)
-    	resultBase.RType = tName
+	for _, t := range searchTypes {
+		tName := dns.Type(t).String()
+		logger := run.log.With("FQDN", host, "Type", tName)
+		resultBase.RType = tName
 
-    	good_to_go := false
+		good_to_go := false
 		counter := 0
-		for good_to_go != true && run.Running {
-            m := new(dns.Msg)
-            m.Id = dns.Id()
+		for !good_to_go && run.Running {
+			m := new(dns.Msg)
+			m.Id = dns.Id()
 			m.RecursionDesired = true
 
 			//m.Question = make([]dns.Question, 1)
@@ -319,24 +319,26 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 			logger.Debug("Quering", "host", host, "type", t)
 			m.SetQuestion(host, t)
 
-			//r, err := dns.Exchange(m, run.dnsServer); 
+			//r, err := dns.Exchange(m, run.dnsServer);
 			c := new(internal.SocksClient)
-			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
+			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
 			counter += 1
 			good_to_go = (err == nil)
 
 			if err != nil {
 				logger.Debug("Error running DNS request, trying again...", "type", t, "err", err)
-				time.Sleep(time.Duration(rand.IntN(20)) * time.Second)
+				// Use crypto/rand for secure random number generation
+				n, _ := rand.Int(rand.Reader, big.NewInt(20))
+				time.Sleep(time.Duration(n.Int64()) * time.Second)
 			}
 
 			if !good_to_go && counter >= 5 {
 				resultBase.Exists = false
 				resultBase.Failed = true
 				resultBase.FailedReason = err.Error()
-				return []*models.Result{ resultBase }
+				return []*models.Result{resultBase}
 			}
-			
+
 			if good_to_go {
 				for _, ans := range r.Answer {
 					run.log.Debug(ans.String())
@@ -366,7 +368,7 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 						}
 						run.appendName(&names, soa.Hdr.Name)
 					}
-					
+
 					//TXT
 					txt, ok := ans.(*dns.TXT)
 					if ok {
@@ -526,17 +528,17 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 		if arpa, err := dns.ReverseAddr(ip); err == nil {
 
 			m := new(dns.Msg)
-            m.Id = dns.Id()
+			m.Id = dns.Id()
 			m.RecursionDesired = true
 
 			m.SetQuestion(arpa, dns.TypePTR)
 
-			//r, err := dns.Exchange(m, run.dnsServer); 
+			//r, err := dns.Exchange(m, run.dnsServer);
 			c := new(internal.SocksClient)
-			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer); 
+			r, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
 			if err != nil {
 				logger.Error("Error", "err", err)
-			}else{
+			} else {
 				for _, ans := range r.Answer {
 					ptr, ok := ans.(*dns.PTR)
 					if ok {
@@ -546,7 +548,7 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 						a2.RType = "PTR"
 						if strings.Contains(arpa, "ip6.arpa") {
 							a2.IPv6 = ip
-						}else{
+						} else {
 							a2.IPv4 = ip
 						}
 						a2.Ptr = arpa
@@ -569,7 +571,6 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 							resList = append(resList, a2)
 						}
 
-						
 						for _, res := range resList {
 							if res.RType != "PTR" && (res.IPv4 == ip || res.IPv6 == ip) {
 								res.Ptr = ptr.Ptr
@@ -592,7 +593,7 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 
 	if len(resList) == 0 {
 		resultBase.Exists = false
-		return []*models.Result{ resultBase }
+		return []*models.Result{resultBase}
 	}
 
 	return resList
@@ -609,14 +610,14 @@ func (run *Recon) getHost(c *internal.SocksClient, host string, resList *[]*mode
 	logger := run.log.With("FQDN", host)
 
 	m1 := new(dns.Msg)
-    m1.Id = dns.Id()
+	m1.Id = dns.Id()
 	m1.RecursionDesired = true
-	m1.SetQuestion(strings.Trim(host, ". ") + ".", dns.TypeANY)
-	//r1, err := dns.Exchange(m1, run.dnsServer); 
-	r1, err := c.Exchange(m1, run.options.Proxy, run.dnsServer); 
+	m1.SetQuestion(strings.Trim(host, ". ")+".", dns.TypeANY)
+	//r1, err := dns.Exchange(m1, run.dnsServer);
+	r1, err := c.Exchange(m1, run.options.Proxy, run.dnsServer)
 	if err != nil {
 		return
-	}else{
+	} else {
 		for _, ans1 := range r1.Answer {
 			a, ok := ans1.(*dns.A)
 			if ok {
@@ -645,7 +646,7 @@ func (run *Recon) getHost(c *internal.SocksClient, host string, resList *[]*mode
 			if ok {
 				logger.Debug("AAAA", "IP", aaaa.AAAA.String())
 				*ips = append(*ips, aaaa.AAAA.String())
-				
+
 				// With the same FQDN
 				a2 := resultBase.Clone()
 				a2.RType = "AAAA"
@@ -669,7 +670,8 @@ func (run *Recon) getHost(c *internal.SocksClient, host string, resList *[]*mode
 
 func (run *Recon) Close() {
 	for _, writer := range run.writers {
-		writer.Finish()
+		if err := writer.Finish(); err != nil {
+			run.log.Error("failed to finish writer", "err", err)
+		}
 	}
 }
-

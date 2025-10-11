@@ -3,7 +3,8 @@ package ascii
 import (
 	"fmt"
 	"strings"
-	"github.com/helviojunior/enumdns/internal/version"
+
+	"github.com/bob-reis/enumdns/internal/version"
 )
 
 // Logo returns the enumdns ascii logo

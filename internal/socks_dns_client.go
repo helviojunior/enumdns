@@ -2,12 +2,12 @@ package internal
 
 import (
 	"context"
-	"net/url"
-	"net"
 	"errors"
-	"golang.org/x/net/proxy"
-	"github.com/miekg/dns"
+	"net"
+	"net/url"
 
+	"github.com/miekg/dns"
+	"golang.org/x/net/proxy"
 )
 
 type SocksClient struct {
@@ -30,7 +30,7 @@ type SocksClient struct {
 // attribute appropriately
 func (c *SocksClient) Exchange(m *dns.Msg, proxyUri *url.URL, address string) (*dns.Msg, error) {
 	if proxyUri == nil {
-		return dns.Exchange(m, address); 
+		return dns.Exchange(m, address)
 	}
 
 	c.Client = new(dns.Client)
@@ -52,7 +52,7 @@ func (c *SocksClient) Dial(proxyUri *url.URL, address string) (conn *dns.Conn, e
 func (c *SocksClient) DialContext(ctx context.Context, proxyUri *url.URL, address string) (conn *dns.Conn, err error) {
 	d, err := FromURL(proxyUri, proxy.Direct)
 	if err != nil {
-	    return nil, errors.New("Error connecting to proxy: " +  err.Error())
+		return nil, errors.New("Error connecting to proxy: " + err.Error())
 	}
 
 	conn = new(dns.Conn)

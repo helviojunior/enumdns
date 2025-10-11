@@ -1,9 +1,8 @@
 package tools
 
 import (
-	"time"
-
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 )
 
 // SliceHasStr checks if a slice has a string
@@ -28,7 +27,6 @@ func SliceHasInt(slice []int, item int) bool {
 	return false
 }
 
-
 // SliceHasInt checks if a slice has an int
 func SliceHasUInt16(slice []uint16, item uint16) bool {
 	for _, s := range slice {
@@ -39,7 +37,6 @@ func SliceHasUInt16(slice []uint16, item uint16) bool {
 
 	return false
 }
-
 
 // UniqueIntSlice returns a slice of unique ints
 func UniqueIntSlice(slice []int) []int {
@@ -58,12 +55,10 @@ func UniqueIntSlice(slice []int) []int {
 
 // ShuffleStr shuffles a slice of strings
 func ShuffleStr(slice []string) {
-	source := rand.NewSource(time.Now().UnixNano())
-	rng := rand.New(source)
-
-	// Fisher-Yates shuffle algorithm
+	// Fisher-Yates shuffle algorithm using crypto/rand
 	for i := len(slice) - 1; i > 0; i-- {
-		j := rng.Intn(i + 1)
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(i+1)))
+		j := int(n.Int64())
 		slice[i], slice[j] = slice[j], slice[i]
 	}
 }

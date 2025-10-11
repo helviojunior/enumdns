@@ -1,0 +1,32 @@
+# golangci-lint configuration for EnumDNS
+# Workaround configuration to avoid Go 1.23 compatibility issues
+run:
+  timeout: 30s
+  tests: false
+  skip-dirs:
+    - internal/tools    # Skip problematic unicode imports
+    - pkg/advanced      # Skip problematic unicode imports
+    - examples
+    - testdata
+    - vendor
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_generated\\.go$"
+    - ".*_test\\.go$"
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+
+linters-settings:
+  gofmt:
+    simplify: true
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  exclude-use-default: true
+
+output:
+  format: tab

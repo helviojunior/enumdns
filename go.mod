@@ -1,4 +1,4 @@
-module github.com/helviojunior/enumdns
+module github.com/bob-reis/enumdns
 
 go 1.23.0
 
@@ -12,9 +12,9 @@ require (
 	github.com/miekg/dns v1.1.63
 	github.com/prometheus/procfs v0.16.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/net v0.31.0
-	golang.org/x/sys v0.30.0
-	golang.org/x/term v0.26.0
+	golang.org/x/net v0.42.0
+	golang.org/x/sys v0.35.0
+	golang.org/x/term v0.34.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.30.0
@@ -56,12 +56,12 @@ require (
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.18.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/tools v0.35.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect

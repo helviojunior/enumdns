@@ -1,6 +1,6 @@
 package writers
 
-import "github.com/helviojunior/enumdns/pkg/models"
+import "github.com/bob-reis/enumdns/pkg/models"
 
 // Writer is a results writer
 type Writer interface {

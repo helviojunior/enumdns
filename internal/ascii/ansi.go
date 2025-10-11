@@ -1,10 +1,10 @@
 package ascii
 
 import (
-    "regexp"
+	"regexp"
 )
 
-var ansiPattern *regexp.Regexp = regexp.MustCompile(`(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]`) 
+var ansiPattern *regexp.Regexp = regexp.MustCompile(`(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]`)
 
 func ScapeAnsi(text string) string {
 	return ansiPattern.ReplaceAllString(text, "")

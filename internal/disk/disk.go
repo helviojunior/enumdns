@@ -10,16 +10,15 @@ package disk
 // Minor - minor dev id
 // Devname - device name
 type Info struct {
-    Total      uint64
-    Free       uint64
-    Used       uint64
-    Files      uint64
-    Ffree      uint64
-    FSType     string
-    Major      uint32
-    Minor      uint32
-    Name       string
-    Rotational *bool
-    NRRequests uint64
+	Total      uint64
+	Free       uint64
+	Used       uint64
+	Files      uint64
+	Ffree      uint64
+	FSType     string
+	Major      uint32
+	Minor      uint32
+	Name       string
+	Rotational *bool
+	NRRequests uint64
 }
-
