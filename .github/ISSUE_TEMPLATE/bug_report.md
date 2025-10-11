@@ -31,7 +31,7 @@ A clear and concise description of what actually happened.
 
 **System Information:**
 - OS: [e.g. Ubuntu 22.04, macOS 13.0, Windows 11]
-- Go Version: [e.g. 1.23.0]
+- Go Version: [e.g. 1.24.0]
 - EnumDNS Version: [e.g. v1.0.0]
 - Installation Method: [e.g. built from source, binary download, go install]
 
