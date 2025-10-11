@@ -179,11 +179,11 @@ jobs:
         args: '-concurrency 1 -quiet -no-fail -fmt sarif -out gosec-results.sarif ./...'
       timeout-minutes: 5
         
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v4
-      if: always() && hashFiles('gosec-results.sarif') != ''
-      with:
-        sarif_file: gosec-results.sarif
+    #- name: Upload SARIF file
+    #  uses: github/codeql-action/upload-sarif@v4
+    #  if: always() && hashFiles('gosec-results.sarif') != ''
+    #  with:
+    #    sarif_file: gosec-results.sarif
     
     - name: Run Nancy to check for vulnerabilities
       run: |
