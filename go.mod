@@ -15,12 +15,13 @@ require (
 	golang.org/x/net v0.42.0
 	golang.org/x/sys v0.35.0
 	golang.org/x/term v0.34.0
-	gorm.io/driver/mysql v1.5.7
+	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.30.0
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
@@ -32,7 +33,7 @@ require (
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-sql-driver/mysql v1.7.0 // indirect
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
