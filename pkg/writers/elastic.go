@@ -71,6 +71,45 @@ type indexResponse struct {
 	} `json:"error"`
 }
 
+type Interceptor struct {
+  base   	*http.Transport
+}
+
+
+func (i Interceptor) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Header exigido pelo client do ES
+	const prodHeaderKey = "X-Elastic-Product"
+	const prodHeaderVal = "Elasticsearch"
+
+	// O client do ES costuma checar GET /
+	if (req.Method == http.MethodGet || req.Method == http.MethodHead) && req.URL.Path == "/" {
+		str_body := ""
+		if req.Method != http.MethodHead {
+		
+			str_body = `{
+			  "version": { "number": "8.0.0-SNAPSHOT", "build_flavor": "default" },
+			  "tagline": "You Know, for Search"
+			}`
+		}
+
+		resp := &http.Response{
+			StatusCode: 200,
+			Body:       io.NopCloser(strings.NewReader(str_body)),
+			Header:     make(http.Header),
+			Request:    req,
+		}
+		resp.Header.Set("Content-Type", "application/json")
+		resp.Header.Set(prodHeaderKey, prodHeaderVal)
+		return resp, nil
+	}
+
+	resp, err := i.base.RoundTrip(req)
+	if resp != nil {
+		resp.Header.Set(prodHeaderKey, prodHeaderVal)
+	}
+	return resp, err
+}
+
 // NewJsonWriter return a new Json lines writer
 func NewElasticWriter(uri string) (*ElasticWriter, error) {
 
@@ -111,10 +150,13 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
 			logger.Debugf("Elastic retry, attempt: %d | Sleeping for %s...\n", i, d)
 			return d
 		},
-		Transport: &http.Transport{
-			MaxIdleConns:       10,
-			IdleConnTimeout:    10 * time.Second,
-			DisableCompression: true,
+		Transport: &Interceptor{
+			&http.Transport{
+				MaxIdleConns:       10,
+			    IdleConnTimeout:    10 * time.Second,
+			    DisableCompression: true,
+			    TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
 		},
 	}
 
@@ -127,6 +169,13 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Faz um ping (chama GET / internamente)
+	res, err := wr.Client.Ping()
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
 
 	//File Index
 	err = wr.CreateIndex(wr.Index, `{
