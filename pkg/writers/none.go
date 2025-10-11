@@ -1,7 +1,7 @@
 package writers
 
 import (
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/models"
 )
 
 // NoneWriter is a None writer

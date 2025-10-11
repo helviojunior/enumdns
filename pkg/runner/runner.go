@@ -21,11 +21,11 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/bob-reis/enumdns/internal"
-	"github.com/bob-reis/enumdns/internal/ascii"
-	"github.com/bob-reis/enumdns/internal/tools"
-	"github.com/bob-reis/enumdns/pkg/models"
-	"github.com/bob-reis/enumdns/pkg/writers"
+	"github.com/helviojunior/enumdns/internal"
+	"github.com/helviojunior/enumdns/internal/ascii"
+	"github.com/helviojunior/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/writers"
 	"github.com/miekg/dns"
 )
 

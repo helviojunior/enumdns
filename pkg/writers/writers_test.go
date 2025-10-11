@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/models"
 )
 
 // Helper function to create temporary file for testing

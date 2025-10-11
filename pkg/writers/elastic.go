@@ -16,9 +16,9 @@ import (
 	//"reflect"
 	//"io"
 
-	"github.com/bob-reis/enumdns/internal/tools"
-	logger "github.com/bob-reis/enumdns/pkg/log"
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/internal/tools"
+	logger "github.com/helviojunior/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/pkg/models"
 	elk "github.com/elastic/go-elasticsearch/v8"
 	esapi "github.com/elastic/go-elasticsearch/v8/esapi"
 )

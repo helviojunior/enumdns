@@ -4,7 +4,7 @@ import (
 	"net/url"
 )
 
-// Options are global github.com/bob-reis/enumdnsenumdns options
+// Options are global github.com/helviojunior/enumdnsenumdns options
 type Options struct {
 	// Logging is logging options
 	Logging Logging

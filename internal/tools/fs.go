@@ -16,8 +16,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/bob-reis/enumdns/internal/disk"
-	"github.com/bob-reis/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/internal/disk"
+	"github.com/helviojunior/enumdns/pkg/log"
 )
 
 func GetMimeType(s string) (string, error) {

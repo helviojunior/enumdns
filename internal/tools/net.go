@@ -10,7 +10,7 @@ import (
 	//"context"
 	"github.com/miekg/dns"
 
-	"github.com/bob-reis/enumdns/internal"
+	"github.com/helviojunior/enumdns/internal"
 )
 
 var privateNets = []string{

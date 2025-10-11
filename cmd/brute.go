@@ -6,13 +6,13 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/bob-reis/enumdns/internal/ascii"
-	"github.com/bob-reis/enumdns/internal/tools"
-	"github.com/bob-reis/enumdns/pkg/database"
-	"github.com/bob-reis/enumdns/pkg/log"
-	"github.com/bob-reis/enumdns/pkg/readers"
-	"github.com/bob-reis/enumdns/pkg/runner"
-	"github.com/bob-reis/enumdns/pkg/writers"
+	"github.com/helviojunior/enumdns/internal/ascii"
+	"github.com/helviojunior/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/pkg/database"
+	"github.com/helviojunior/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/pkg/readers"
+	"github.com/helviojunior/enumdns/pkg/runner"
+	"github.com/helviojunior/enumdns/pkg/writers"
 	"github.com/spf13/cobra"
 )
 

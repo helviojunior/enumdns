@@ -1,4 +1,4 @@
-module github.com/bob-reis/enumdns
+module github.com/helviojunior/enumdns
 
 go 1.23.0
 

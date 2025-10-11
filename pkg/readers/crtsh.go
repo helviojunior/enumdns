@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/bob-reis/enumdns/internal/tools"
-	"github.com/bob-reis/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/pkg/log"
 )
 
 type CrtShReader struct {

@@ -13,9 +13,9 @@ updates:
       prefix: "deps(go):"
       include: "scope"
     reviewers:
-      - "bob-reis"
+      - "helviojunior"
     assignees:
-      - "bob-reis"
+      - "helviojunior"
     labels:
       - "dependencies"
       - "go"
@@ -32,9 +32,9 @@ updates:
       prefix: "ci:"
       include: "scope"
     reviewers:
-      - "bob-reis"
+      - "helviojunior"
     assignees:
-      - "bob-reis"
+      - "helviojunior"
     labels:
       - "dependencies"
       - "github-actions"

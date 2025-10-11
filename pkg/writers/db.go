@@ -3,8 +3,8 @@ package writers
 import (
 	"sync"
 
-	"github.com/bob-reis/enumdns/pkg/database"
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/database"
+	"github.com/helviojunior/enumdns/pkg/models"
 	"gorm.io/gorm"
 )
 

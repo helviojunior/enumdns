@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/models"
 )
 
 // StdoutWriter is a Stdout writer

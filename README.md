@@ -26,7 +26,7 @@ Available modules:
 
 ## Get last release
 
-Check how to get last release by your Operational Systems procedures here [INSTALL.md](https://github.com/bob-reis/enumdns/blob/main/INSTALL.md)
+Check how to get last release by your Operational Systems procedures here [INSTALL.md](https://github.com/helviojunior/enumdns/blob/main/INSTALL.md)
 
 
 # Utilization

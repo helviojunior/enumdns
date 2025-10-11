@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/bob-reis/enumdns/internal/tools"
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/pkg/models"
 )
 
 // JsonWriter is a JSON lines writer

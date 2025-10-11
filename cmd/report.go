@@ -7,11 +7,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/bob-reis/enumdns/internal/ascii"
-	"github.com/bob-reis/enumdns/pkg/database"
-	"github.com/bob-reis/enumdns/pkg/log"
-	"github.com/bob-reis/enumdns/pkg/models"
-	"github.com/bob-reis/enumdns/pkg/writers"
+	"github.com/helviojunior/enumdns/internal/ascii"
+	"github.com/helviojunior/enumdns/pkg/database"
+	"github.com/helviojunior/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/writers"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm/clause"
 )

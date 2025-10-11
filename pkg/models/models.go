@@ -12,7 +12,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/bob-reis/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/internal/tools"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -66,7 +66,7 @@ func (subnet *ASNIpDelegate) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// Result is a github.com/bob-reis/enumdnsenumdns result
+// Result is a github.com/helviojunior/enumdnsenumdns result
 type Result struct {
 	ID uint `json:"id" gorm:"primarykey"`
 

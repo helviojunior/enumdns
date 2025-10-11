@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/term"
 
-	logger "github.com/bob-reis/enumdns/pkg/log"
-	"github.com/bob-reis/enumdns/pkg/models"
+	logger "github.com/helviojunior/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/pkg/models"
 )
 
 // StdoutWriter is a Stdout writer

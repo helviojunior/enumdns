@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bob-reis/enumdns/internal/ascii"
-	"github.com/bob-reis/enumdns/internal/tools"
-	"github.com/bob-reis/enumdns/pkg/log"
-	"github.com/bob-reis/enumdns/pkg/writers"
+	"github.com/helviojunior/enumdns/internal/ascii"
+	"github.com/helviojunior/enumdns/internal/tools"
+	"github.com/helviojunior/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/pkg/writers"
 	resolver "github.com/helviojunior/gopathresolver"
 	"github.com/spf13/cobra"
 )

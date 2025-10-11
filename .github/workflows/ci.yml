@@ -19,8 +19,8 @@ permissions:
 
 env:
   GO_VERSION: "1.23"
-  SONAR_PROJECT_KEY: "bob-reis_enumdns"
-  SONAR_ORGANIZATION: "bob-reis"
+  SONAR_PROJECT_KEY: "helviojunior_enumdns"
+  SONAR_ORGANIZATION: "helviojunior"
 
 jobs:
   # Job para validação de código e testes

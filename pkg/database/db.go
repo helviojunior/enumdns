@@ -9,10 +9,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/glebarez/sqlite"
 
-	"github.com/bob-reis/enumdns/pkg/log"
+	"github.com/helviojunior/enumdns/pkg/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/bob-reis/enumdns/pkg/models"
+	"github.com/helviojunior/enumdns/pkg/models"
 )
 
 // MemoryWriter is a memory-based results queue with a maximum slot count

@@ -5,7 +5,7 @@
 ```
 apt install curl jq
 
-url=$(curl -s https://api.github.com/repos/bob-reis/enumdns/releases | jq -r '[ .[] | {id: .id, tag_name: .tag_name, assets: [ .assets[] | select(.name|match("linux-amd64.tar.gz$")) | {name: .name, browser_download_url: .browser_download_url} ]} | select(.assets != []) ] | sort_by(.id) | reverse | first(.[].assets[]) | .browser_download_url')
+url=$(curl -s https://api.github.com/repos/helviojunior/enumdns/releases | jq -r '[ .[] | {id: .id, tag_name: .tag_name, assets: [ .assets[] | select(.name|match("linux-amd64.tar.gz$")) | {name: .name, browser_download_url: .browser_download_url} ]} | select(.assets != []) ] | sort_by(.id) | reverse | first(.[].assets[]) | .browser_download_url')
 
 cd /tmp
 rm -rf enumdns-latest.tar.gz enumdns
@@ -35,7 +35,7 @@ brew install curl jq
 
 arch=$(if [[ "$(uname -m)" -eq "x86_64" ]]; then echo "amd64"; else echo "arm64"; fi)
 
-url=$(curl -s https://api.github.com/repos/bob-reis/enumdns/releases | jq -r --arg filename "darwin-${arch}.tar.gz\$" '[ .[] | {id: .id, tag_name: .tag_name, assets: [ .assets[] | select(.name|match($filename)) | {name: .name, browser_download_url: .browser_download_url} ]} | select(.assets != []) ] | sort_by(.id) | reverse | first(.[].assets[]) | .browser_download_url')
+url=$(curl -s https://api.github.com/repos/helviojunior/enumdns/releases | jq -r --arg filename "darwin-${arch}.tar.gz\$" '[ .[] | {id: .id, tag_name: .tag_name, assets: [ .assets[] | select(.name|match($filename)) | {name: .name, browser_download_url: .browser_download_url} ]} | select(.assets != []) ] | sort_by(.id) | reverse | first(.[].assets[]) | .browser_download_url')
 
 cd /tmp
 rm -rf enumdns-latest.tar.gz enumdns
@@ -53,10 +53,10 @@ enumdns version
 Just run the following powershell script
 
 ```
-# Download latest bob-reis/enumdns release from github
+# Download latest helviojunior/enumdns release from github
 function Invoke-Downloadenumdns {
 
-    $repo = "bob-reis/enumdns"
+    $repo = "helviojunior/enumdns"
     
     # Determine OS and Architecture
     $osPlatform = [System.Runtime.InteropServices.RuntimeInformation]::OSDescription
@@ -229,7 +229,7 @@ rm -rf /usr/bin/go && ln -s /usr/local/go/bin/go /usr/bin/go
 Clone the repository and build the project with Golang:
 
 ```
-git clone https://github.com/bob-reis/enumdns.git
+git clone https://github.com/helviojunior/enumdns.git
 cd enumdns
 go get ./...
 go build
