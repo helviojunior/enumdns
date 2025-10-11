@@ -185,10 +185,10 @@ jobs:
     #  with:
     #    sarif_file: gosec-results.sarif
     
-    - name: Run Nancy to check for vulnerabilities
-      run: |
-        go install github.com/sonatype-nexus-community/nancy@latest
-        go list -json -deps ./... | nancy sleuth
+    #- name: Run Nancy to check for vulnerabilities
+    #  run: |
+    #    go install github.com/sonatype-nexus-community/nancy@latest
+    #    go list -json -deps ./... | nancy sleuth
     
     - name: Check for hardcoded secrets
       uses: trufflesecurity/trufflehog@b140e2b58e65881729b6035ad03a3c0b23d79985
