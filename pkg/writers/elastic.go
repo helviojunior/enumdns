@@ -160,6 +160,14 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
 		},
 	}
 
+	// Check username and password from Environment Variables
+	if v1, ok := os.LookupEnv("ENUMDNS_OUTPUT_USERNAME"); ok {
+		conf.Username = v1;
+	}
+	if v1, ok := os.LookupEnv("ENUMDNS_OUTPUT_PASSWORD"); ok {
+		conf.Password = v1;
+	}
+
 	if username != "" && password != "" {
 		conf.Username = username
 		conf.Password = password
