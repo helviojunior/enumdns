@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/helviojunior/enumdns/pkg/models"
 	"github.com/glebarez/sqlite"
+	"github.com/helviojunior/enumdns/pkg/models"
 
 	"github.com/helviojunior/enumdns/pkg/log"
 	"gorm.io/driver/mysql"

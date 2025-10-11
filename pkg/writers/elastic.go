@@ -16,11 +16,11 @@ import (
 	//"reflect"
 	//"io"
 
+	elk "github.com/elastic/go-elasticsearch/v8"
+	esapi "github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/helviojunior/enumdns/internal/tools"
 	logger "github.com/helviojunior/enumdns/pkg/log"
 	"github.com/helviojunior/enumdns/pkg/models"
-	elk "github.com/elastic/go-elasticsearch/v8"
-	esapi "github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
 // fields in the main model to ignore
