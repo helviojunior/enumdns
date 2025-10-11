@@ -72,9 +72,8 @@ type indexResponse struct {
 }
 
 type Interceptor struct {
-  base   	*http.Transport
+	base *http.Transport
 }
-
 
 func (i Interceptor) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Header exigido pelo client do ES
@@ -85,7 +84,7 @@ func (i Interceptor) RoundTrip(req *http.Request) (*http.Response, error) {
 	if (req.Method == http.MethodGet || req.Method == http.MethodHead) && req.URL.Path == "/" {
 		str_body := ""
 		if req.Method != http.MethodHead {
-		
+
 			str_body = `{
 			  "version": { "number": "8.0.0-SNAPSHOT", "build_flavor": "default" },
 			  "tagline": "You Know, for Search"
@@ -153,19 +152,19 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
 		Transport: &Interceptor{
 			&http.Transport{
 				MaxIdleConns:       10,
-			    IdleConnTimeout:    10 * time.Second,
-			    DisableCompression: true,
-			    TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				IdleConnTimeout:    10 * time.Second,
+				DisableCompression: true,
+				TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 			},
 		},
 	}
 
 	// Check username and password from Environment Variables
 	if v1, ok := os.LookupEnv("ENUMDNS_OUTPUT_USERNAME"); ok {
-		conf.Username = v1;
+		conf.Username = v1
 	}
 	if v1, ok := os.LookupEnv("ENUMDNS_OUTPUT_PASSWORD"); ok {
-		conf.Password = v1;
+		conf.Password = v1
 	}
 
 	if username != "" && password != "" {
