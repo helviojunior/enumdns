@@ -1,6 +1,6 @@
 module github.com/bob-reis/enumdns
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/charmbracelet/glamour v0.8.0
@@ -13,8 +13,8 @@ require (
 	github.com/prometheus/procfs v0.16.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/net v0.42.0
-	golang.org/x/sys v0.35.0
-	golang.org/x/term v0.34.0
+	golang.org/x/sys v0.37.0
+	golang.org/x/term v0.36.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.30.0
