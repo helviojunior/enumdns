@@ -9,7 +9,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.19.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/helviojunior/gopathresolver v0.1.0
-	github.com/miekg/dns v1.1.63
+	github.com/miekg/dns v1.1.68
 	github.com/prometheus/procfs v0.16.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/net v0.42.0
