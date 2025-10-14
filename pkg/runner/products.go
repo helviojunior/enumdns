@@ -53,4 +53,5 @@ var datacenter = map[string][]string{
 	"HostGator":       {"hostgator.com.br"},
 	"Datacom":         {"dialhost.com.br", "stackpath.net"},
 	"DialHost":        {"brascloud.com.br", "dialhost.com.br"},
+	"Oracle Cloud":    {"oraclecloud.com"},
 }
