@@ -54,4 +54,7 @@ var datacenter = map[string][]string{
 	"Datacom":         {"dialhost.com.br", "stackpath.net"},
 	"DialHost":        {"brascloud.com.br", "dialhost.com.br"},
 	"Oracle Cloud":    {"oraclecloud.com"},
+	"Dream Host":      {"dreamhost.com"},
+	"AWS":             {"awsglobalaccelerator.com", "amazonaws.com", "awsdns"},
+	"Linode":          {"linode.com"},
 }
