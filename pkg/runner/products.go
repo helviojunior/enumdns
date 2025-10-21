@@ -39,6 +39,7 @@ var saas_products = map[string][]string{
 	"Github":                     {"github.io", "github.com"},
 	"SalesForce":                 {"exacttarget.com"},
 	"Shopify":                    {"myshopify.com"},
+	"Weebly":                     {"weebly.com"},
 }
 
 var datacenter = map[string][]string{
@@ -56,5 +57,8 @@ var datacenter = map[string][]string{
 	"Oracle Cloud":    {"oraclecloud.com"},
 	"Dream Host":      {"dreamhost.com"},
 	"AWS":             {"awsglobalaccelerator.com", "amazonaws.com", "awsdns"},
-	"Linode":          {"linode.com"},
+	"Linode":          {"linode.com", "linodeusercontent.com"},
+	"Namecheap":       {"namecheap.com", "web-hosting.com"},
+	"OVHCloud":        {"ovh.net"},
+	"Cyso":            {"cyso.net"},
 }
