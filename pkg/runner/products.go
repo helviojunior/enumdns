@@ -61,4 +61,5 @@ var datacenter = map[string][]string{
 	"Namecheap":       {"namecheap.com", "web-hosting.com"},
 	"OVHCloud":        {"ovh.net"},
 	"Cyso":            {"cyso.net"},
+	"KingHost":        {"kinghost.net"},
 }
