@@ -269,7 +269,7 @@ jobs:
     
     - name: Create Release on Success
       if: steps.status.outputs.status == 'success' && github.ref == 'refs/heads/main'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const tagName = `v${new Date().toISOString().slice(0,10)}-${context.sha.slice(0,7)}`;
