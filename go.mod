@@ -10,14 +10,14 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/helviojunior/gopathresolver v0.1.0
 	github.com/miekg/dns v1.1.68
-	github.com/prometheus/procfs v0.19.1
+	github.com/prometheus/procfs v0.19.2
 	github.com/spf13/cobra v1.10.1
 	golang.org/x/net v0.46.0
 	golang.org/x/sys v0.38.0
 	golang.org/x/term v0.37.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.30.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
@@ -60,12 +60,12 @@ require (
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/crypto v0.44.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
-	golang.org/x/tools v0.37.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
