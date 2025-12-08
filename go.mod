@@ -12,7 +12,7 @@ require (
 	github.com/miekg/dns v1.1.68
 	github.com/prometheus/procfs v0.19.2
 	github.com/spf13/cobra v1.10.1
-	golang.org/x/net v0.46.0
+	golang.org/x/net v0.47.0
 	golang.org/x/sys v0.38.0
 	golang.org/x/term v0.37.0
 	gorm.io/driver/mysql v1.5.7
