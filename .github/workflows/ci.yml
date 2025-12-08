@@ -174,7 +174,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
     
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@a58917f611bbd062000eac14a5c45434854f61f6
+      uses: securego/gosec@41f28e209a74be7102c923314ab604db2b1adb62
       with:
         args: '-concurrency 1 -quiet -no-fail -fmt sarif -out gosec-results.sarif ./...'
       timeout-minutes: 5
