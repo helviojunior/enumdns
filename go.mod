@@ -13,8 +13,8 @@ require (
 	github.com/prometheus/procfs v0.19.2
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/net v0.47.0
-	golang.org/x/sys v0.38.0
-	golang.org/x/term v0.37.0
+	golang.org/x/sys v0.39.0
+	golang.org/x/term v0.38.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
