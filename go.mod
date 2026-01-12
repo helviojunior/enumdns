@@ -9,7 +9,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.19.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/helviojunior/gopathresolver v0.1.0
-	github.com/miekg/dns v1.1.69
+	github.com/miekg/dns v1.1.70
 	github.com/prometheus/procfs v0.19.2
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/net v0.48.0
@@ -62,10 +62,10 @@ require (
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	golang.org/x/crypto v0.46.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
+	golang.org/x/tools v0.40.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
