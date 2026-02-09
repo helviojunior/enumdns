@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/glamour v0.8.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.2
-	github.com/elastic/go-elasticsearch/v8 v8.19.1
+	github.com/elastic/go-elasticsearch/v8 v8.19.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/helviojunior/gopathresolver v0.1.0
 	github.com/miekg/dns v1.1.72
