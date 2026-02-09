@@ -48,7 +48,7 @@ jobs:
 
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_OUTPUT
 
-      - uses: wangyoucao577/go-release-action@v1.54
+      - uses: wangyoucao577/go-release-action@v1.55
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
