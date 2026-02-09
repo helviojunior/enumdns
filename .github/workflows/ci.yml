@@ -191,7 +191,7 @@ jobs:
     #    go list -json -deps ./... | nancy sleuth
     
     - name: Check for hardcoded secrets
-      uses: trufflesecurity/trufflehog@821e8b9e5cdf8dc484dd23e06f78941fcf6b9191
+      uses: trufflesecurity/trufflehog@ef6e76c3c4023279497fab4721ffa071a722fd05
       with:
         path: ./
         base: ${{ github.event.pull_request.base.sha || github.event.before }}
