@@ -1,6 +1,6 @@
 module github.com/helviojunior/enumdns
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/charmbracelet/glamour v0.8.0
@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/procfs v0.19.2
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/net v0.49.0
-	golang.org/x/sys v0.41.0
+	golang.org/x/sys v0.42.0
 	golang.org/x/term v0.39.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.6.0
