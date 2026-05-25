@@ -77,6 +77,7 @@ func runMigrations(c *gorm.DB) error {
 		&Application{},
 		&models.Result{},
 		&models.FQDNData{},
+		&models.SOA{},
 		&models.ASN{},
 		&models.ASNIpDelegate{},
 	)

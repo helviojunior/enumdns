@@ -81,6 +81,10 @@ func (s *MemoryWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
+func (s *MemoryWriter) WriteSOA(soa *models.SOA) error {
+	return nil
+}
+
 func (s *MemoryWriter) Finish() error {
 	return nil
 }

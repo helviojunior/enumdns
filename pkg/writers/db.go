@@ -75,6 +75,17 @@ func (dw *DbWriter) WriteFqdn(fqdn *models.FQDNData) error {
 	return dw.conn.Create(fqdn).Error
 }
 
+func (dw *DbWriter) WriteSOA(soa *models.SOA) error {
+	if soa == nil {
+		return nil
+	}
+
+	dw.mutex.Lock()
+	defer dw.mutex.Unlock()
+
+	return dw.conn.CreateInBatches(soa, 50).Error
+}
+
 func (dw *DbWriter) Finish() error {
 	return nil
 }

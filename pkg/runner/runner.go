@@ -59,6 +59,10 @@ type Runner struct {
 
 	//DNS Server
 	dnsServer string
+
+	//In-memory SOA cache keyed by zone apex. Avoids re-querying the SOA for
+	//every host of an already known zone (shared logic in soaCache).
+	soa *soaCache
 }
 
 type Status struct {
@@ -119,6 +123,7 @@ func NewRunner(logger *slog.Logger, opts Options, writers []writers.Writer) (*Ru
 		options:     opts,
 		searchOrder: []uint16{dns.TypeCNAME, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
 		dnsServer:   opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
+		soa:         newSOACache(),
 		status: &Status{
 			Total:      0,
 			Complete:   0,
@@ -175,6 +180,201 @@ func (run *Runner) runWriters(result *models.Result) error {
 			run.log.Debug("Error at writer", "type", reflect.TypeOf(writer).Name(), "err", err)
 			return err
 		}
+	}
+
+	return nil
+}
+
+// runWritersSOA takes a SOA object and passes it to writers
+func (run *Runner) runWritersSOA(soa *models.SOA) error {
+	if soa == nil {
+		return nil
+	}
+	for _, writer := range run.writers {
+		if err := writer.WriteSOA(soa); err != nil {
+			run.log.Debug("Error at writer", "type", reflect.TypeOf(writer).Name(), "err", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// soaFromDNS builds a models.SOA from a DNS SOA record, normalizing names and
+// enriching the Cloud/SaaS/Datacenter attributes from the primary nameserver.
+func soaFromDNS(testId string, soa *dns.SOA) *models.SOA {
+	if soa == nil {
+		return nil
+	}
+
+	s := &models.SOA{
+		TestId:    testId,
+		Name:      strings.Trim(strings.ToLower(soa.Hdr.Name), ". "),
+		PrimaryNS: strings.Trim(strings.ToLower(soa.Ns), ". "),
+		Mbox:      strings.Trim(strings.ToLower(soa.Mbox), ". "),
+		Serial:    soa.Serial,
+		Refresh:   soa.Refresh,
+		Retry:     soa.Retry,
+		Expire:    soa.Expire,
+		MinTTL:    soa.Minttl,
+		ProbedAt:  time.Now(),
+	}
+
+	if cc, prodName, _ := ContainsCloudProduct(s.PrimaryNS); cc {
+		s.CloudProduct = prodName
+	}
+	if ss, saasName, _ := ContainsSaaS(s.PrimaryNS); ss {
+		s.SaaSProduct = saasName
+	}
+	if dc, dcName, _ := ContainsDatacenter(s.PrimaryNS); dc {
+		s.Datacenter = dcName
+	}
+
+	return s
+}
+
+// linkResultToSOA points a resolved record to its zone SOA object, but only when
+// the record's FQDN actually belongs to that zone (apex or sub-name). This avoids
+// linking unrelated names such as PTR results or external CNAME targets.
+func linkResultToSOA(res *models.Result, soa *models.SOA) {
+	if res == nil || soa == nil || soa.Name == "" {
+		return
+	}
+	fqdn := strings.Trim(strings.ToLower(res.FQDN), ". ")
+	if fqdn == soa.Name || strings.HasSuffix(fqdn, "."+soa.Name) {
+		res.SOA = soa.Name
+	}
+}
+
+// soaCache is a concurrency-safe in-memory cache of SOA objects keyed by zone
+// apex (normalized, no trailing dot). It is shared by every runner mode so a
+// zone's SOA is queried at most once.
+type soaCache struct {
+	mu      sync.RWMutex
+	entries map[string]*models.SOA
+}
+
+func newSOACache() *soaCache {
+	return &soaCache{entries: map[string]*models.SOA{}}
+}
+
+// lookup walks the host and its parent domains (most specific first) and returns
+// the first cached zone that matches. Returns nil on a miss.
+func (c *soaCache) lookup(host string) *models.SOA {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if len(c.entries) == 0 {
+		return nil
+	}
+
+	for _, candidate := range parentDomains(host) {
+		if soa, ok := c.entries[candidate]; ok {
+			return soa
+		}
+	}
+	return nil
+}
+
+// store inserts the SOA keyed by its apex and returns the canonical cached entry
+// (an existing one wins, keeping a single object per zone under concurrency).
+func (c *soaCache) store(soa *models.SOA) *models.SOA {
+	if soa == nil || soa.Name == "" {
+		return soa
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if existing, ok := c.entries[soa.Name]; ok {
+		return existing
+	}
+	c.entries[soa.Name] = soa
+	return soa
+}
+
+// resolve returns the SOA object for the host's zone. It checks the cache
+// (extracting parent domains) before querying the DNS server via queryFn, and
+// caches the answer by zone apex.
+func (c *soaCache) resolve(host string, queryFn func(string) *models.SOA) *models.SOA {
+	host = strings.Trim(strings.ToLower(host), ". ")
+	if host == "" {
+		return nil
+	}
+
+	if soa := c.lookup(host); soa != nil {
+		return soa
+	}
+
+	soa := queryFn(host)
+	if soa == nil {
+		return nil
+	}
+
+	return c.store(soa)
+}
+
+// parentDomains returns the host itself followed by each of its parent domains,
+// from the most specific to the least specific (the TLD alone is not returned).
+// e.g. "a.b.example.com" -> ["a.b.example.com", "b.example.com", "example.com"]
+func parentDomains(host string) []string {
+	host = strings.Trim(strings.ToLower(host), ". ")
+	if host == "" {
+		return nil
+	}
+
+	labels := strings.Split(host, ".")
+	out := []string{}
+	// Stop before the last label so we never consider a bare TLD as a zone apex.
+	for i := 0; i < len(labels)-1; i++ {
+		out = append(out, strings.Join(labels[i:], "."))
+	}
+	return out
+}
+
+// resolveSOA returns the SOA object for the zone the host belongs to, using the
+// shared cache and the Runner's own DNS query.
+func (run *Runner) resolveSOA(host string) *models.SOA {
+	return run.soa.resolve(host, run.querySOA)
+}
+
+// querySOA performs the actual SOA DNS query for the given host. The SOA record
+// may be returned either in the answer section (when the host is the apex) or in
+// the authority section (when the host is a sub-name of the zone).
+func (run *Runner) querySOA(host string) *models.SOA {
+	logger := run.log.With("FQDN", host, "Type", "SOA")
+	host = strings.Trim(strings.ToLower(host), ". ") + "."
+
+	counter := 0
+	for run.status.Running {
+		m := new(dns.Msg)
+		m.Id = dns.Id()
+		m.RecursionDesired = true
+		m.SetQuestion(host, dns.TypeSOA)
+
+		c := new(internal.SocksClient)
+		r, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
+		counter += 1
+
+		if err != nil {
+			logger.Debug("Error running SOA request, trying again...", "err", err)
+			if counter >= 5 {
+				return nil
+			}
+			n, _ := rand.Int(rand.Reader, big.NewInt(20))
+			time.Sleep(time.Duration(n.Int64()) * time.Second)
+			continue
+		}
+
+		// SOA may come in the answer or the authority section.
+		for _, ans := range append(r.Answer, r.Ns...) {
+			if soa, ok := ans.(*dns.SOA); ok {
+				logger.Debug("SOA", "Name", soa.Hdr.Name, "MNAME", soa.Ns, "Serial", soa.Serial)
+				return soaFromDNS(run.uid, soa)
+			}
+		}
+
+		// Answered without an error but no SOA was present.
+		return nil
 	}
 
 	return nil
@@ -253,7 +453,20 @@ func (run *Runner) Run(total int) Status {
 							run.status.AddResult(results[0])
 						}
 
+						// Resolve (cached) the SOA of the host's zone once and link
+						// the resolved records back to that SOA object.
+						var soa *models.SOA
+						if len(results) >= 1 && results[0].Exists {
+							soa = run.resolveSOA(host)
+							if soa != nil {
+								if err := run.runWritersSOA(soa); err != nil {
+									logger.Error("failed to write SOA", "err", err)
+								}
+							}
+						}
+
 						for _, res := range results {
+							linkResultToSOA(res, soa)
 							if err := run.runWriters(res); err != nil {
 								logger.Error("failed to write result", "err", err)
 							}
@@ -263,6 +476,7 @@ func (run *Runner) Run(total int) Status {
 							logger.Debug("Doing complementary search...")
 							results := run.Probe(host, complementarySearchOrder)
 							for _, res := range results {
+								linkResultToSOA(res, soa)
 								if err := run.runWriters(res); err != nil {
 									logger.Error("failed to write result", "err", err)
 								}

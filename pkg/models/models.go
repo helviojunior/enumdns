@@ -78,6 +78,7 @@ type Result struct {
 	IPv6         string    `gorm:"column:ipv6"`
 	ASN          int64     `gorm:"column:asn"`
 	Target       string    `gorm:"column:target"`
+	SOA          string    `gorm:"column:soa"`
 	Ptr          string    `gorm:"column:ptr"`
 	Txt          string    `gorm:"column:txt"`
 	CloudProduct string    `gorm:"column:cloud_product"`
@@ -187,6 +188,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		IPv4         string `json:"ipv4,omitempty"`
 		IPv6         string `json:"ipv6,omitempty"`
 		Target       string `json:"target,omitempty"`
+		SOA          string `json:"soa,omitempty"`
 		Ptr          string `json:"ptr,omitempty"`
 		Txt          string `json:"txt,omitempty"`
 		CloudProduct string `json:"cloud_product,omitempty"`
@@ -202,6 +204,7 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		IPv4:         result.IPv4,
 		IPv6:         result.IPv6,
 		Target:       strings.Trim(strings.ToLower(result.Target), ". "),
+		SOA:          strings.Trim(strings.ToLower(result.SOA), ". "),
 		Ptr:          strings.Trim(strings.ToLower(result.Ptr), ". "),
 		Txt:          result.Txt,
 		DC:           result.DC,
@@ -220,6 +223,7 @@ func (result Result) Clone() *Result {
 		IPv4:         result.IPv4,
 		IPv6:         result.IPv6,
 		Target:       result.Target,
+		SOA:          result.SOA,
 		Ptr:          result.Ptr,
 		Txt:          result.Txt,
 		DC:           result.DC,
@@ -269,6 +273,49 @@ func (result Result) ToFqdn() *FQDNData {
 		Source:   "Enum",
 		ProbedAt: result.ProbedAt,
 	}
+}
+
+// SOA represents the Start Of Authority record of a DNS zone.
+// A single SOA object is stored per zone apex and the resolved Result
+// records point back to it through the Result.SOA column (= SOA.Name).
+type SOA struct {
+	ID uint `json:"id" gorm:"primarykey"`
+
+	TestId       string    `gorm:"column:test_id" json:"test_id"`
+	Hash         string    `gorm:"column:hash;index:,unique;" json:"-"`
+	Name         string    `gorm:"column:name" json:"name"`
+	PrimaryNS    string    `gorm:"column:primary_ns" json:"primary_ns,omitempty"`
+	Mbox         string    `gorm:"column:mbox" json:"mbox,omitempty"`
+	Serial       uint32    `gorm:"column:serial" json:"serial"`
+	Refresh      uint32    `gorm:"column:refresh" json:"refresh"`
+	Retry        uint32    `gorm:"column:retry" json:"retry"`
+	Expire       uint32    `gorm:"column:expire" json:"expire"`
+	MinTTL       uint32    `gorm:"column:min_ttl" json:"min_ttl"`
+	CloudProduct string    `gorm:"column:cloud_product" json:"cloud_product,omitempty"`
+	SaaSProduct  string    `gorm:"column:saas_product" json:"saas_product,omitempty"`
+	Datacenter   string    `gorm:"column:datacenter" json:"datacenter,omitempty"`
+	ProbedAt     time.Time `gorm:"column:probed_at" json:"probed_at"`
+}
+
+func (*SOA) TableName() string {
+	return "soa"
+}
+
+func (soa *SOA) BeforeCreate(tx *gorm.DB) (err error) {
+	soa.Name = strings.Trim(strings.ToLower(soa.Name), ". ")
+	calcHash(&soa.Hash, soa.Name)
+
+	tx.Statement.AddClause(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "hash"}},
+		UpdateAll: true,
+	})
+	return nil
+}
+
+// GetHash returns a stable identifier for the SOA object (used as document id
+// by document stores such as Elasticsearch).
+func (soa SOA) GetHash() string {
+	return tools.GetHash([]byte(strings.Trim(strings.ToLower(soa.Name), ". ")))
 }
 
 func (result Result) Equal(r1 Result) bool {

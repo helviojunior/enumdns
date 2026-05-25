@@ -34,6 +34,7 @@ const (
 type ElasticWriter struct {
 	Client         *elk.Client
 	Index          string
+	SoaIndex       string
 	screenshotPath string
 }
 
@@ -131,6 +132,7 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
 
 	wr := &ElasticWriter{
 		Index:          index_name,
+		SoaIndex:       index_name + "-soa",
 		screenshotPath: "",
 	}
 
@@ -202,6 +204,32 @@ func NewElasticWriter(uri string) (*ElasticWriter, error) {
                     "ptr": {"type": "keyword"},
                     "failed": {"type": "keyword"},
                     "failed_reason": {"type": "text"}
+                }
+            }
+        }`)
+	if err != nil {
+		return nil, err
+	}
+
+	//SOA Index
+	err = wr.CreateIndex(wr.SoaIndex, `{
+            "settings": {
+                    "number_of_replicas": 1,
+                    "index": {"highlight.max_analyzed_offset": 10000000}
+                },
+
+            "mappings": {
+                "properties": {
+                    "probed_at": {"type": "date"},
+                    "test_id": {"type": "keyword"},
+                    "name": {"type": "keyword"},
+                    "primary_ns": {"type": "keyword"},
+                    "mbox": {"type": "keyword"},
+                    "serial": {"type": "long"},
+                    "refresh": {"type": "long"},
+                    "retry": {"type": "long"},
+                    "expire": {"type": "long"},
+                    "min_ttl": {"type": "long"}
                 }
             }
         }`)
@@ -487,6 +515,28 @@ func (ew *ElasticWriter) Marshal(v any) ([]byte, error) {
 }
 
 func (ew *ElasticWriter) WriteFqdn(result *models.FQDNData) error {
+	return nil
+}
+
+func (ew *ElasticWriter) WriteSOA(soa *models.SOA) error {
+	if soa == nil {
+		return nil
+	}
+
+	b_data, err := json.Marshal(*soa)
+	if err != nil {
+		return err
+	}
+
+	res, err := ew.Client.Index(ew.SoaIndex, bytes.NewReader(b_data), ew.Client.Index.WithDocumentID(soa.GetHash()))
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != 200 && res.StatusCode != 201 {
+		fmt.Printf("Err: %s", res)
+		return errors.New(elasticDocumentError)
+	}
+
 	return nil
 }
 

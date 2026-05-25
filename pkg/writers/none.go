@@ -22,6 +22,10 @@ func (s *NoneWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
+func (s *NoneWriter) WriteSOA(soa *models.SOA) error {
+	return nil
+}
+
 func (s *NoneWriter) Finish() error {
 	return nil
 }

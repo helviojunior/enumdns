@@ -65,6 +65,10 @@ func (s *StdoutWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
+func (s *StdoutWriter) WriteSOA(soa *models.SOA) error {
+	return nil
+}
+
 func (s *StdoutWriter) Finish() error {
 	return nil
 }

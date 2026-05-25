@@ -133,6 +133,10 @@ func (t *TextWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
+func (t *TextWriter) WriteSOA(soa *models.SOA) error {
+	return nil
+}
+
 func (t *TextWriter) formatResult(result *models.Result) string {
 	fqdn := strings.Trim(strings.ToLower(result.FQDN), ". ")
 	r := fqdn

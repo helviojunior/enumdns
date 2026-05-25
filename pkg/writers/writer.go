@@ -6,5 +6,6 @@ import "github.com/helviojunior/enumdns/pkg/models"
 type Writer interface {
 	Write(*models.Result) error
 	WriteFqdn(*models.FQDNData) error
+	WriteSOA(*models.SOA) error
 	Finish() error
 }

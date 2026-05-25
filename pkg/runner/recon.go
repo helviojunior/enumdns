@@ -61,6 +61,9 @@ type Recon struct {
 	Running bool
 
 	Domains []string
+
+	//Shared in-memory SOA cache (same logic used by Runner).
+	soa *soaCache
 }
 
 // New gets a new Recon ready for probing.
@@ -76,10 +79,11 @@ func NewRecon(logger *slog.Logger, opts Options, writers []writers.Writer) (*Rec
 		log:         logger,
 		writers:     writers,
 		options:     opts,
-		searchOrder: []uint16{dns.TypeSOA, dns.TypeCNAME, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
+		searchOrder: []uint16{dns.TypeCNAME, dns.TypeMX, dns.TypeTXT, dns.TypeNS, dns.TypeSRV, dns.TypeA, dns.TypeAAAA, dns.TypeANY},
 		dnsServer:   opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort),
 		Running:     true,
 		Domains:     []string{},
+		soa:         newSOACache(),
 	}, nil
 }
 
@@ -92,6 +96,77 @@ func (run *Recon) runWriters(result *models.Result) error {
 	}
 
 	return nil
+}
+
+// runWritersSOA takes a SOA object and passes it to writers
+func (run *Recon) runWritersSOA(soa *models.SOA) error {
+	if soa == nil {
+		return nil
+	}
+	for _, writer := range run.writers {
+		if err := writer.WriteSOA(soa); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// resolveSOA returns the SOA object for the host's zone using the shared cache,
+// querying the DNS server only on a cache miss.
+func (run *Recon) resolveSOA(host string) *models.SOA {
+	return run.soa.resolve(host, run.querySOA)
+}
+
+// querySOA performs the actual SOA DNS query for the given host. The SOA record
+// may be returned either in the answer section (host is the apex) or in the
+// authority section (host is a sub-name of the zone).
+func (run *Recon) querySOA(host string) *models.SOA {
+	logger := run.log.With("FQDN", host, "Type", "SOA")
+	host = strings.Trim(strings.ToLower(host), ". ") + "."
+
+	counter := 0
+	for run.Running {
+		m := new(dns.Msg)
+		m.Id = dns.Id()
+		m.RecursionDesired = true
+		m.SetQuestion(host, dns.TypeSOA)
+
+		c := new(internal.SocksClient)
+		r, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
+		counter += 1
+
+		if err != nil {
+			logger.Debug("Error running SOA request, trying again...", "err", err)
+			if counter >= 5 {
+				return nil
+			}
+			n, _ := rand.Int(rand.Reader, big.NewInt(20))
+			time.Sleep(time.Duration(n.Int64()) * time.Second)
+			continue
+		}
+
+		// SOA may come in the answer or the authority section.
+		for _, ans := range append(r.Answer, r.Ns...) {
+			if soa, ok := ans.(*dns.SOA); ok {
+				logger.Debug("SOA", "Name", soa.Hdr.Name, "MNAME", soa.Ns, "Serial", soa.Serial)
+				return soaFromDNS(run.uid, soa)
+			}
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// cacheSOAFromRecord stores a SOA discovered opportunistically (e.g. in an ANY
+// answer) into the shared cache and persists it, avoiding a dedicated query.
+func (run *Recon) cacheSOAFromRecord(soa *dns.SOA) {
+	s := run.soa.store(soaFromDNS(run.uid, soa))
+	if err := run.runWritersSOA(s); err != nil {
+		run.log.Error("failed to write SOA", "err", err)
+	}
 }
 
 func (run *Recon) Reset() {
@@ -127,10 +202,16 @@ func (run *Recon) Run(total int) {
 					logger := run.log.With("FQDN", host)
 
 					logger.Debug("Getting SOA")
-					soa, err := run.GetSOAName(host)
-					if err != nil {
-						logger.Error("failed to get SOA", "err", err)
+					soaObj := run.resolveSOA(host)
+					if soaObj == nil {
+						logger.Error("failed to get SOA", "err", errors.New("SOA not found for domain '"+host+"'"))
 						continue
+					}
+					soa := soaObj.Name
+
+					// Persist the SOA object (one per zone, deduplicated by the cache).
+					if err := run.runWritersSOA(soaObj); err != nil {
+						logger.Error("failed to write SOA", "err", err)
 					}
 
 					logger.Debug("SOA result", "soa", soa)
@@ -226,6 +307,7 @@ func (run *Recon) Run(total int) {
 
 					logger.Debug("Writting results to DB")
 					for _, res := range results {
+						linkResultToSOA(res, soaObj)
 						if err := run.runWriters(res); err != nil {
 							logger.Error("failed to write result", "err", err)
 						}
@@ -239,44 +321,6 @@ func (run *Recon) Run(total int) {
 
 	wg.Wait()
 	run.Running = false
-}
-
-func (run *Recon) GetSOAName(host string) (string, error) {
-	s := ""
-	host = strings.Trim(host, ". ")
-	if host == "" {
-		return "", errors.New("empty host string")
-	}
-
-	host = strings.ToLower(host) + "."
-
-	m := new(dns.Msg)
-	m.Id = dns.Id()
-	m.RecursionDesired = true
-
-	m.Question = make([]dns.Question, 1)
-	m.Question[0] = dns.Question{Name: host, Qtype: dns.TypeSOA, Qclass: dns.ClassINET}
-
-	c := new(internal.SocksClient)
-	in, err := c.Exchange(m, run.options.Proxy, run.dnsServer)
-	if err != nil {
-		return "", err
-	} else {
-
-		for _, ans1 := range in.Answer {
-			if soa, ok := ans1.(*dns.SOA); ok {
-				s = strings.Trim(soa.Hdr.Name, ". ")
-			}
-		}
-
-	}
-
-	if s == "" {
-		return "", errors.New("SOA not found for domain '" + host + "'")
-	}
-
-	return s, nil
-
 }
 
 func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
@@ -343,29 +387,13 @@ func (run *Recon) Probe(host string, customTypes *[]uint16) []*models.Result {
 				for _, ans := range r.Answer {
 					run.log.Debug(ans.String())
 
-					//SOA
+					//SOA: represented as a dedicated SOA object (see resolveSOA), not
+					//as a Result row. We still feed the apex into the name list so the
+					//zone keeps being resolved, and we warm the shared SOA cache.
 					soa, ok := ans.(*dns.SOA)
 					if ok {
 						logger.Debug("SOA", "Name", soa.Hdr.Name)
-						c1 := resultBase.Clone()
-						c1.RType = "SOA"
-						c1.Target = soa.Hdr.Name
-						if !models.SliceHasResult(resList, c1) {
-							cc, prodName, _ := ContainsCloudProduct(soa.Hdr.Name)
-							if cc {
-								c1.CloudProduct = prodName
-							}
-							ss, saasName, _ := ContainsSaaS(soa.Hdr.Name)
-							if ss {
-								c1.SaaSProduct = saasName
-							}
-							dc, dcName, _ := ContainsDatacenter(soa.Hdr.Name)
-							if dc {
-								c1.Datacenter = dcName
-							}
-							resList = append(resList, c1)
-
-						}
+						run.cacheSOAFromRecord(soa)
 						run.appendName(&names, soa.Hdr.Name)
 					}
 

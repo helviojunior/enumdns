@@ -81,6 +81,10 @@ func (jw *JsonWriter) WriteFqdn(result *models.FQDNData) error {
 	return nil
 }
 
+func (jw *JsonWriter) WriteSOA(soa *models.SOA) error {
+	return nil
+}
+
 func (jw *JsonWriter) Finish() error {
 	return nil
 }
