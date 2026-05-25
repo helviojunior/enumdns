@@ -1,20 +1,20 @@
 module github.com/helviojunior/enumdns
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/charmbracelet/glamour v0.8.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.2
-	github.com/elastic/go-elasticsearch/v8 v8.19.2
+	github.com/elastic/go-elasticsearch/v8 v8.19.3
 	github.com/glebarez/sqlite v1.11.0
 	github.com/helviojunior/gopathresolver v0.1.0
 	github.com/miekg/dns v1.1.72
-	github.com/prometheus/procfs v0.19.2
+	github.com/prometheus/procfs v0.20.1
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/net v0.49.0
-	golang.org/x/sys v0.41.0
-	golang.org/x/term v0.39.0
+	golang.org/x/net v0.51.0
+	golang.org/x/sys v0.42.0
+	golang.org/x/term v0.40.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
@@ -60,12 +60,12 @@ require (
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
-	golang.org/x/tools v0.40.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
