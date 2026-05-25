@@ -17,6 +17,7 @@ Available modules:
 - [x] Support for custom DNS suffix lists  
 - [x] Automatically identify cloud provider services  
 - [x] Retrieve multiple DNS record types (e.g., CNAME, A, AAAA)  
+- [x] Resolve each host's zone **SOA** and link every record to it (cached per zone)
 - [x] Enumerate all domain controllers names and IPs (in a Active Directory environment)
 - [x] Support to SOCKS (socks4/socks5) proxy
 - [x] **Threat analysis** with 8 detection techniques (typosquatting, bitsquatting, homographic attacks, etc.)
@@ -151,6 +152,34 @@ enumdns threat-analysis -d yeslinux.com.br --all-techniques --target-tlds com,ne
 - **Proxy Support**: Works with SOCKS proxies for discrete analysis
 
 For detailed documentation, see [documentation.md](documentation.md#análise-de-ameaças-threat-analysis---guia-detalhado).
+
+
+## SOA Resolution
+
+In every enumeration mode (`recon`, `brute`, and the `resolve` subcommands), EnumDNS
+resolves the **Start Of Authority (SOA)** record of the zone each host belongs to and
+links every resolved record back to it.
+
+The SOA is stored as a dedicated object (table `soa` / Elasticsearch index `<index>-soa`)
+holding the zone apex, primary nameserver (MNAME), responsible mailbox (RNAME), serial and
+the refresh/retry/expire/min-TTL timers. Each `Result` carries a `soa` column pointing to
+its zone apex, so the link is preserved in every output format (DB, CSV, JSON, Elastic).
+
+### Optimized, cache-aware lookup
+
+SOA resolution is backed by an in-memory cache so a zone's SOA is queried **at most once**,
+no matter how many hosts of that zone you enumerate:
+
+- For a host such as `a.b.c.example.com`, EnumDNS first checks the cache against the host
+  and its parent domains, from most specific to least specific
+  (`a.b.c.example.com` → `b.c.example.com` → `c.example.com` → `example.com`), stopping
+  before the bare TLD.
+- On a cache hit, the cached SOA object is reused with **no DNS query**.
+- On a cache miss, a single SOA query is sent; the authoritative answer reveals the real
+  zone apex (e.g. `example.com`), which is then cached for all subsequent hosts of that zone.
+
+This keeps enumeration fast on large wordlists while still attributing every record to its
+authoritative zone.
 
 
 ## Disclaimer
