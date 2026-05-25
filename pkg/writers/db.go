@@ -43,6 +43,13 @@ func (dw *DbWriter) Write(result *models.Result) error {
 	defer dw.mutex.Unlock()
 	var err error
 
+	// The logical identity of a result is its `hash` (unique index), and inserts
+	// are resolved with ON CONFLICT(hash). The primary key is database-managed, so
+	// we must never send a stale ID: a previous write populates result.ID via
+	// RETURNING, and if the object is later mutated (changing its hash) and written
+	// again, that stale ID would collide -> "UNIQUE constraint failed: results.id".
+	result.ID = 0
+
 	if !result.Exists {
 		dw.registers = append(dw.registers, *result)
 		if len(dw.registers) >= regThreshold {
@@ -82,6 +89,10 @@ func (dw *DbWriter) WriteSOA(soa *models.SOA) error {
 
 	dw.mutex.Lock()
 	defer dw.mutex.Unlock()
+
+	// Same rationale as Write: the cached SOA object is reused/rewritten for every
+	// host of the zone, so keep the PK database-managed and upsert by hash.
+	soa.ID = 0
 
 	return dw.conn.CreateInBatches(soa, 50).Error
 }
