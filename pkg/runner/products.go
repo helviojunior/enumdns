@@ -41,6 +41,7 @@ var saas_products = map[string][]string{
 	"Shopify":                    {"myshopify.com"},
 	"Weebly":                     {"weebly.com"},
 	"Google":                     {"googleusercontent.com"},
+	"TOTVS":                      {"linx.com.br"},
 }
 
 var datacenter = map[string][]string{
