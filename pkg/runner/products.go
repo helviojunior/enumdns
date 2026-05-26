@@ -29,7 +29,7 @@ var saas_products = map[string][]string{
 	"KeyCDN":                     {"proinity.net"},
 	"CDN77":                      {"cdn77.com"},
 	"AWS Global Accelerator":     {"awsglobalaccelerator.com"},
-	"Microsoft Office 365":       {"lync.com", "office.com", "outlook.com", "skype.com", "msidentity.com"},
+	"Microsoft Office 365":       {"lync.com", "office.com", "outlook.com", "skype.com", "msidentity.com", "graph.windows.net"},
 	"Microsoft Sharepoint":       {"sharepointonline.com"},
 	"Azure":                      {"azure-dns.com", "azure-dns.net", "azure-dns.org", "azure-dns.info", "azurewebsites.net"},
 	"Heroku":                     {"herokuapp.com", "herokudns.com"},
