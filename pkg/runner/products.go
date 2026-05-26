@@ -40,7 +40,7 @@ var saas_products = map[string][]string{
 	"SalesForce":                 {"exacttarget.com"},
 	"Shopify":                    {"myshopify.com"},
 	"Weebly":                     {"weebly.com"},
-	"Google":          			  {"googleusercontent.com"},
+	"Google":                     {"googleusercontent.com"},
 }
 
 var datacenter = map[string][]string{
