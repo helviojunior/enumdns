@@ -63,4 +63,5 @@ var datacenter = map[string][]string{
 	"Cyso":            {"cyso.net"},
 	"KingHost":        {"kinghost.net"},
 	"Onda":            {"onda.com.br"},
+	"3XData":          {"3xdatacloud.com.br"},
 }
