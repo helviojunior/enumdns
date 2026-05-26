@@ -67,4 +67,5 @@ var datacenter = map[string][]string{
 	"3XData":          {"3xdatacloud.com.br"},
 	"Google":          {"googleusercontent.com"},
 	"Galactic":        {"datacenter1.com.br", "galactic.com.br"},
+	"Microsoft Azure": {"azureedge.net"},
 }
