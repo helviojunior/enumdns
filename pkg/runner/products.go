@@ -42,7 +42,7 @@ var saas_products = map[string][]string{
 	"Weebly":                     {"weebly.com"},
 	"Google":                     {"googleusercontent.com"},
 	"TOTVS":                      {"linx.com.br"},
-	"SAP Hana":      		      {"hana.ondemand.com"},
+	"SAP Hana":                   {"hana.ondemand.com"},
 }
 
 var datacenter = map[string][]string{
