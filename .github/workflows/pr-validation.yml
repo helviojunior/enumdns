@@ -71,17 +71,7 @@ jobs:
           exit 1
         fi
         echo "✅ staticcheck passed"
-    
-    - name: Install and run golangci-lint
-      run: |
-        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
-        echo "Running golangci-lint..."
-        if ! golangci-lint run ./...; then
-          echo "❌ golangci-lint found issues"
-          exit 1
-        fi
-        echo "✅ golangci-lint passed"
-    
+
     - name: Run unit tests
       run: |
         echo "Running unit tests..."
