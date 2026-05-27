@@ -453,15 +453,14 @@ func (run *Runner) Run(total int) Status {
 							run.status.AddResult(results[0])
 						}
 
-						// Resolve (cached) the SOA of the host's zone once and link
-						// the resolved records back to that SOA object.
-						var soa *models.SOA
-						if len(results) >= 1 && results[0].Exists {
-							soa = run.resolveSOA(host)
-							if soa != nil {
-								if err := run.runWritersSOA(soa); err != nil {
-									logger.Error("failed to write SOA", "err", err)
-								}
+						// Always resolve (cached) the SOA of the host's zone and persist
+						// it through the registered writers, regardless of whether the
+						// host itself resolved. linkResultToSOA below still only links
+						// records that actually belong to the zone.
+						soa := run.resolveSOA(host)
+						if soa != nil {
+							if err := run.runWritersSOA(soa); err != nil {
+								logger.Error("failed to write SOA", "err", err)
 							}
 						}
 
