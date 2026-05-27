@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/helviojunior/enumdns/internal/ascii"
 	"github.com/helviojunior/enumdns/internal/tools"
@@ -104,6 +105,11 @@ multiple writers using the _--writer-*_ flags (see --help).
 
 		dnsSuffix := []string{}
 		hostWordList := []string{}
+		// Brute-force the wordlist against both the resolved zone apex (real SOA)
+		// and the informed name; refuse public suffixes unless explicitly allowed.
+		fileOptions.AddParentSOA = opts.AllowParentSOA
+		fileOptions.RefusePublicSuffix = true
+		fileOptions.AllowTLD = opts.AllowTLD
 		reader := readers.NewFileReader(fileOptions)
 		total := 0
 
@@ -114,11 +120,29 @@ multiple writers using the _--writer-*_ flags (see --help).
 				log.Warn("If you are facing error related to 'SOA not found for domain' you can ignore it with -I option")
 				os.Exit(2)
 			}
+		} else if opts.AllowParentSOA {
+			// Resolve the real zone apex and brute-force both it and the informed name.
+			apex, err := tools.GetZoneApexSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy, opts.AllowTLD)
+			if err != nil {
+				log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
+				os.Exit(2)
+			}
+			cand := strings.Trim(strings.ToLower(opts.DnsSuffix), ". ")
+			log.Infof("Resolved parent SOA for '%s': %s", cand, strings.Trim(apex, ". "))
+			for _, n := range []string{apex, cand + "."} {
+				if strings.Trim(n, ". ") != "" && !tools.SliceHasStr(dnsSuffix, n) {
+					dnsSuffix = append(dnsSuffix, n)
+				}
+			}
 		} else {
 			//Check if DNS exists
 			s, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
 			if err != nil {
 				log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
+				os.Exit(2)
+			}
+			if !opts.AllowTLD && tools.IsPublicSuffix(s) {
+				log.Error("refusing to enumerate public suffix (use --allow-tld to override)", "suffix", strings.Trim(s, ". "))
 				os.Exit(2)
 			}
 			dnsSuffix = append(dnsSuffix, s)

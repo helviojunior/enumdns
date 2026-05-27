@@ -198,7 +198,4 @@ func init() {
 
 	reconCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
 
-	reconCmd.Flags().BoolVar(&opts.AllowParentSOA, "allow-parent-soa", false, "When a DNS name is not a zone apex (e.g. www.test.com), resolve and enumerate its parent zone's real SOA (e.g. test.com) instead of failing.")
-	reconCmd.Flags().BoolVar(&opts.AllowTLD, "allow-tld", false, "Explicitly allow enumerating a public suffix / TLD (e.g. com.br, co.uk). Refused by default.")
-
 }

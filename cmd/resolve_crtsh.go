@@ -258,6 +258,4 @@ func init() {
 	resolveCrtshCmd.Flags().StringVarP(&opts.DnsSuffix, "dns-suffix", "d", "", "Single DNS suffix. (ex: test.com)")
 	resolveCrtshCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "dns-list", "L", "", "File containing a list of DNS suffix")
 	resolveCrtshCmd.Flags().StringVar(&fqdnOutFile, "fqdn-out", "", "Output file to save requested FQDN")
-	resolveCrtshCmd.Flags().BoolVar(&opts.AllowParentSOA, "allow-parent-soa", false, "When a DNS name is not a zone apex (e.g. www.test.com), resolve its parent zone's real SOA and crawl crt.sh for both the SOA apex and the informed name.")
-	resolveCrtshCmd.Flags().BoolVar(&opts.AllowTLD, "allow-tld", false, "Explicitly allow enumerating a public suffix / TLD (e.g. com.br, co.uk). Refused by default.")
 }

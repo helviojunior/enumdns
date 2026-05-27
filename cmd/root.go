@@ -237,6 +237,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&opts.StoreTempAsWorkspace, "local-temp", false, "Use execution path to store temp files")
 	rootCmd.PersistentFlags().BoolVar(&opts.LocalWorkspace, "local-workspace", false, "Use execution path to store .enumdns.db intead of user home")
 
+	// SOA / public-suffix scoping (used by recon, brute and crtsh)
+	rootCmd.PersistentFlags().BoolVar(&opts.AllowParentSOA, "allow-parent-soa", false, "When a DNS name is not a zone apex (e.g. www.test.com), resolve its parent zone's real SOA instead of failing.")
+	rootCmd.PersistentFlags().BoolVar(&opts.AllowTLD, "allow-tld", false, "Explicitly allow enumerating a public suffix / TLD (e.g. com.br, co.uk). Refused by default.")
+
 	// Write options for scan subcommands
 	rootCmd.PersistentFlags().BoolVar(&opts.Writer.Db, "write-db", false, "Write results to a SQLite database")
 	rootCmd.PersistentFlags().StringVar(&opts.Writer.DbURI, "write-db-uri", "sqlite://enumdns.sqlite3", "The database URI to use. Supports SQLite, Postgres, and MySQL (e.g., postgres://user:pass@host:port/db)")
