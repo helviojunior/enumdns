@@ -9,6 +9,7 @@ import (
 
 	//"context"
 	"github.com/miekg/dns"
+	"golang.org/x/net/publicsuffix"
 
 	"github.com/helviojunior/enumdns/internal"
 )
@@ -95,6 +96,18 @@ func GetValidDnsSuffix(dnsServer string, suffix string, proxyUri *url.URL) (stri
 
 }
 
+// IsPublicSuffix reports whether name is itself a public suffix (an entry on the
+// Public Suffix List, such as "com", "com.br" or "co.uk") — a registry-operated
+// zone with no registrable label, which must never be enumerated as a target.
+func IsPublicSuffix(name string) bool {
+	name = strings.Trim(strings.ToLower(name), ". ")
+	if name == "" {
+		return false
+	}
+	ps, _ := publicsuffix.PublicSuffix(name)
+	return ps == name
+}
+
 // GetZoneApexSuffix resolves the authoritative zone apex for a DNS name that is
 // not necessarily a zone apex itself (e.g. www.example.com). It walks the name
 // and each of its parent domains, from most to least specific, and returns the
@@ -103,7 +116,11 @@ func GetValidDnsSuffix(dnsServer string, suffix string, proxyUri *url.URL) (stri
 // a SOA returned via a CNAME chase (e.g. www -> *.github.io), which would point
 // at the target's zone instead of the queried name's own zone.
 // Returns the apex with a trailing dot, matching GetValidDnsSuffix.
-func GetZoneApexSuffix(dnsServer string, suffix string, proxyUri *url.URL) (string, error) {
+//
+// When allowPublicSuffix is false the walk stops (and fails) before reaching a
+// public suffix such as com.br or co.uk, so registry-operated zones are never
+// enumerated. Set allowPublicSuffix to true to explicitly permit them.
+func GetZoneApexSuffix(dnsServer string, suffix string, proxyUri *url.URL, allowPublicSuffix bool) (string, error) {
 	suffix = strings.Trim(strings.ToLower(suffix), ". ")
 	if suffix == "" {
 		return "", errors.New("empty suffix string")
@@ -113,6 +130,14 @@ func GetZoneApexSuffix(dnsServer string, suffix string, proxyUri *url.URL) (stri
 	// Walk from the most specific name up to (but not including) the bare TLD.
 	for i := 0; i < len(labels)-1; i++ {
 		candidate := strings.Join(labels[i:], ".")
+
+		// Unless explicitly allowed, never walk up to (or accept) a public suffix
+		// such as com.br or co.uk: those are registry-operated zones and
+		// enumerating them is out of scope. Stop here, as every shorter parent is
+		// also a public suffix.
+		if !allowPublicSuffix && IsPublicSuffix(candidate) {
+			return "", errors.New("refusing to enumerate public suffix '" + candidate + "' (no registrable parent zone found for '" + suffix + "')")
+		}
 
 		m := new(dns.Msg)
 		m.Id = dns.Id()

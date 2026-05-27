@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/helviojunior/enumdns/internal/ascii"
@@ -96,6 +97,11 @@ multiple writers using the _--writer-*_ flags (see --help).
 		dnsSuffix := []string{}
 		hostWordList := []string{}
 		fqdnList := []string{}
+		// crtsh crawls crt.sh for both the resolved zone apex (real SOA) and the
+		// informed name; refuse public suffixes unless explicitly allowed.
+		fileOptions.AddParentSOA = opts.AllowParentSOA
+		fileOptions.RefusePublicSuffix = true
+		fileOptions.AllowTLD = opts.AllowTLD
 		reader := readers.NewFileReader(fileOptions)
 		crtShReader := readers.NewCrtShReader(crtshOpts)
 		total := 0
@@ -107,11 +113,29 @@ multiple writers using the _--writer-*_ flags (see --help).
 				log.Warn("If you are facing error related to 'SOA not found for domain' you can ignore it with -I option")
 				os.Exit(2)
 			}
+		} else if opts.AllowParentSOA {
+			// Resolve the real zone apex and crawl both it and the informed name.
+			apex, err := tools.GetZoneApexSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy, opts.AllowTLD)
+			if err != nil {
+				log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
+				os.Exit(2)
+			}
+			cand := strings.Trim(strings.ToLower(opts.DnsSuffix), ". ")
+			log.Infof("Resolved parent SOA for '%s': %s", cand, strings.Trim(apex, ". "))
+			for _, n := range []string{apex, cand + "."} {
+				if strings.Trim(n, ". ") != "" && !tools.SliceHasStr(dnsSuffix, n) {
+					dnsSuffix = append(dnsSuffix, n)
+				}
+			}
 		} else {
 			//Check if DNS exists
 			s, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
 			if err != nil {
 				log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
+				os.Exit(2)
+			}
+			if !opts.AllowTLD && tools.IsPublicSuffix(s) {
+				log.Error("refusing to enumerate public suffix (use --allow-tld to override)", "suffix", strings.Trim(s, ". "))
 				os.Exit(2)
 			}
 			dnsSuffix = append(dnsSuffix, s)
@@ -234,4 +258,6 @@ func init() {
 	resolveCrtshCmd.Flags().StringVarP(&opts.DnsSuffix, "dns-suffix", "d", "", "Single DNS suffix. (ex: test.com)")
 	resolveCrtshCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "dns-list", "L", "", "File containing a list of DNS suffix")
 	resolveCrtshCmd.Flags().StringVar(&fqdnOutFile, "fqdn-out", "", "Output file to save requested FQDN")
+	resolveCrtshCmd.Flags().BoolVar(&opts.AllowParentSOA, "allow-parent-soa", false, "When a DNS name is not a zone apex (e.g. www.test.com), resolve its parent zone's real SOA and crawl crt.sh for both the SOA apex and the informed name.")
+	resolveCrtshCmd.Flags().BoolVar(&opts.AllowTLD, "allow-tld", false, "Explicitly allow enumerating a public suffix / TLD (e.g. com.br, co.uk). Refused by default.")
 }

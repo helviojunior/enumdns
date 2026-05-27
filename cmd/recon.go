@@ -80,6 +80,8 @@ multiple writers using the _--writer-*_ flags (see --help).
 
 		fileOptions.DnsServer = opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort)
 		fileOptions.AllowParentSOA = opts.AllowParentSOA
+		fileOptions.RefusePublicSuffix = true
+		fileOptions.AllowTLD = opts.AllowTLD
 
 		return nil
 	},
@@ -125,7 +127,7 @@ multiple writers using the _--writer-*_ flags (see --help).
 			if err != nil && opts.AllowParentSOA {
 				// The name itself is not a zone apex; resolve the real parent SOA.
 				var apex string
-				apex, err = tools.GetZoneApexSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
+				apex, err = tools.GetZoneApexSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy, opts.AllowTLD)
 				if err == nil {
 					log.Infof("Resolved parent SOA for '%s': %s", opts.DnsSuffix, strings.Trim(apex, ". "))
 					s = apex
@@ -133,6 +135,10 @@ multiple writers using the _--writer-*_ flags (see --help).
 			}
 			if err != nil {
 				log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
+				os.Exit(2)
+			}
+			if !opts.AllowTLD && tools.IsPublicSuffix(s) {
+				log.Error("refusing to enumerate public suffix (use --allow-tld to override)", "suffix", strings.Trim(s, ". "))
 				os.Exit(2)
 			}
 			dnsSuffix = append(dnsSuffix, s)
@@ -193,5 +199,6 @@ func init() {
 	reconCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
 
 	reconCmd.Flags().BoolVar(&opts.AllowParentSOA, "allow-parent-soa", false, "When a DNS name is not a zone apex (e.g. www.test.com), resolve and enumerate its parent zone's real SOA (e.g. test.com) instead of failing.")
+	reconCmd.Flags().BoolVar(&opts.AllowTLD, "allow-tld", false, "Explicitly allow enumerating a public suffix / TLD (e.g. com.br, co.uk). Refused by default.")
 
 }

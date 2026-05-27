@@ -33,6 +33,10 @@ type Options struct {
 	// sub-name (e.g. www.example.com -> example.com) instead of failing with
 	// "SOA not found" when the name itself is not a zone apex.
 	AllowParentSOA bool
+
+	// AllowTLD explicitly permits enumerating a public suffix / TLD (e.g. com.br,
+	// co.uk). By default these registry-operated zones are refused.
+	AllowTLD bool
 }
 
 // Logging is log related options
