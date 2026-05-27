@@ -397,6 +397,9 @@ enumdns recon -L domains.txt --write-jsonl
 
 # Com banco de dados
 enumdns recon -d example.com --write-db
+
+# Sub-nome: resolve e enumera o SOA real da zona pai
+enumdns recon -d www.example.com --allow-parent-soa
 ```
 
 ### Comando Brute (Força Bruta)
@@ -410,6 +413,9 @@ enumdns brute -L domains.txt -w wordlist.txt --write-db
 
 # Modo rápido (apenas registros A)
 enumdns brute -d example.com -w wordlist.txt -Q --write-jsonl
+
+# Sub-nome: força bruta no apex real E no nome informado
+enumdns brute -d www.example.com -w wordlist.txt --allow-parent-soa
 ```
 
 ### Comando Threat-Analysis (Análise de Ameaças) ⭐ *ATUALIZADO*
@@ -460,6 +466,9 @@ enumdns resolve crtsh -d example.com --write-db
 
 # Salvar FQDNs encontrados
 enumdns resolve crtsh -d example.com --fqdn-out discovered_hosts.txt
+
+# Sub-nome: rastreia o crt.sh para o apex real E o nome informado
+enumdns resolve crtsh -d www.example.com --allow-parent-soa
 ```
 
 ### Comando Report
@@ -510,6 +519,33 @@ enumdns recon -d example.com -q
 
 # Forçar re-verificação
 enumdns recon -d example.com -F
+```
+
+### Escopo de Zona: SOA do Pai e TLD
+
+Flags globais (registradas no comando raiz, portanto disponíveis em todos os comandos; têm efeito em `recon`, `brute` e `resolve crtsh`):
+
+| Flag | Descrição |
+|------|-----------|
+| `--allow-parent-soa` | Quando o nome informado não é o apex de uma zona (ex.: `www.example.com`), resolve o SOA real da zona pai em vez de falhar com `SOA not found`. Em `recon` o apex passa a ser enumerado; em `brute` e `resolve crtsh` são usados **dois** alvos: o apex resolvido **e** o nome informado. |
+| `--allow-tld` | Permite explicitamente enumerar um *public suffix* / TLD (ex.: `com.br`, `co.uk`). Por padrão essas zonas operadas por registries são **recusadas**. |
+
+Por padrão, a resolução do SOA do pai para antes de um *public suffix* (baseado na Public Suffix List), evitando enumerar um TLD inteiro. A resolução também ignora respostas obtidas via CNAME (ex.: `www -> *.github.io`), garantindo o SOA da zona do próprio nome.
+
+```bash
+# Resolver o SOA real de um sub-nome (www.example.com -> example.com)
+enumdns recon -d www.example.com --allow-parent-soa
+
+# brute/crtsh usam o apex real E o nome informado
+enumdns brute -d www.example.com -w wordlist.txt --allow-parent-soa
+enumdns resolve crtsh -d www.example.com --allow-parent-soa
+
+# Domínio inexistente NÃO escala até o TLD (recusado por padrão)
+enumdns recon -d inexistente.com.br --allow-parent-soa
+# ERRO: refusing to enumerate public suffix 'com.br' (use --allow-tld to override)
+
+# Permitir explicitamente um TLD / public suffix
+enumdns recon -d com.br --allow-tld
 ```
 
 ### Opções de Saída
@@ -2544,6 +2580,9 @@ enumdns recon -L domains.txt --write-jsonl
 
 # Com banco de dados
 enumdns recon -d example.com --write-db
+
+# Sub-nome: resolve e enumera o SOA real da zona pai
+enumdns recon -d www.example.com --allow-parent-soa
 ```
 
 ### Comando Brute (Força Bruta)
@@ -2557,6 +2596,9 @@ enumdns brute -L domains.txt -w wordlist.txt --write-db
 
 # Modo rápido (apenas registros A)
 enumdns brute -d example.com -w wordlist.txt -Q --write-jsonl
+
+# Sub-nome: força bruta no apex real E no nome informado
+enumdns brute -d www.example.com -w wordlist.txt --allow-parent-soa
 ```
 
 ### Comando Threat-Analysis (Análise de Ameaças) ⭐ *ATUALIZADO*
@@ -2607,6 +2649,9 @@ enumdns resolve crtsh -d example.com --write-db
 
 # Salvar FQDNs encontrados
 enumdns resolve crtsh -d example.com --fqdn-out discovered_hosts.txt
+
+# Sub-nome: rastreia o crt.sh para o apex real E o nome informado
+enumdns resolve crtsh -d www.example.com --allow-parent-soa
 ```
 
 ### Comando Report
@@ -2657,6 +2702,33 @@ enumdns recon -d example.com -q
 
 # Forçar re-verificação
 enumdns recon -d example.com -F
+```
+
+### Escopo de Zona: SOA do Pai e TLD
+
+Flags globais (registradas no comando raiz, portanto disponíveis em todos os comandos; têm efeito em `recon`, `brute` e `resolve crtsh`):
+
+| Flag | Descrição |
+|------|-----------|
+| `--allow-parent-soa` | Quando o nome informado não é o apex de uma zona (ex.: `www.example.com`), resolve o SOA real da zona pai em vez de falhar com `SOA not found`. Em `recon` o apex passa a ser enumerado; em `brute` e `resolve crtsh` são usados **dois** alvos: o apex resolvido **e** o nome informado. |
+| `--allow-tld` | Permite explicitamente enumerar um *public suffix* / TLD (ex.: `com.br`, `co.uk`). Por padrão essas zonas operadas por registries são **recusadas**. |
+
+Por padrão, a resolução do SOA do pai para antes de um *public suffix* (baseado na Public Suffix List), evitando enumerar um TLD inteiro. A resolução também ignora respostas obtidas via CNAME (ex.: `www -> *.github.io`), garantindo o SOA da zona do próprio nome.
+
+```bash
+# Resolver o SOA real de um sub-nome (www.example.com -> example.com)
+enumdns recon -d www.example.com --allow-parent-soa
+
+# brute/crtsh usam o apex real E o nome informado
+enumdns brute -d www.example.com -w wordlist.txt --allow-parent-soa
+enumdns resolve crtsh -d www.example.com --allow-parent-soa
+
+# Domínio inexistente NÃO escala até o TLD (recusado por padrão)
+enumdns recon -d inexistente.com.br --allow-parent-soa
+# ERRO: refusing to enumerate public suffix 'com.br' (use --allow-tld to override)
+
+# Permitir explicitamente um TLD / public suffix
+enumdns recon -d com.br --allow-tld
 ```
 
 ### Opções de Saída
