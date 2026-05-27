@@ -79,6 +79,7 @@ multiple writers using the _--writer-*_ flags (see --help).
 		}
 
 		fileOptions.DnsServer = opts.DnsServer + ":" + fmt.Sprintf("%d", opts.DnsPort)
+		fileOptions.AllowParentSOA = opts.AllowParentSOA
 
 		return nil
 	},

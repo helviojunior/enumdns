@@ -26,6 +26,11 @@ type FileReaderOptions struct {
 	DnsServer         string
 	IgnoreNonexistent bool
 	ProxyUri          *url.URL
+
+	// AllowParentSOA resolves the real parent zone apex for a name that is not a
+	// zone apex itself (e.g. www.example.com -> example.com) instead of treating
+	// it as a non-existent suffix.
+	AllowParentSOA bool
 }
 
 // NewFileReader prepares a new file reader
@@ -56,6 +61,15 @@ func (fr *FileReader) ReadDnsList(outList *[]string) error {
 
 		//Check if DNS exists
 		s, err := tools.GetValidDnsSuffix(fr.Options.DnsServer, candidate, fr.Options.ProxyUri)
+		if err != nil && fr.Options.AllowParentSOA {
+			// The name itself is not a zone apex; resolve the real parent SOA.
+			var apex string
+			apex, err = tools.GetZoneApexSuffix(fr.Options.DnsServer, candidate, fr.Options.ProxyUri)
+			if err == nil {
+				log.Infof("Resolved parent SOA for '%s': %s", candidate, strings.Trim(apex, ". "))
+				s = apex
+			}
+		}
 		if err != nil {
 			if !fr.Options.IgnoreNonexistent {
 				return err
