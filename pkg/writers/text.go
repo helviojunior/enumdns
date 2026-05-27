@@ -3,6 +3,7 @@ package writers
 import (
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/helviojunior/enumdns/pkg/models"
@@ -14,6 +15,8 @@ type TextWriter struct {
 	finalPath string
 	seen      map[string]struct{}
 	seenCand  map[string]struct{}
+	seenSOA   map[string]struct{}
+	soaMutex  sync.Mutex
 }
 
 // NewStdoutWriter initialises a stdout writer
@@ -34,6 +37,7 @@ func NewTextWriter(destination string) (*TextWriter, error) {
 		finalPath: destination,
 		seen:      make(map[string]struct{}),
 		seenCand:  make(map[string]struct{}),
+		seenSOA:   make(map[string]struct{}),
 	}, nil
 }
 
@@ -134,7 +138,58 @@ func (t *TextWriter) WriteFqdn(result *models.FQDNData) error {
 }
 
 func (t *TextWriter) WriteSOA(soa *models.SOA) error {
+	if soa == nil || strings.TrimSpace(soa.Name) == "" {
+		return nil
+	}
+
+	t.soaMutex.Lock()
+	defer t.soaMutex.Unlock()
+
+	// The cached SOA is persisted once per host of the zone; print it only once.
+	key := soa.GetHash()
+	if _, ok := t.seenSOA[key]; ok {
+		return nil
+	}
+	t.seenSOA[key] = struct{}{}
+
+	file, err := os.OpenFile(t.finalPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(t.formatSOA(soa) + "\r\n"); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (t *TextWriter) formatSOA(soa *models.SOA) string {
+	name := strings.Trim(strings.ToLower(soa.Name), ". ")
+	r := name
+
+	// Add spacing for FQDN column (71 chars)
+	s := 71 - len(name)
+	if s <= 0 {
+		s = 1
+	}
+	r += strings.Repeat(" ", s)
+
+	// Add type column with spacing (11 chars)
+	rtype := "SOA"
+	r += rtype
+	s = 11 - len(rtype)
+	if s <= 0 {
+		s = 1
+	}
+	r += strings.Repeat(" ", s)
+
+	// Full SOA record + cloud/saas/datacenter suffix
+	r += soa.FormatValue()
+	r += soa.FormatSuffix()
+
+	return r
 }
 
 func (t *TextWriter) formatResult(result *models.Result) string {

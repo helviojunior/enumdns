@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sync"
 
 	"github.com/helviojunior/enumdns/internal/tools"
 	"github.com/helviojunior/enumdns/pkg/models"
@@ -17,6 +18,8 @@ var csvExludedFields = []string{"HTML"}
 type CsvWriter struct {
 	FilePath  string
 	finalPath string
+	seenSOA   map[string]struct{}
+	soaMutex  sync.Mutex
 }
 
 // NewCsvWriter gets a new CsvWriter
@@ -42,6 +45,7 @@ func NewCsvWriter(destination string) (*CsvWriter, error) {
 	return &CsvWriter{
 		FilePath:  destination,
 		finalPath: p,
+		seenSOA:   make(map[string]struct{}),
 	}, nil
 }
 
@@ -92,7 +96,27 @@ func (cw *CsvWriter) WriteFqdn(result *models.FQDNData) error {
 }
 
 func (cw *CsvWriter) WriteSOA(soa *models.SOA) error {
-	return nil
+	if soa == nil {
+		return nil
+	}
+
+	res := soa.ToResult()
+	if res == nil {
+		return nil
+	}
+
+	cw.soaMutex.Lock()
+	// The cached SOA is persisted once per host of the zone; write it only once.
+	key := soa.GetHash()
+	if _, ok := cw.seenSOA[key]; ok {
+		cw.soaMutex.Unlock()
+		return nil
+	}
+	cw.seenSOA[key] = struct{}{}
+	cw.soaMutex.Unlock()
+
+	// Persist a standard results-table row (no SOA timers, matching the CSV schema).
+	return cw.Write(res)
 }
 
 // headers returns the headers a CSV file should have.

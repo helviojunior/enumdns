@@ -28,6 +28,11 @@ type Options struct {
 	Quick                bool
 	StoreTempAsWorkspace bool
 	LocalWorkspace       bool
+
+	// AllowParentSOA, when set (recon only), resolves the real zone apex for a
+	// sub-name (e.g. www.example.com -> example.com) instead of failing with
+	// "SOA not found" when the name itself is not a zone apex.
+	AllowParentSOA bool
 }
 
 // Logging is log related options

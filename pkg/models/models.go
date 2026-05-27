@@ -318,6 +318,61 @@ func (soa SOA) GetHash() string {
 	return tools.GetHash([]byte(strings.Trim(strings.ToLower(soa.Name), ". ")))
 }
 
+// FormatValue returns the complete SOA record for detailed output (text/stdout):
+// "<primary_ns> <mbox> <serial> <refresh> <retry> <expire> <min_ttl>".
+func (soa SOA) FormatValue() string {
+	return fmt.Sprintf("%s %s %d %d %d %d %d",
+		strings.Trim(strings.ToLower(soa.PrimaryNS), ". "),
+		strings.Trim(strings.ToLower(soa.Mbox), ". "),
+		soa.Serial, soa.Refresh, soa.Retry, soa.Expire, soa.MinTTL)
+}
+
+// FormatSuffix formats the Cloud/SaaS/Datacenter information of the primary
+// nameserver, mirroring Result.FormatSuffix.
+func (soa SOA) FormatSuffix() string {
+	var prod []string
+	if soa.CloudProduct != "" {
+		prod = append(prod, "Cloud = "+soa.CloudProduct)
+	}
+	if soa.SaaSProduct != "" {
+		prod = append(prod, "SaaS = "+soa.SaaSProduct)
+	}
+	if soa.Datacenter != "" {
+		prod = append(prod, "Datacenter = "+soa.Datacenter)
+	}
+	if len(prod) > 0 {
+		return " (" + strings.Join(prod, ", ") + ")"
+	}
+	return ""
+}
+
+// ToResult builds a standard hosts-table record (RType=SOA) for the zone apex,
+// pointing at the primary nameserver. It intentionally omits the SOA timers
+// (serial/refresh/retry/expire/min_ttl) so the row matches the regular results
+// schema; the full record lives in the dedicated SOA object.
+func (soa SOA) ToResult() *Result {
+	name := strings.Trim(strings.ToLower(soa.Name), ". ")
+	if name == "" {
+		return nil
+	}
+	probed := soa.ProbedAt
+	if probed.IsZero() {
+		probed = time.Now()
+	}
+	return &Result{
+		TestId:       soa.TestId,
+		FQDN:         name,
+		RType:        "SOA",
+		Target:       strings.Trim(strings.ToLower(soa.PrimaryNS), ". "),
+		SOA:          name,
+		CloudProduct: soa.CloudProduct,
+		SaaSProduct:  soa.SaaSProduct,
+		Datacenter:   soa.Datacenter,
+		ProbedAt:     probed,
+		Exists:       true,
+	}
+}
+
 func (result Result) Equal(r1 Result) bool {
 	if result.RType != r1.RType {
 		return false
@@ -358,8 +413,11 @@ func (result Result) String() string {
 	r := strings.Trim(strings.ToLower(result.FQDN), ". ") + ": "
 
 	value := result.FormatValue()
+	// SOA keeps its type prefix so its identity (and hash) differs from the NS
+	// record of the same zone: a zone's primary nameserver is usually also an NS
+	// record, so both would otherwise share the same fqdn+target string.
 	if result.RType != "A" && result.RType != "AAAA" && result.RType != "CNAME" &&
-		result.RType != "SRV" && result.RType != "NS" && result.RType != "SOA" &&
+		result.RType != "SRV" && result.RType != "NS" &&
 		result.RType != "MX" && result.RType != "PTR" && result.RType != "TXT" {
 		r += result.RType + " "
 	}

@@ -95,6 +95,51 @@ func GetValidDnsSuffix(dnsServer string, suffix string, proxyUri *url.URL) (stri
 
 }
 
+// GetZoneApexSuffix resolves the authoritative zone apex for a DNS name that is
+// not necessarily a zone apex itself (e.g. www.example.com). It walks the name
+// and each of its parent domains, from most to least specific, and returns the
+// first candidate that is itself a zone apex (i.e. a SOA whose owner name equals
+// the candidate). Requiring the SOA owner to match the candidate avoids honoring
+// a SOA returned via a CNAME chase (e.g. www -> *.github.io), which would point
+// at the target's zone instead of the queried name's own zone.
+// Returns the apex with a trailing dot, matching GetValidDnsSuffix.
+func GetZoneApexSuffix(dnsServer string, suffix string, proxyUri *url.URL) (string, error) {
+	suffix = strings.Trim(strings.ToLower(suffix), ". ")
+	if suffix == "" {
+		return "", errors.New("empty suffix string")
+	}
+
+	labels := strings.Split(suffix, ".")
+	// Walk from the most specific name up to (but not including) the bare TLD.
+	for i := 0; i < len(labels)-1; i++ {
+		candidate := strings.Join(labels[i:], ".")
+
+		m := new(dns.Msg)
+		m.Id = dns.Id()
+		m.RecursionDesired = true
+		m.Question = []dns.Question{{Name: candidate + ".", Qtype: dns.TypeSOA, Qclass: dns.ClassINET}}
+
+		c := new(internal.SocksClient)
+		in, err := c.Exchange(m, proxyUri, dnsServer)
+		if err != nil {
+			return "", err
+		}
+
+		// SOA may come in the answer (apex) or the authority (sub-name) section.
+		// Only accept it when its owner name is the candidate itself, meaning the
+		// candidate is a real zone apex.
+		for _, ans := range append(in.Answer, in.Ns...) {
+			if soa, ok := ans.(*dns.SOA); ok {
+				if strings.Trim(strings.ToLower(soa.Hdr.Name), ". ") == candidate {
+					return candidate + ".", nil
+				}
+			}
+		}
+	}
+
+	return "", errors.New("SOA not found for domain '" + suffix + ".'")
+}
+
 func IsPrivateIP(ipAddr string) bool {
 	ip := net.ParseIP(ipAddr)
 	for _, netip := range privateNets {

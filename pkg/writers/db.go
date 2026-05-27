@@ -94,7 +94,18 @@ func (dw *DbWriter) WriteSOA(soa *models.SOA) error {
 	// host of the zone, so keep the PK database-managed and upsert by hash.
 	soa.ID = 0
 
-	return dw.conn.CreateInBatches(soa, 50).Error
+	err := dw.conn.CreateInBatches(soa, 50).Error
+
+	// Also persist a standard hosts-table record (RType=SOA, without the SOA
+	// timers) so the SOA shows up alongside the regular results. Upserted by hash.
+	if res := soa.ToResult(); res != nil {
+		res.ID = 0
+		if err1 := dw.conn.CreateInBatches(res, 50).Error; err1 != nil && err == nil {
+			err = err1
+		}
+	}
+
+	return err
 }
 
 func (dw *DbWriter) Finish() error {

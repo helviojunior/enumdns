@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/helviojunior/enumdns/internal/ascii"
 	"github.com/helviojunior/enumdns/internal/tools"
@@ -120,6 +121,15 @@ multiple writers using the _--writer-*_ flags (see --help).
 		} else {
 			//Check if DNS exists
 			s, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
+			if err != nil && opts.AllowParentSOA {
+				// The name itself is not a zone apex; resolve the real parent SOA.
+				var apex string
+				apex, err = tools.GetZoneApexSuffix(fileOptions.DnsServer, opts.DnsSuffix, opts.Proxy)
+				if err == nil {
+					log.Infof("Resolved parent SOA for '%s': %s", opts.DnsSuffix, strings.Trim(apex, ". "))
+					s = apex
+				}
+			}
 			if err != nil {
 				log.Error("invalid dns suffix", "suffix", opts.DnsSuffix, "err", err)
 				os.Exit(2)
@@ -180,5 +190,7 @@ func init() {
 	reconCmd.Flags().StringVarP(&fileOptions.DnsSuffixFile, "dns-list", "L", "", "File containing a list of DNS names")
 
 	reconCmd.Flags().BoolVarP(&fileOptions.IgnoreNonexistent, "IgnoreNonexistent", "I", false, "Ignore Nonexistent DNS suffix. Used only with --dns-list option.")
+
+	reconCmd.Flags().BoolVar(&opts.AllowParentSOA, "allow-parent-soa", false, "When a DNS name is not a zone apex (e.g. www.test.com), resolve and enumerate its parent zone's real SOA (e.g. test.com) instead of failing.")
 
 }

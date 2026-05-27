@@ -3,6 +3,8 @@ package writers
 import (
 	"fmt"
 	"os"
+	"strings"
+	"sync"
 
 	"golang.org/x/term"
 
@@ -14,6 +16,8 @@ import (
 type StdoutWriter struct {
 	WriteAll   bool
 	IsTerminal bool
+	seenSOA    map[string]struct{}
+	soaMutex   sync.Mutex
 }
 
 // NewStdoutWriter initialises a stdout writer
@@ -21,6 +25,7 @@ func NewStdoutWriter() (*StdoutWriter, error) {
 	return &StdoutWriter{
 		WriteAll:   false,
 		IsTerminal: term.IsTerminal(int(os.Stdin.Fd())),
+		seenSOA:    make(map[string]struct{}),
 	}, nil
 }
 
@@ -66,6 +71,32 @@ func (s *StdoutWriter) WriteFqdn(result *models.FQDNData) error {
 }
 
 func (s *StdoutWriter) WriteSOA(soa *models.SOA) error {
+	if soa == nil || strings.TrimSpace(soa.Name) == "" {
+		return nil
+	}
+
+	s.soaMutex.Lock()
+	// The cached SOA is persisted once per host of the zone; print it only once.
+	key := soa.GetHash()
+	if _, ok := s.seenSOA[key]; ok {
+		s.soaMutex.Unlock()
+		return nil
+	}
+	s.seenSOA[key] = struct{}{}
+	s.soaMutex.Unlock()
+
+	if s.IsTerminal {
+		fmt.Fprintf(os.Stderr, "                                                                               \r")
+	}
+
+	name := strings.Trim(strings.ToLower(soa.Name), ". ")
+	line := name + ": SOA " + soa.FormatValue() + soa.FormatSuffix()
+	if s.WriteAll {
+		logger.Infof("%s", line)
+	} else {
+		logger.Debug(line)
+	}
+
 	return nil
 }
 

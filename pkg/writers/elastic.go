@@ -537,6 +537,12 @@ func (ew *ElasticWriter) WriteSOA(soa *models.SOA) error {
 		return errors.New(elasticDocumentError)
 	}
 
+	// Also index a standard hosts record (RType=SOA, without the SOA timers) in
+	// the main index so the SOA shows up alongside the regular results.
+	if r := soa.ToResult(); r != nil {
+		return ew.Write(r)
+	}
+
 	return nil
 }
 
