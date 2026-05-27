@@ -40,7 +40,7 @@ var saas_products = map[string][]string{
 	"SalesForce":                 {"exacttarget.com", "sfmc-content.com", "siteforce.com"},
 	"Shopify":                    {"myshopify.com"},
 	"Weebly":                     {"weebly.com"},
-	"Google":                     {"googleusercontent.com", "googlehosted.com", "googlemail.com", "google.com"},
+	"Google":                     {"googleusercontent.com", "googlehosted.com", "googlemail.com", "google.com", "1e100.net"},
 	"TOTVS":                      {"linx.com.br"},
 	"SAP Hana":                   {"hana.ondemand.com"},
 	"Atlassian":                  {"atlassian.com", "atlassian.net"},
