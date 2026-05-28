@@ -58,6 +58,8 @@ var datacenter = map[string][]string{
 	"Telefonica":      {"tdatabrasil.net.br"},
 	"UOL":             {"uoldiveo.com.br", "compasso.com.br"},
 	"HostGator":       {"hostgator.com.br"},
+	"Hostinger":       {"hostinger.com", "hstgr.io"},
+	"TurboCloud":      {"turbocloud.com.br", "brasil108-6015.com.br"},
 	"Datacom":         {"dialhost.com.br", "stackpath.net"},
 	"DialHost":        {"brascloud.com.br", "dialhost.com.br"},
 	"Oracle Cloud":    {"oraclecloud.com"},
