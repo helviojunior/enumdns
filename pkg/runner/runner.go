@@ -209,9 +209,9 @@ func soaFromDNS(testId string, soa *dns.SOA) *models.SOA {
 
 	s := &models.SOA{
 		TestId:    testId,
-		Name:      strings.Trim(strings.ToLower(soa.Hdr.Name), ". "),
-		PrimaryNS: strings.Trim(strings.ToLower(soa.Ns), ". "),
-		Mbox:      strings.Trim(strings.ToLower(soa.Mbox), ". "),
+		Name:      strings.Trim(strings.ToLower(tools.UnescapeDNSName(soa.Hdr.Name)), ". "),
+		PrimaryNS: strings.Trim(strings.ToLower(tools.UnescapeDNSName(soa.Ns)), ". "),
+		Mbox:      strings.Trim(strings.ToLower(tools.UnescapeDNSName(soa.Mbox)), ". "),
 		Serial:    soa.Serial,
 		Refresh:   soa.Refresh,
 		Retry:     soa.Retry,

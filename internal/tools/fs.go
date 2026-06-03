@@ -227,6 +227,44 @@ func GetHash(data []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+// UnescapeDNSName converts a DNS name in miekg/dns presentation format back to
+// its raw byte form. The DNS library escapes every byte that is not a printable
+// ASCII label character: non-ASCII/non-printable bytes become a decimal "\DDD"
+// sequence and the special characters '.' and '\' become "\." and "\\". An IDN
+// label carrying raw UTF-8 (e.g. "sòdoc") is therefore handed to us as
+// "s\195\178doc"; decoding the "\DDD" sequences rebuilds the original UTF-8
+// bytes so the name is stored readably instead of as escaped gibberish.
+//
+// It is a no-op for names that contain no backslash (the overwhelming majority),
+// so it is cheap to call on every name.
+func UnescapeDNSName(s string) string {
+	if !strings.Contains(s, "\\") {
+		return s
+	}
+	out := make([]byte, 0, len(s))
+	for i := 0; i < len(s); {
+		if s[i] == '\\' && i+1 < len(s) {
+			// "\DDD" decimal byte escape (exactly three digits).
+			if i+3 < len(s) &&
+				s[i+1] >= '0' && s[i+1] <= '9' &&
+				s[i+2] >= '0' && s[i+2] <= '9' &&
+				s[i+3] >= '0' && s[i+3] <= '9' {
+				n := int(s[i+1]-'0')*100 + int(s[i+2]-'0')*10 + int(s[i+3]-'0')
+				out = append(out, byte(n))
+				i += 4
+				continue
+			}
+			// "\." or "\\": keep the escaped character literally.
+			out = append(out, s[i+1])
+			i += 2
+			continue
+		}
+		out = append(out, s[i])
+		i++
+	}
+	return string(out)
+}
+
 func RemoveFolder(path string) error {
 	if path == "" {
 		return nil

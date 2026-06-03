@@ -101,6 +101,14 @@ func (*Result) TableName() string {
 }
 
 func (result *Result) BeforeCreate(tx *gorm.DB) (err error) {
+	// Decode the miekg/dns "\DDD" escapes into the persisted name columns so an
+	// IDN row is stored as "sòdoc.cf" rather than "s\195\178doc.cf". The hash is
+	// computed below from String(), which decodes too, so column and hash stay
+	// consistent.
+	result.FQDN = tools.UnescapeDNSName(result.FQDN)
+	result.Target = tools.UnescapeDNSName(result.Target)
+	result.Ptr = tools.UnescapeDNSName(result.Ptr)
+	result.SOA = tools.UnescapeDNSName(result.SOA)
 	calcHash(&result.Hash, result.String())
 	asn := result.GetASN(tx)
 
@@ -198,14 +206,14 @@ func (result Result) MarshalJSON() ([]byte, error) {
 		GC           bool   `json:"gc"`
 		ProbedAt     string `json:"probed_at"`
 	}{
-		FQDN:         strings.Trim(strings.ToLower(result.FQDN), ". "),
+		FQDN:         normalizeName(result.FQDN),
 		RType:        strings.ToUpper(result.RType),
 		ProbedAt:     result.ProbedAt.Format(time.RFC3339),
 		IPv4:         result.IPv4,
 		IPv6:         result.IPv6,
-		Target:       strings.Trim(strings.ToLower(result.Target), ". "),
-		SOA:          strings.Trim(strings.ToLower(result.SOA), ". "),
-		Ptr:          strings.Trim(strings.ToLower(result.Ptr), ". "),
+		Target:       normalizeName(result.Target),
+		SOA:          normalizeName(result.SOA),
+		Ptr:          normalizeName(result.Ptr),
 		Txt:          result.Txt,
 		DC:           result.DC,
 		GC:           result.GC,
@@ -252,6 +260,7 @@ func (*FQDNData) TableName() string {
 }
 
 func (fqdn *FQDNData) BeforeCreate(tx *gorm.DB) (err error) {
+	fqdn.FQDN = tools.UnescapeDNSName(fqdn.FQDN)
 	calcHash(&fqdn.Hash, fqdn.FQDN)
 
 	tx.Statement.AddClause(clause.OnConflict{
@@ -269,7 +278,7 @@ func (result Result) ToFqdn() *FQDNData {
 	}
 
 	return &FQDNData{
-		FQDN:     strings.Trim(strings.ToLower(result.FQDN), ". "),
+		FQDN:     normalizeName(result.FQDN),
 		Source:   "Enum",
 		ProbedAt: result.ProbedAt,
 	}
@@ -302,7 +311,9 @@ func (*SOA) TableName() string {
 }
 
 func (soa *SOA) BeforeCreate(tx *gorm.DB) (err error) {
-	soa.Name = strings.Trim(strings.ToLower(soa.Name), ". ")
+	soa.Name = normalizeName(soa.Name)
+	soa.PrimaryNS = normalizeName(soa.PrimaryNS)
+	soa.Mbox = normalizeName(soa.Mbox)
 	calcHash(&soa.Hash, soa.Name)
 
 	tx.Statement.AddClause(clause.OnConflict{
@@ -315,15 +326,15 @@ func (soa *SOA) BeforeCreate(tx *gorm.DB) (err error) {
 // GetHash returns a stable identifier for the SOA object (used as document id
 // by document stores such as Elasticsearch).
 func (soa SOA) GetHash() string {
-	return tools.GetHash([]byte(strings.Trim(strings.ToLower(soa.Name), ". ")))
+	return tools.GetHash([]byte(normalizeName(soa.Name)))
 }
 
 // FormatValue returns the complete SOA record for detailed output (text/stdout):
 // "<primary_ns> <mbox> <serial> <refresh> <retry> <expire> <min_ttl>".
 func (soa SOA) FormatValue() string {
 	return fmt.Sprintf("%s %s %d %d %d %d %d",
-		strings.Trim(strings.ToLower(soa.PrimaryNS), ". "),
-		strings.Trim(strings.ToLower(soa.Mbox), ". "),
+		normalizeName(soa.PrimaryNS),
+		normalizeName(soa.Mbox),
 		soa.Serial, soa.Refresh, soa.Retry, soa.Expire, soa.MinTTL)
 }
 
@@ -351,7 +362,7 @@ func (soa SOA) FormatSuffix() string {
 // (serial/refresh/retry/expire/min_ttl) so the row matches the regular results
 // schema; the full record lives in the dedicated SOA object.
 func (soa SOA) ToResult() *Result {
-	name := strings.Trim(strings.ToLower(soa.Name), ". ")
+	name := normalizeName(soa.Name)
 	if name == "" {
 		return nil
 	}
@@ -363,7 +374,7 @@ func (soa SOA) ToResult() *Result {
 		TestId:       soa.TestId,
 		FQDN:         name,
 		RType:        "SOA",
-		Target:       strings.Trim(strings.ToLower(soa.PrimaryNS), ". "),
+		Target:       normalizeName(soa.PrimaryNS),
 		SOA:          name,
 		CloudProduct: soa.CloudProduct,
 		SaaSProduct:  soa.SaaSProduct,
@@ -410,7 +421,7 @@ func (result Result) Equal(r1 Result) bool {
 }
 
 func (result Result) String() string {
-	r := strings.Trim(strings.ToLower(result.FQDN), ". ") + ": "
+	r := normalizeName(result.FQDN) + ": "
 
 	value := result.FormatValue()
 	// SOA keeps its type prefix so its identity (and hash) differs from the NS
@@ -435,9 +446,9 @@ func (result Result) FormatValue() string {
 	case "AAAA":
 		return result.IPv6
 	case "CNAME", "SRV", "NS", "SOA", "MX":
-		return strings.Trim(strings.ToLower(result.Target), ". ")
+		return normalizeName(result.Target)
 	case "PTR":
-		r := strings.Trim(strings.ToLower(result.Ptr), ". ") + " -> "
+		r := normalizeName(result.Ptr) + " -> "
 		if result.IPv6 != "" {
 			r += result.IPv6
 		} else {
@@ -452,7 +463,7 @@ func (result Result) FormatValue() string {
 		} else if result.IPv4 != "" {
 			return result.IPv4
 		} else if result.Target != "" {
-			return strings.Trim(strings.ToLower(result.Target), ". ")
+			return normalizeName(result.Target)
 		} else if result.Ptr != "" {
 			return result.Ptr
 		}
@@ -556,6 +567,16 @@ func SliceHasResult(s []*Result, r *Result) bool {
 			}*/
 	}
 	return false
+}
+
+// normalizeName brings a DNS name to its canonical stored form: decode the
+// miekg/dns "\DDD" presentation escapes back to raw UTF-8, then lowercase and
+// strip the surrounding dots/spaces. Used everywhere a name is hashed or
+// serialized so an IDN like "sòdoc.cf" is never stored as "s\195\178doc.cf".
+// It is idempotent for real DNS names (a decoded Latin/UTF-8 name has no
+// backslash, so a second pass is a no-op).
+func normalizeName(s string) string {
+	return strings.Trim(strings.ToLower(tools.UnescapeDNSName(s)), ". ")
 }
 
 func calcHash(outValue *string, keyvals ...interface{}) {
