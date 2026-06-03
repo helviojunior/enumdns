@@ -17,8 +17,8 @@ import (
 )
 
 var wordlistOpts = struct {
-	Inputs    []string
-	Exclude   []string
+	Inputs      []string
+	Exclude     []string
 	MinLength   int
 	MaxLength   int
 	KeepTLD     bool
