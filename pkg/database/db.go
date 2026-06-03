@@ -60,6 +60,15 @@ func openDatabaseConnection(uri string, db *url.URL, config *gorm.Config) (*gorm
 		if err != nil {
 			return nil, err
 		}
+		// SQLite e single-writer: forcar uma unica conexao no pool elimina a
+		// corrida de journal entre conexoes (SQLITE_IOERR_DELETE_NOENT / "disk
+		// I/O error (5898)"), que ocorre quando uma conexao apaga o
+		// <db>-journal que outra ainda referencia. O mutex do DbWriter serializa
+		// as chamadas Go, mas nao fixa a conexao SQL subjacente.
+		if sqlDB, e := c.DB(); e == nil {
+			sqlDB.SetMaxOpenConns(1)
+		}
+		c.Exec("PRAGMA busy_timeout = 5000")
 		c.Exec("PRAGMA foreign_keys = ON")
 		c.Exec("PRAGMA cache_size = 10000")
 	case "postgres":
