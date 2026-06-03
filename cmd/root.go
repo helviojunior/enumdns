@@ -45,6 +45,10 @@ var rootCmd = &cobra.Command{
    - enumdns brute -d test.com -w /tmp/wordlist.txt --write-jsonl
    - enumdns brute -L domains.txt -w /tmp/wordlist.txt --write-db
 
+   - enumdns wordlist -i '*.txt' -o custom_wl.txt
+   - enumdns wordlist -i '/data/recon/*.txt' -i extra.txt --exclude cloud,mail,onmicrosoft -o custom_wl.txt
+   - enumdns wordlist -i dump.txt --exclude deny.txt --min-length 3 --keep-tld -o custom_wl.txt
+
    - enumdns threat-analysis -d test.com --all-techniques -o threats.txt
    - enumdns threat-analysis -d test.com --typosquatting --write-jsonl
    - enumdns threat-analysis -L domains.txt --bitsquatting --write-db

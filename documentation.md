@@ -106,6 +106,7 @@ enumdns/
 │   ├── recon.go           # Comando de reconhecimento  
 │   ├── resolve*.go        # Comandos de resolução
 │   ├── report*.go         # Comandos de relatório
+│   ├── wordlist.go        # Comando de geração de wordlist
 │   └── root.go            # Comando raiz e configurações
 ├── internal/              # Código interno
 │   ├── ascii/             # Interface de usuário
@@ -417,6 +418,45 @@ enumdns brute -d example.com -w wordlist.txt -Q --write-jsonl
 # Sub-nome: força bruta no apex real E no nome informado
 enumdns brute -d www.example.com -w wordlist.txt --allow-parent-soa
 ```
+
+### Comando Wordlist (Geração de Wordlist)
+
+Gera uma wordlist de *labels* DNS limpa, deduplicada e ordenada a partir de
+arquivos arbitrários (listas, resultados anteriores, dados coletados, etc.).
+Cada linha é quebrada em *labels* candidatos (em qualquer caractere fora de
+`[a-z0-9_-]`, então `host.example.com` produz `host` e `example`), e cada token é:
+
+- normalizado em minúsculas e deduplicado;
+- validado como *label* DNS — lixo de flag como `--allow-parent-soa` é descartado;
+- filtrado por tamanho (`--min-length` / `--max-length`);
+- filtrado por TLD/*public suffix* (`com`, `br`, `gov`, `cloud`, ...), salvo `--keep-tld`;
+- filtrado pela sua própria lista de exclusão (`--exclude`).
+
+O arquivo de saída (`-o`) é sempre removido dos inputs, então reprocessar a lista
+nunca realimenta o resultado anterior (evita reinjetar tokens previamente gerados).
+
+```bash
+# A partir de todos os .txt do diretório atual (cite o glob para o enumdns expandir)
+enumdns wordlist -i '*.txt' -o custom_wl.txt
+
+# Múltiplos inputs + exclusão inline (separada por vírgula)
+enumdns wordlist -i '/data/recon/*.txt' -i extra.txt --exclude cloud,mail,onmicrosoft -o custom_wl.txt
+
+# Exclusão a partir de um arquivo (um termo por linha) e mantendo TLDs
+enumdns wordlist -i dump.txt --exclude deny.txt --min-length 3 --keep-tld -o custom_wl.txt
+
+# Sem -o: escreve no stdout (use -q para saída limpa, pronta para pipe)
+enumdns wordlist -i '*.txt' -q | sort -u
+```
+
+| Flag | Descrição |
+|------|-----------|
+| `-i, --input` | Arquivo ou *glob* de entrada (repetível). Cite o *glob* (ex.: `-i '*.txt'`) para o enumdns expandir. |
+| `--exclude` | Termos a excluir: um arquivo (um termo por linha) **ou** literais separados por vírgula (repetível). |
+| `--min-length` | Tamanho mínimo do *label* (padrão: 4). |
+| `--max-length` | Tamanho máximo do *label* (padrão/máximo DNS: 63). |
+| `--keep-tld` | Mantém tokens que são TLD/*public suffix* em vez de removê-los. |
+| `-o` | Arquivo de saída (flag global). Sem ela, escreve no stdout. |
 
 ### Comando Threat-Analysis (Análise de Ameaças) ⭐ *ATUALIZADO*
 
@@ -2289,6 +2329,7 @@ enumdns/
 │   ├── recon.go           # Comando de reconhecimento  
 │   ├── resolve*.go        # Comandos de resolução
 │   ├── report*.go         # Comandos de relatório
+│   ├── wordlist.go        # Comando de geração de wordlist
 │   └── root.go            # Comando raiz e configurações
 ├── internal/              # Código interno
 │   ├── ascii/             # Interface de usuário
@@ -2600,6 +2641,45 @@ enumdns brute -d example.com -w wordlist.txt -Q --write-jsonl
 # Sub-nome: força bruta no apex real E no nome informado
 enumdns brute -d www.example.com -w wordlist.txt --allow-parent-soa
 ```
+
+### Comando Wordlist (Geração de Wordlist)
+
+Gera uma wordlist de *labels* DNS limpa, deduplicada e ordenada a partir de
+arquivos arbitrários (listas, resultados anteriores, dados coletados, etc.).
+Cada linha é quebrada em *labels* candidatos (em qualquer caractere fora de
+`[a-z0-9_-]`, então `host.example.com` produz `host` e `example`), e cada token é:
+
+- normalizado em minúsculas e deduplicado;
+- validado como *label* DNS — lixo de flag como `--allow-parent-soa` é descartado;
+- filtrado por tamanho (`--min-length` / `--max-length`);
+- filtrado por TLD/*public suffix* (`com`, `br`, `gov`, `cloud`, ...), salvo `--keep-tld`;
+- filtrado pela sua própria lista de exclusão (`--exclude`).
+
+O arquivo de saída (`-o`) é sempre removido dos inputs, então reprocessar a lista
+nunca realimenta o resultado anterior (evita reinjetar tokens previamente gerados).
+
+```bash
+# A partir de todos os .txt do diretório atual (cite o glob para o enumdns expandir)
+enumdns wordlist -i '*.txt' -o custom_wl.txt
+
+# Múltiplos inputs + exclusão inline (separada por vírgula)
+enumdns wordlist -i '/data/recon/*.txt' -i extra.txt --exclude cloud,mail,onmicrosoft -o custom_wl.txt
+
+# Exclusão a partir de um arquivo (um termo por linha) e mantendo TLDs
+enumdns wordlist -i dump.txt --exclude deny.txt --min-length 3 --keep-tld -o custom_wl.txt
+
+# Sem -o: escreve no stdout (use -q para saída limpa, pronta para pipe)
+enumdns wordlist -i '*.txt' -q | sort -u
+```
+
+| Flag | Descrição |
+|------|-----------|
+| `-i, --input` | Arquivo ou *glob* de entrada (repetível). Cite o *glob* (ex.: `-i '*.txt'`) para o enumdns expandir. |
+| `--exclude` | Termos a excluir: um arquivo (um termo por linha) **ou** literais separados por vírgula (repetível). |
+| `--min-length` | Tamanho mínimo do *label* (padrão: 4). |
+| `--max-length` | Tamanho máximo do *label* (padrão/máximo DNS: 63). |
+| `--keep-tld` | Mantém tokens que são TLD/*public suffix* em vez de removê-los. |
+| `-o` | Arquivo de saída (flag global). Sem ela, escreve no stdout. |
 
 ### Comando Threat-Analysis (Análise de Ameaças) ⭐ *ATUALIZADO*
 

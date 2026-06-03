@@ -220,3 +220,23 @@ func TestGetDefaultDnsServer(t *testing.T) {
 		})
 	}
 }
+
+func TestIsTLD(t *testing.T) {
+	// Real ICANN-managed public suffixes must be reported as TLDs.
+	tldTrue := []string{"com", "br", "net", "org", "gov", "io", "cloud", "app", "dev", "gov.br", "co.uk"}
+	for _, s := range tldTrue {
+		if !IsTLD(s) {
+			t.Errorf("IsTLD(%q) = false, want true", s)
+		}
+	}
+
+	// Arbitrary labels that are not TLDs must NOT be reported as TLDs, even though
+	// the bare public-suffix algorithm treats any unknown rightmost label as a
+	// suffix (which is why IsPublicSuffix is unsuitable for single labels here).
+	tldFalse := []string{"portal", "intranet", "onmicrosoft", "sharepoint", "autodiscover", "www", "corp", "local", "internal", "pbh.gov.br", ""}
+	for _, s := range tldFalse {
+		if IsTLD(s) {
+			t.Errorf("IsTLD(%q) = true, want false", s)
+		}
+	}
+}

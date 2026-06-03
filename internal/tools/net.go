@@ -108,6 +108,20 @@ func IsPublicSuffix(name string) bool {
 	return ps == name
 }
 
+// IsTLD reports whether name is a known, ICANN-managed public suffix (a real
+// TLD such as "com", "br", "gov", "cloud" or a multi-label one like "gov.br").
+// Unlike IsPublicSuffix it consults the ICANN flag, so an arbitrary unlisted
+// single label (e.g. "portal", "intranet") is NOT reported as a TLD — the public
+// suffix algorithm otherwise treats any unknown rightmost label as a suffix.
+func IsTLD(name string) bool {
+	name = strings.Trim(strings.ToLower(name), ". ")
+	if name == "" {
+		return false
+	}
+	ps, icann := publicsuffix.PublicSuffix(name)
+	return icann && ps == name
+}
+
 // GetZoneApexSuffix resolves the authoritative zone apex for a DNS name that is
 // not necessarily a zone apex itself (e.g. www.example.com). It walks the name
 // and each of its parent domains, from most to least specific, and returns the
