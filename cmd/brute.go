@@ -14,6 +14,7 @@ import (
 	"github.com/helviojunior/enumdns/pkg/readers"
 	"github.com/helviojunior/enumdns/pkg/runner"
 	"github.com/helviojunior/enumdns/pkg/writers"
+	resolver "github.com/helviojunior/gopathresolver"
 	"github.com/spf13/cobra"
 )
 
@@ -102,6 +103,14 @@ multiple writers using the _--writer-*_ flags (see --help).
 		}
 
 		log.Debug("starting DNS brute-force")
+
+		// Mirror the "Control DB Path" line so the resolved wordlist file is
+		// visible in the run log.
+		wordlistPath := fileOptions.HostFile
+		if p, err := resolver.ResolveFullPath(fileOptions.HostFile); err == nil {
+			wordlistPath = p
+		}
+		log.Info("Wordlist", "Path", wordlistPath)
 
 		dnsSuffix := []string{}
 		hostWordList := []string{}
