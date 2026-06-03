@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# enumdns pre-commit hook: reject commits that contain Go files not formatted
+# with `gofmt -s`. Mirrors the CI gofmt check so formatting issues are caught
+# locally instead of on the build server.
+#
+# Installed via `make hooks` (sets core.hooksPath to .githooks).
+# POSIX sh only (macOS ships bash 3.2 without `mapfile`).
+set -eu
+
+# Go files staged for this commit (added/copied/modified) that still exist.
+staged=$(git diff --cached --name-only --diff-filter=ACM -- '*.go')
+[ -z "$staged" ] && exit 0
+
+files=""
+for f in $staged; do
+	[ -f "$f" ] && files="$files $f"
+done
+[ -z "$files" ] && exit 0
+
+# shellcheck disable=SC2086
+unformatted=$(gofmt -s -l $files)
+if [ -n "$unformatted" ]; then
+	echo "❌ Code is not formatted. Please run 'gofmt -s -w .' (or 'make fmt')"
+	echo "Files that need formatting:"
+	echo "$unformatted"
+	exit 1
+fi
+
+exit 0

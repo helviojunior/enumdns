@@ -14,12 +14,21 @@ BUILDENV=`go version | cut -d' ' -f 3,4 | sed 's/ /_/g'`
 BUILDTIME=`date -u +'%Y-%m-%dT%H:%M:%SZ'`
 
 
-.PHONY: help local windows linux mac all clean
+.PHONY: help local windows linux mac all clean hooks fmt
 
 default: local
 
 help:		   ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
+
+hooks:		   ## Install git hooks (gofmt pre-commit) via core.hooksPath
+	@git config core.hooksPath .githooks ; \
+	chmod +x .githooks/* 2>/dev/null || true ; \
+	echo "Git hooks installed (core.hooksPath -> .githooks)."
+
+fmt:		   ## Format all Go code with gofmt -s -w
+	@gofmt -s -w . ; \
+	echo "Done."
 
 
 get-version:
