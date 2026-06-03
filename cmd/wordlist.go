@@ -19,21 +19,30 @@ import (
 var wordlistOpts = struct {
 	Inputs    []string
 	Exclude   []string
-	MinLength int
-	MaxLength int
-	KeepTLD   bool
+	MinLength   int
+	MaxLength   int
+	KeepTLD     bool
+	KeepNumeric bool
 }{}
 
-// labelToken matches maximal runs of DNS-label characters (letters, digits,
-// underscore and hyphen). The dot is intentionally excluded so an FQDN such as
-// www.example.com is split into its individual labels (www, example, com).
-var labelToken = regexp.MustCompile(`[a-z0-9_-]+`)
+// fqdnRun matches a maximal run of DNS-label characters (letters, digits,
+// underscore and hyphen) optionally joined by dots, so a name such as
+// www.example.com is captured as a single run and can be split into its labels
+// while remembering which label was the trailing TLD. A bare token (no dot) is
+// matched too, and is never TLD-filtered.
+var fqdnRun = regexp.MustCompile(`[a-z0-9_-]+(?:\.[a-z0-9_-]+)*`)
 
 // validLabel reports whether a token is a syntactically valid DNS label: it must
 // start and end with an alphanumeric or underscore and may contain hyphens only
 // in the middle. This is what drops flag-like garbage such as "--allow-parent-soa"
 // or "-foo"/"bar-", which is exactly how CLI flags leak into a scraped wordlist.
 var validLabel = regexp.MustCompile(`^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?$`)
+
+// allNumeric matches a token made entirely of digits. Such labels are valid DNS
+// labels in a subdomain position (RFC 1123 §2.1), but in a scraped wordlist they
+// are almost always noise (IP octets, TTLs, SOA serials) rather than useful
+// brute-force candidates, so they are dropped unless --keep-numeric is set.
+var allNumeric = regexp.MustCompile(`^[0-9]+$`)
 
 var wordlistCmd = &cobra.Command{
 	Use:   "wordlist",
@@ -50,9 +59,14 @@ _example_. Each token is then:
 
   - lower-cased and deduplicated;
   - validated as a DNS label (flag-like junk such as _--allow-parent-soa_ is dropped);
+  - dropped when all-numeric (IP octets, TTLs, SOA serials) unless _--keep-numeric_;
   - filtered by length (_--min-length_ / _--max-length_);
-  - stripped of public suffixes / TLDs (e.g. _com_, _br_, _gov_, _cloud_) unless _--keep-tld_;
   - filtered against your own exclusion list (_--exclude_).
+
+Only the trailing TLD of a _dotted_ name is removed (the _com_ of _www.example.com_,
+the _br_ of _ed.dev.br_), so internal labels that merely share a name with a gTLD
+(e.g. _dev_) are kept. A bare token (no dot) is never treated as a TLD. Use
+_--keep-tld_ to keep the trailing TLD as well.
 
 Inputs accept shell globs. Quote them (e.g. _-i '*.txt'_) so enumdns expands the
 pattern itself. The output file (_-o_) is always removed from the inputs, so
@@ -252,10 +266,23 @@ func collectTokens(path string, exclude map[string]struct{}, out map[string]stru
 	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for sc.Scan() {
 		line := strings.ToLower(sc.Text())
-		for _, tok := range labelToken.FindAllString(line, -1) {
-			scanned++
-			if acceptToken(tok, exclude) {
-				out[tok] = struct{}{}
+		for _, run := range fqdnRun.FindAllString(line, -1) {
+			labels := strings.Split(run, ".")
+			// Only a dotted name has a TLD position. Drop the genuine trailing
+			// TLD (the "br" of ed.dev.br, the "com" of www.example.com) but keep
+			// every internal label, even one that merely shares its name with a
+			// gTLD (e.g. "dev"). Bare tokens have no dot, so they are never
+			// TLD-filtered. --keep-tld keeps the trailing TLD too.
+			if !wordlistOpts.KeepTLD && len(labels) > 1 {
+				if last := len(labels) - 1; tools.IsTLD(labels[last]) {
+					labels = labels[:last]
+				}
+			}
+			for _, tok := range labels {
+				scanned++
+				if acceptToken(tok, exclude) {
+					out[tok] = struct{}{}
+				}
 			}
 		}
 	}
@@ -270,11 +297,11 @@ func acceptToken(tok string, exclude map[string]struct{}) bool {
 	if !validLabel.MatchString(tok) {
 		return false // flag-like junk: "--allow-parent-soa", "-foo", "bar-"
 	}
+	if !wordlistOpts.KeepNumeric && allNumeric.MatchString(tok) {
+		return false // IP octets, TTLs, SOA serials: 144, 226, 300, 3600, ...
+	}
 	if _, bad := exclude[tok]; bad {
 		return false
-	}
-	if !wordlistOpts.KeepTLD && tools.IsTLD(tok) {
-		return false // TLD / public suffix: com, br, gov, cloud, app, dev, ...
 	}
 	return true
 }
@@ -312,5 +339,6 @@ func init() {
 	wordlistCmd.Flags().StringArrayVar(&wordlistOpts.Exclude, "exclude", []string{}, "Terms to exclude: a file (one term per line) or comma-separated literals (repeatable), e.g. --exclude cloud,mail,onmicrosoft or --exclude deny.txt")
 	wordlistCmd.Flags().IntVar(&wordlistOpts.MinLength, "min-length", 4, "Minimum label length to keep")
 	wordlistCmd.Flags().IntVar(&wordlistOpts.MaxLength, "max-length", 63, "Maximum label length to keep (DNS label max is 63)")
-	wordlistCmd.Flags().BoolVar(&wordlistOpts.KeepTLD, "keep-tld", false, "Keep public-suffix / TLD tokens (e.g. com, br, gov, cloud) instead of removing them")
+	wordlistCmd.Flags().BoolVar(&wordlistOpts.KeepTLD, "keep-tld", false, "Keep the trailing TLD of dotted names (e.g. com, br) instead of removing it")
+	wordlistCmd.Flags().BoolVar(&wordlistOpts.KeepNumeric, "keep-numeric", false, "Keep all-numeric tokens (e.g. 144, 3600) instead of dropping them")
 }
