@@ -112,7 +112,7 @@ jobs:
         fi
     
     - name: Upload test results
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-results
@@ -163,7 +163,7 @@ jobs:
         go-version-file: 'go.mod'
     
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@2b2077e921b56c7ce6545cccceea0556ff8d5d91
+      uses: securego/gosec@92ed8df32846e85d4e81b0b62012567afddfdc95
       with:
         args: '-concurrency 1 -quiet -no-fail -fmt sarif -out gosec-results.sarif ./...'
       timeout-minutes: 5
@@ -180,7 +180,7 @@ jobs:
     #    go list -json -deps ./... | nancy sleuth
     
     - name: Check for hardcoded secrets
-      uses: trufflesecurity/trufflehog@6961f2bace57ab32b23b3ba40f8f420f6bc7e004
+      uses: trufflesecurity/trufflehog@37b77001d0174ebec2fcca2bd83ff83a6d45a3ab
       with:
         path: ./
         base: ${{ github.event.pull_request.base.sha || github.event.before }}
