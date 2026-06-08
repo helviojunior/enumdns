@@ -319,7 +319,7 @@ jobs:
         echo "This PR is ready for review and can be merged."
     
     - name: Comment PR status
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       if: always()
       with:
         script: |
