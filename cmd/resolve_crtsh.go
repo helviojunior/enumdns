@@ -200,8 +200,11 @@ multiple writers using the _--writer-*_ flags (see --help).
 		//Check DNS connectivity
 		_, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
 		if err != nil {
-			log.Error("Error checking DNS connectivity", "err", err)
-			os.Exit(2)
+			// Best-effort reachability probe against a public name. It fails
+			// legitimately when the resolver is internal-only (e.g. an AD DNS
+			// that does not recurse to the internet) or when a proxy adds
+			// latency, so warn instead of aborting the run.
+			log.Warn("DNS connectivity check against google.com failed; continuing anyway", "err", err)
 		}
 
 		// Check runned items

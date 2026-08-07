@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"errors"
 	"log/slog"
 
 	//"os"
+	//"errors"
 	//"fmt"
 
 	"github.com/helviojunior/enumdns/internal/ascii"
@@ -73,7 +73,11 @@ Perform resolver operations.
 		//Check DNS connectivity
 		_, err := tools.GetValidDnsSuffix(fileOptions.DnsServer, "google.com.", opts.Proxy)
 		if err != nil {
-			return errors.New("Error checking DNS connectivity: " + err.Error())
+			// Best-effort reachability probe against a public name. It fails
+			// legitimately when the resolver is internal-only (e.g. an AD DNS
+			// that does not recurse to the internet) or when a proxy adds
+			// latency, so warn instead of aborting the run.
+			log.Warn("DNS connectivity check against google.com failed; continuing anyway", "err", err)
 		}
 
 		return nil
