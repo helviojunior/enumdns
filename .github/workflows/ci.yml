@@ -180,7 +180,7 @@ jobs:
     #    go list -json -deps ./... | nancy sleuth
     
     - name: Check for hardcoded secrets
-      uses: trufflesecurity/trufflehog@37b77001d0174ebec2fcca2bd83ff83a6d45a3ab
+      uses: trufflesecurity/trufflehog@d411fff7b8879a62509f3fa98c07f247ac089a51
       with:
         path: ./
         base: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -258,7 +258,7 @@ jobs:
     
     - name: Create Release on Success
       if: steps.status.outputs.status == 'success' && github.ref == 'refs/heads/main'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const tagName = `v${new Date().toISOString().slice(0,10)}-${context.sha.slice(0,7)}`;
