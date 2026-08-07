@@ -5,13 +5,32 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"time"
 
 	"github.com/miekg/dns"
 	"golang.org/x/net/proxy"
 )
 
+// DefaultTimeout is the fallback timeout applied to DNS exchanges (and to the
+// dial to the SOCKS proxy) when a SocksClient does not set its own Timeout. It
+// is configurable at startup via the --dns-timeout flag. miekg/dns defaults to
+// a 2s read deadline, which is too short once a proxy adds latency, so we raise
+// the effective default here.
+var DefaultTimeout = 10 * time.Second
+
 type SocksClient struct {
 	Client *dns.Client
+
+	// Timeout overrides DefaultTimeout for this client when greater than zero.
+	Timeout time.Duration
+}
+
+// timeout returns the effective timeout for this client.
+func (c *SocksClient) timeout() time.Duration {
+	if c.Timeout > 0 {
+		return c.Timeout
+	}
+	return DefaultTimeout
 }
 
 // Exchange performs a synchronous query. It sends the message m to the address
@@ -29,11 +48,14 @@ type SocksClient struct {
 // To specify a local address or a timeout, the caller has to set the `Client.Dialer`
 // attribute appropriately
 func (c *SocksClient) Exchange(m *dns.Msg, proxyUri *url.URL, address string) (*dns.Msg, error) {
+	c.Client = new(dns.Client)
+	c.Client.Timeout = c.timeout()
+
 	if proxyUri == nil {
-		return dns.Exchange(m, address)
+		r, _, err := c.Client.Exchange(m, address)
+		return r, err
 	}
 
-	c.Client = new(dns.Client)
 	co, err := c.Dial(proxyUri, address)
 	if err != nil {
 		return nil, err
@@ -50,17 +72,26 @@ func (c *SocksClient) Dial(proxyUri *url.URL, address string) (conn *dns.Conn, e
 
 // DialContext connects to the address on the named network, with a context.Context.
 func (c *SocksClient) DialContext(ctx context.Context, proxyUri *url.URL, address string) (conn *dns.Conn, err error) {
-	d, err := FromURL(proxyUri, proxy.Direct)
+	// Bound the dial to the SOCKS proxy with the effective timeout so a stalled
+	// or unreachable proxy fails fast instead of hanging.
+	forward := &net.Dialer{Timeout: c.timeout()}
+	d, err := FromURL(proxyUri, forward)
 	if err != nil {
 		return nil, errors.New("Error connecting to proxy: " + err.Error())
 	}
 
 	conn = new(dns.Conn)
-	conn.Conn, err = d.Dial("tcp", address)
+	if cd, ok := d.(proxy.ContextDialer); ok {
+		conn.Conn, err = cd.DialContext(ctx, "tcp", address)
+	} else {
+		conn.Conn, err = d.Dial("tcp", address)
+	}
 	if err != nil {
 		return nil, err
 	}
-	conn.UDPSize = c.Client.UDPSize
+	if c.Client != nil {
+		conn.UDPSize = c.Client.UDPSize
+	}
 	return conn, nil
 }
 

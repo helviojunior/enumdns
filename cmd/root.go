@@ -151,6 +151,13 @@ var rootCmd = &cobra.Command{
 			opts.Proxy = nil
 		}
 
+		// Apply the query timeout to the shared DNS client (direct and over
+		// proxy). Guard against a non-positive value to keep the built-in
+		// default.
+		if opts.Scan.Timeout > 0 {
+			internal.DefaultTimeout = time.Duration(opts.Scan.Timeout) * time.Second
+		}
+
 		return nil
 	},
 }
@@ -235,7 +242,7 @@ func init() {
 
 	// "Threads" & other
 	rootCmd.PersistentFlags().IntVarP(&opts.Scan.Threads, "threads", "t", 6, "Number of concurrent threads (goroutines) to use")
-	rootCmd.PersistentFlags().IntVarP(&opts.Scan.Timeout, "timeout", "T", 60, "Number of seconds before considering a page timed out")
+	rootCmd.PersistentFlags().IntVarP(&opts.Scan.Timeout, "timeout", "T", 60, "Number of seconds to wait for a DNS query (direct or over proxy) before timing out")
 
 	rootCmd.PersistentFlags().BoolVar(&opts.Writer.NoControlDb, "disable-control-db", false, "Disable utilization of database ~/.enumdns.db.")
 	rootCmd.PersistentFlags().BoolVar(&opts.StoreTempAsWorkspace, "local-temp", false, "Use execution path to store temp files")
