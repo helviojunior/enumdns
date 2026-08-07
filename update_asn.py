@@ -24,7 +24,7 @@ lacnic|BR|ipv4|24.152.12.0|1024|20200309|allocated
 | **status**   | `allocated`, `assigned`, `available`, etc.                                        |
 
 
-https://github.com/sapics/ip-location-db/blob/main/asn/asn-ipv4.csv
+https://github.com/sapics/ip-location-db/blob/main/origin-asn/origin-asn-ipv4.csv
 ip_range_start, ip_range_end, autonomous_system_number, autonomous_system_organization
 
 
@@ -32,6 +32,7 @@ ip_range_start, ip_range_end, autonomous_system_number, autonomous_system_organi
 
 import requests
 import re, sys
+import csv
 import math
 import ipaddress
 
@@ -43,7 +44,10 @@ URLS = [
     "https://ftp.lacnic.net/pub/stats/ripencc/delegated-ripencc-latest",
 ]
 
-URL_IPASN = "https://raw.githubusercontent.com/sapics/ip-location-db/refs/heads/main/asn/asn-ipv4.csv"
+# The upstream repo dropped the combined asn/ directory. origin-asn is the
+# replacement that still carries the organization name in the 4th column
+# (geolite2-asn and dbip-asn leave it empty).
+URL_IPASN = "https://raw.githubusercontent.com/sapics/ip-location-db/refs/heads/main/origin-asn/origin-asn-ipv4.csv"
 
 GO_FILE = "pkg/models/asn.go"
 RIR_NAMES = [
@@ -80,12 +84,14 @@ def parse_ipasn(lines):
     print("[*] Parsing asn list...")
     asn1 = {}
     asn2 = {}
-    for l in lines:
-        lp = l.lower().split(",")
+    # Parse with the csv module so organization names containing commas
+    # (e.g. "Cloudflare, Inc.") are kept whole instead of being split apart
+    # and dropped by the len == 4 guard.
+    for lp in csv.reader(lines):
         if len(lp) == 4:
-            ip_range_start = lp[0]
+            ip_range_start = lp[0].strip().lower()
             asn = lp[2].strip()
-            org = lp[3].strip()
+            org = lp[3].strip().lower()
 
             org = re.sub(r'[^a-z0-9 .()-]', '', org, flags=re.IGNORECASE)
 
