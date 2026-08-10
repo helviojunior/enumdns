@@ -10,7 +10,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/helviojunior/gopathresolver v0.1.0
 	github.com/miekg/dns v1.1.72
-	github.com/prometheus/procfs v0.21.0
+	github.com/prometheus/procfs v0.21.1
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/net v0.56.0
 	golang.org/x/sys v0.46.0
