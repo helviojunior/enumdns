@@ -163,7 +163,7 @@ jobs:
         go-version-file: 'go.mod'
     
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@92ed8df32846e85d4e81b0b62012567afddfdc95
+      uses: securego/gosec@2eb4727ebc7504944ddbcdd2f7157db492026c3f
       with:
         args: '-concurrency 1 -quiet -no-fail -fmt sarif -out gosec-results.sarif ./...'
       timeout-minutes: 5
