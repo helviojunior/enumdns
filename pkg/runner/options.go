@@ -37,6 +37,40 @@ type Options struct {
 	// AllowTLD explicitly permits enumerating a public suffix / TLD (e.g. com.br,
 	// co.uk). By default these registry-operated zones are refused.
 	AllowTLD bool
+
+	// AD holds the Active Directory / LDAP options used by the `ad` command to
+	// dump AD-integrated DNS zones (ADIDNS style).
+	AD AD
+}
+
+// AD holds the options for the Active Directory DNS dump (the `ad` command).
+type AD struct {
+	// TargetIP forces a single LDAP server (host or IP) and disables the
+	// automatic Global Catalog discovery. When empty, the `ad` command discovers
+	// the Global Catalog servers via DNS SRV and tries each one.
+	TargetIP string
+	// Port is the LDAP port (default 389, or 636 when LDAPS is set).
+	Port int
+	// LDAPS selects TLS (LDAPS) instead of plaintext LDAP.
+	LDAPS bool
+
+	// Username / Password / Domain are used for user+password or NTLM binds.
+	Username string
+	Password string
+	Domain   string
+
+	// NtlmHash enables pass-the-hash ("NT" or "LM:NT").
+	NtlmHash string
+
+	// Kerberos enables authentication from a ticket cache (ccache).
+	Kerberos   bool
+	CCachePath string
+	Krb5Conf   string
+	SPN        string
+
+	// BaseDN optionally restricts the dump to a single LDAP container instead
+	// of autodetecting the DomainDnsZones / ForestDnsZones partitions.
+	BaseDN string
 }
 
 // Logging is log related options

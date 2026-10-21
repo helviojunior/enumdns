@@ -62,7 +62,11 @@ var rootCmd = &cobra.Command{
 
    - enumdns resolve file -L /tmp/host_list.txt -o enumdns.txt
    - enumdns resolve file -L /tmp/host_list.txt --write-jsonl
-   - enumdns resolve file -L /tmp/host_list.txt --write-db`,
+   - enumdns resolve file -L /tmp/host_list.txt --write-db
+
+   - enumdns ad -s 10.0.0.1 -d corp.local -u jdoe -p 'Passw0rd!' -o adidns.txt
+   - enumdns ad -s 10.0.0.1 -d corp.local -u jdoe -H :<nthash> --write-db
+   - KRB5CCNAME=/tmp/jdoe.ccache enumdns ad -s 10.0.0.1 -d corp.local -k --write-jsonl`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
 		if cmd.CalledAs() != "version" && !opts.Logging.Silence {

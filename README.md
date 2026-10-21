@@ -9,6 +9,7 @@ Available modules:
 3. Resolve DNS hosts from txt file
 4. Resolve DNS hosts from BloodHound file (.zip or .json)
 5. **Threat Analysis** - Advanced domain security analysis for typosquatting, homographic attacks, and malicious domain detection
+6. **AD DNS dump (ADIDNS)** - Dump every DNS zone and record stored in Active Directory over LDAP
 
 
 ## Main features
@@ -19,6 +20,7 @@ Available modules:
 - [x] Retrieve multiple DNS record types (e.g., CNAME, A, AAAA)  
 - [x] Resolve each host's zone **SOA** and link every record to it (cached per zone)
 - [x] Enumerate all domain controllers names and IPs (in a Active Directory environment)
+- [x] Dump AD-integrated DNS zones and records (ADIDNS) via LDAP, with user/password, NTLM pass-the-hash or Kerberos (ccache) authentication
 - [x] Support to SOCKS (socks4/socks5) proxy
 - [x] **Threat analysis** with 8 detection techniques (typosquatting, bitsquatting, homographic attacks, etc.)
 - [x] **Comprehensive test coverage** (98.4% on threat analysis module)
