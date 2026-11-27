@@ -37,6 +37,7 @@ Authentication supports three methods:
    - enumdns ad -s 10.0.0.1 --ldaps -d corp.local -u jdoe -p 'Passw0rd!' --write-jsonl
    - enumdns ad -s 10.0.0.1 -d corp.local -u jdoe -H aad3b435b51404eeaad3b435b51404ee:<nthash> --write-db
    - enumdns ad --target-ip 10.0.0.1 -d corp.local -u jdoe -p 'Passw0rd!' --write-db
+   - enumdns ad -s 10.0.0.1 -d corp.local -u jdoe -p 'Passw0rd!' --base-dn 'DC=corp,DC=local' -o adidns.txt
    - KRB5CCNAME=/tmp/jdoe.ccache enumdns ad -s 10.0.0.1 -d corp.local -k --write-db`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
